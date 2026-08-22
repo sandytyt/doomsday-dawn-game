@@ -1,1 +1,132 @@
-//tbc
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#1a1a1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="末日黎明">
+<title>末日黎明：喪屍浩劫</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ============ 開局金鑰設定畫面 ============ -->
+  <div id="setup-screen" class="screen">
+    <div class="setup-box">
+      <h1 class="setup-title">末日黎明</h1>
+      <p class="setup-subtitle">喪屍浩劫 · 生存協議</p>
+
+      <div class="setup-field">
+        <label for="api-key-input">Google Gemini API 金鑰</label>
+        <input type="password" id="api-key-input" placeholder="貼上你的 API 金鑰" autocomplete="off">
+        <p class="setup-hint">金鑰僅儲存於本機瀏覽器，不會上傳到任何伺服器。</p>
+      </div>
+
+      <button id="start-game-btn" class="btn-primary">進入末日</button>
+
+      <div class="setup-divider">或</div>
+
+      <button id="import-save-btn" class="btn-secondary">匯入存檔繼續遊玩</button>
+      <input type="file" id="import-save-file" accept=".json" hidden>
+    </div>
+  </div>
+
+  <!-- ============ 遊戲主畫面 ============ -->
+  <div id="game-screen" class="screen hidden">
+
+    <!-- 頂部狀態欄 -->
+    <header id="status-bar">
+      <div class="status-row">
+        <span id="status-time" class="status-item">⏱ 第1天 06:00</span>
+        <span id="status-location" class="status-item">📍 未知地點</span>
+      </div>
+      <div class="status-row">
+        <div class="stamina-wrapper">
+          <span class="stamina-label">體力</span>
+          <div class="stamina-bar-bg">
+            <div id="stamina-bar-fill" class="stamina-bar-fill" style="width:100%"></div>
+          </div>
+          <span id="stamina-value" class="stamina-value">100</span>
+        </div>
+        <span id="status-danger" class="danger-tag safe">安全</span>
+        <button id="menu-toggle-btn" class="icon-btn" aria-label="選單">⚙</button>
+      </div>
+    </header>
+
+    <!-- 展開式完整狀態面板（關鍵節點才顯示） -->
+    <div id="status-panel-full" class="status-panel-full hidden">
+      <div class="panel-full-grid">
+        <div class="panel-full-item"><span class="panel-label">人性值</span><span id="stat-humanity">--</span></div>
+        <div class="panel-full-item"><span class="panel-label">陣營信任</span><span id="stat-faction">--</span></div>
+        <div class="panel-full-item"><span class="panel-label">覺醒進度</span><span id="stat-awakening">未覺醒</span></div>
+        <div class="panel-full-item"><span class="panel-label">天氣</span><span id="stat-weather">--</span></div>
+      </div>
+    </div>
+
+    <!-- 中央劇情捲動區 -->
+    <main id="narrative-log">
+      <div id="narrative-content"></div>
+      <div id="typing-indicator" class="typing-indicator hidden">
+        <span></span><span></span><span></span>
+      </div>
+    </main>
+
+    <!-- 底部動態行動面板 -->
+    <footer id="action-panel">
+      <div id="options-container" class="options-container"></div>
+
+      <div id="free-input-row" class="free-input-row hidden">
+        <input type="text" id="free-input-text" placeholder="輸入你的行動…" maxlength="200">
+        <button id="free-input-send" class="btn-send">送出</button>
+        <button id="free-input-cancel" class="icon-btn">✕</button>
+      </div>
+
+      <button id="free-input-toggle" class="btn-free-toggle">✏ 自訂行動</button>
+    </footer>
+
+  </div>
+
+  <!-- ============ 設定側邊選單 ============ -->
+  <div id="side-menu" class="side-menu hidden">
+    <div class="side-menu-content">
+      <h2>選單</h2>
+
+      <button id="menu-export-btn" class="btn-menu">📤 匯出存檔</button>
+      <button id="menu-import-btn" class="btn-menu">📥 匯入存檔</button>
+      <button id="menu-restart-btn" class="btn-menu btn-danger">🔄 重新開始（清空進度）</button>
+      <button id="menu-apikey-btn" class="btn-menu">🔑 更改 API 金鑰</button>
+
+      <div class="side-menu-footer">
+        <button id="menu-close-btn" class="btn-secondary">關閉</button>
+      </div>
+    </div>
+    <div id="side-menu-backdrop" class="side-menu-backdrop"></div>
+  </div>
+
+  <!-- ============ 覺醒 / 重要事件特效彈窗 ============ -->
+  <div id="event-modal" class="event-modal hidden">
+    <div class="event-modal-content">
+      <div id="event-modal-icon" class="event-modal-icon">⚡</div>
+      <h2 id="event-modal-title">異能覺醒</h2>
+      <p id="event-modal-text"></p>
+      <button id="event-modal-close" class="btn-primary">繼續</button>
+    </div>
+  </div>
+
+  <!-- 載入中遮罩 -->
+  <div id="loading-overlay" class="loading-overlay hidden">
+    <div class="loading-spinner"></div>
+  </div>
+
+</div>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
