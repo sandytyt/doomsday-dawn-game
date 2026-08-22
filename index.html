@@ -28,6 +28,26 @@
         <p class="setup-hint">金鑰僅儲存於本機瀏覽器，不會上傳到任何伺服器。</p>
       </div>
 
+      <!-- 角色初始設定（選填，可摺疊） -->
+      <button id="char-setup-toggle" class="collapse-toggle-btn">
+        <span>👤 角色初始設定（選填）</span>
+        <span class="collapse-arrow">▾</span>
+      </button>
+      <div id="char-setup-fields" class="collapse-body hidden">
+        <div class="setup-field">
+          <label for="char-name-input">角色姓名 / 稱呼</label>
+          <input type="text" id="char-name-input" placeholder="留空則由AI自動生成" maxlength="20">
+        </div>
+        <div class="setup-field">
+          <label for="char-background-input">背景設定</label>
+          <input type="text" id="char-background-input" placeholder="例如：前護士、退役軍人、普通學生…" maxlength="60">
+        </div>
+        <div class="setup-field">
+          <label for="char-notes-input">其他自訂細節</label>
+          <input type="text" id="char-notes-input" placeholder="任何你想加入開局的設定，留空則跳過" maxlength="100">
+        </div>
+      </div>
+
       <button id="start-game-btn" class="btn-primary">進入末日</button>
 
       <div class="setup-divider">或</div>
@@ -45,6 +65,8 @@
       <div class="status-row">
         <span id="status-time" class="status-item">⏱ 第1天 06:00</span>
         <span id="status-location" class="status-item">📍 未知地點</span>
+        <button id="status-expand-btn" class="icon-btn" aria-label="展開狀態">▾</button>
+        <button id="menu-toggle-btn" class="icon-btn" aria-label="選單">⚙</button>
       </div>
       <div class="status-row">
         <div class="stamina-wrapper">
@@ -55,11 +77,10 @@
           <span id="stamina-value" class="stamina-value">100</span>
         </div>
         <span id="status-danger" class="danger-tag safe">安全</span>
-        <button id="menu-toggle-btn" class="icon-btn" aria-label="選單">⚙</button>
       </div>
     </header>
 
-    <!-- 展開式完整狀態面板（關鍵節點才顯示） -->
+    <!-- 展開式完整狀態面板（手動切換或關鍵節點自動展開） -->
     <div id="status-panel-full" class="status-panel-full hidden">
       <div class="panel-full-grid">
         <div class="panel-full-item"><span class="panel-label">人性值</span><span id="stat-humanity">--</span></div>
@@ -79,6 +100,10 @@
 
     <!-- 底部動態行動面板 -->
     <footer id="action-panel">
+      <button id="options-collapse-toggle" class="collapse-toggle-btn hidden">
+        <span>行動選項</span>
+        <span class="collapse-arrow">▾</span>
+      </button>
       <div id="options-container" class="options-container"></div>
 
       <div id="free-input-row" class="free-input-row hidden">
@@ -94,19 +119,36 @@
 
   <!-- ============ 設定側邊選單 ============ -->
   <div id="side-menu" class="side-menu hidden">
+    <div id="side-menu-backdrop" class="side-menu-backdrop"></div>
     <div class="side-menu-content">
       <h2>選單</h2>
 
-      <button id="menu-export-btn" class="btn-menu">📤 匯出存檔</button>
-      <button id="menu-import-btn" class="btn-menu">📥 匯入存檔</button>
-      <button id="menu-restart-btn" class="btn-menu btn-danger">🔄 重新開始（清空進度）</button>
-      <button id="menu-apikey-btn" class="btn-menu">🔑 更改 API 金鑰</button>
+      <button id="menu-export-btn" class="btn-menu" type="button">📤 匯出存檔</button>
+      <button id="menu-import-btn" class="btn-menu" type="button">📥 匯入存檔</button>
+      <button id="menu-restart-btn" class="btn-menu btn-danger" type="button">🔄 重新開始（清空進度）</button>
+      <button id="menu-apikey-btn" class="btn-menu" type="button">🔑 更改 API 金鑰</button>
+
+      <button id="notion-setup-toggle" class="collapse-toggle-btn" type="button">
+        <span>☁ Notion 雲端同步（選填）</span>
+        <span class="collapse-arrow">▾</span>
+      </button>
+      <div id="notion-setup-fields" class="collapse-body hidden">
+        <div class="setup-field">
+          <label for="notion-proxy-input">Cloudflare Workers 轉發網址</label>
+          <input type="text" id="notion-proxy-input" placeholder="https://your-worker.workers.dev">
+        </div>
+        <div class="setup-field">
+          <label for="notion-db-input">Notion Database ID</label>
+          <input type="text" id="notion-db-input" placeholder="貼上資料庫ID">
+        </div>
+        <button id="notion-save-btn" class="btn-secondary" type="button">儲存 Notion 設定</button>
+        <p class="setup-hint">尚未部署轉發層前，留空即可，遊戲僅使用本機存檔。</p>
+      </div>
 
       <div class="side-menu-footer">
-        <button id="menu-close-btn" class="btn-secondary">關閉</button>
+        <button id="menu-close-btn" class="btn-secondary" type="button">關閉</button>
       </div>
     </div>
-    <div id="side-menu-backdrop" class="side-menu-backdrop"></div>
   </div>
 
   <!-- ============ 覺醒 / 重要事件特效彈窗 ============ -->
@@ -115,7 +157,7 @@
       <div id="event-modal-icon" class="event-modal-icon">⚡</div>
       <h2 id="event-modal-title">異能覺醒</h2>
       <p id="event-modal-text"></p>
-      <button id="event-modal-close" class="btn-primary">繼續</button>
+      <button id="event-modal-close" class="btn-primary" type="button">繼續</button>
     </div>
   </div>
 
