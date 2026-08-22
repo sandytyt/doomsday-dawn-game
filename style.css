@@ -1,5 +1,5 @@
 /* ============================================
-   末日黎明：喪屍浩劫 — 視覺樣式
+   末日黎明：喪屍浩劫 — 視覺樣式 v2
    配色主軸：鐵灰底 + 暗紅警示 + 低飽和度
    ============================================ */
 
@@ -15,9 +15,6 @@
   --accent-red-bright: #c62828;
   --accent-amber: #b8860b;
   --accent-green: #4a6b4a;
-  --danger-safe: #4a6b4a;
-  --danger-warning: #b8860b;
-  --danger-critical: #8b1e1e;
   --shadow-deep: rgba(0, 0, 0, 0.6);
   --font-main: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", -apple-system, sans-serif;
 }
@@ -56,12 +53,17 @@ html, body {
   display: none !important;
 }
 
+button {
+  font-family: inherit;
+}
+
 /* ============ 開局設定畫面 ============ */
 
 #setup-screen {
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow-y: auto;
   background: radial-gradient(circle at 50% 30%, #1a1a1a 0%, #0a0a0a 100%);
   padding: 24px;
 }
@@ -70,6 +72,7 @@ html, body {
   width: 100%;
   max-width: 380px;
   text-align: center;
+  padding: 20px 0;
 }
 
 .setup-title {
@@ -85,11 +88,11 @@ html, body {
   font-size: 13px;
   color: var(--text-dim);
   letter-spacing: 2px;
-  margin-bottom: 40px;
+  margin-bottom: 32px;
 }
 
 .setup-field {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   text-align: left;
 }
 
@@ -120,13 +123,13 @@ html, body {
   color: var(--text-dim);
   margin-top: 8px;
   line-height: 1.5;
+  text-align: left;
 }
 
 .setup-divider {
   font-size: 12px;
   color: var(--text-dim);
   margin: 20px 0;
-  position: relative;
 }
 
 .btn-primary {
@@ -140,7 +143,6 @@ html, body {
   font-weight: 600;
   letter-spacing: 1px;
   cursor: pointer;
-  transition: background 0.2s;
 }
 
 .btn-primary:active {
@@ -160,6 +162,41 @@ html, body {
 
 .btn-secondary:active {
   background: var(--bg-elevated);
+}
+
+/* ============ 通用摺疊區塊（角色設定 / Notion設定 / 選項摺疊） ============ */
+
+.collapse-toggle-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  margin-bottom: 14px;
+}
+
+.collapse-toggle-btn .collapse-arrow {
+  transition: transform 0.25s ease;
+}
+
+.collapse-toggle-btn.expanded .collapse-arrow {
+  transform: rotate(180deg);
+}
+
+.collapse-body {
+  margin-bottom: 14px;
+  animation: slide-down 0.25s ease;
+}
+
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* ============ 遊戲主畫面 ============ */
@@ -183,8 +220,11 @@ html, body {
 .status-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 10px;
+}
+
+.status-row:first-child {
+  justify-content: space-between;
 }
 
 .status-row + .status-row {
@@ -195,6 +235,17 @@ html, body {
   font-size: 12px;
   color: var(--text-secondary);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#status-time {
+  flex-shrink: 0;
+}
+
+#status-location {
+  flex: 1;
+  min-width: 0;
 }
 
 .stamina-wrapper {
@@ -252,6 +303,7 @@ html, body {
   border-radius: 12px;
   font-weight: 600;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .danger-tag.safe {
@@ -274,9 +326,18 @@ html, body {
   background: none;
   border: none;
   color: var(--text-secondary);
-  font-size: 18px;
+  font-size: 16px;
   cursor: pointer;
   padding: 4px 8px;
+  flex-shrink: 0;
+}
+
+#status-expand-btn {
+  transition: transform 0.25s ease;
+}
+
+#status-expand-btn.expanded {
+  transform: rotate(180deg);
 }
 
 /* --- 展開式完整狀態面板 --- */
@@ -287,11 +348,6 @@ html, body {
   border-bottom: 1px solid var(--border-color);
   padding: 12px 14px;
   animation: slide-down 0.3s ease;
-}
-
-@keyframes slide-down {
-  from { opacity: 0; max-height: 0; }
-  to { opacity: 1; max-height: 200px; }
 }
 
 .panel-full-grid {
@@ -387,6 +443,10 @@ html, body {
   margin-bottom: 10px;
 }
 
+.options-container.collapsed {
+  display: none;
+}
+
 .option-btn {
   width: 100%;
   text-align: left;
@@ -398,7 +458,6 @@ html, body {
   font-size: 14px;
   line-height: 1.5;
   cursor: pointer;
-  transition: border-color 0.2s, background 0.2s;
 }
 
 .option-btn:active {
@@ -417,6 +476,23 @@ html, body {
   font-size: 11px;
   color: var(--text-dim);
   margin-top: 4px;
+}
+
+/* 選項摺疊後，改用精簡橫向清單顯示 */
+.options-container.mini-mode {
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+.options-container.mini-mode .option-btn {
+  width: auto;
+  flex: 1 1 auto;
+  padding: 9px 12px;
+  font-size: 12px;
+}
+
+.options-container.mini-mode .option-risk {
+  display: none;
 }
 
 .btn-free-toggle {
@@ -485,6 +561,7 @@ html, body {
   width: 78%;
   max-width: 320px;
   height: 100%;
+  overflow-y: auto;
   background: var(--bg-panel);
   padding: 24px 18px;
   padding-top: max(24px, env(safe-area-inset-top));
@@ -492,71 +569,4 @@ html, body {
   flex-direction: column;
   gap: 10px;
   box-shadow: -8px 0 24px var(--shadow-deep);
-  animation: slide-in-right 0.25s ease;
-}
-
-@keyframes slide-in-right {
-  from { transform: translateX(100%); }
-  to { transform: translateX(0); }
-}
-
-.side-menu-content h2 {
-  font-size: 18px;
-  color: var(--text-primary);
-  margin-bottom: 12px;
-}
-
-.btn-menu {
-  width: 100%;
-  text-align: left;
-  padding: 13px 14px;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  color: var(--text-primary);
-  font-size: 14px;
-  cursor: pointer;
-}
-
-.btn-menu.btn-danger {
-  color: #e57373;
-  border-color: rgba(139, 30, 30, 0.4);
-}
-
-.side-menu-footer {
-  margin-top: auto;
-}
-
-/* ============ 事件彈窗 ============ */
-
-.event-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 200;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.75);
-  padding: 24px;
-}
-
-.event-modal-content {
-  width: 100%;
-  max-width: 340px;
-  background: var(--bg-panel);
-  border: 1px solid var(--accent-red);
-  border-radius: 14px;
-  padding: 28px 22px;
-  text-align: center;
-  box-shadow: 0 0 40px rgba(198, 40, 40, 0.25);
-  animation: fade-in 0.4s ease;
-}
-
-.event-modal-icon {
-  font-size: 36px;
-  margin-bottom: 10px;
-}
-
-.event-modal-content h2 {
-  font-size: 18px;
-  color: var(--ac
+  animat
