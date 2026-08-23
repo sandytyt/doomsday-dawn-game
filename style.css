@@ -422,11 +422,6 @@ button {
   color: var(--text-dim);
 }
 
-.inventory-toggle {
-  margin: 8px 14px 0;
-  width: calc(100% - 28px);
-}
-
 .inventory-panel {
   flex-shrink: 0;
   background: var(--bg-elevated);
