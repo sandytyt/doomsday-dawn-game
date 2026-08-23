@@ -499,7 +499,7 @@ function buildContextPayload(playerAction) {
 
   var statusSnapshot = '當前狀態：第' + gameState.time.day + '天 ' + pad2(gameState.time.hour) + ':' + pad2(gameState.time.minute) +
     '，地點：' + gameState.location + '，體力：' + gameState.stamina + '/' + gameState.maxStamina +
-    '，飢餓：' + gameState.hunger + '，人性值：' + gameState.humanity +
+    '，飽食度：' + gameState.hunger + '，人性值：' + gameState.humanity +
     '，共鳴值：' + gameState.resonanceValue + '，覺醒等級：' + gameState.awakeningLevel +
     '，能力熟練度：' + gameState.abilityExp + '/' + getAbilityExpNeeded(gameState.awakeningLevel) +
     '，危險等級：' + gameState.dangerLevel + '，傷勢：' + gameState.injuryStatus +
@@ -1049,6 +1049,13 @@ function renderAll() {
   if (staminaPct <= CONFIG.STAMINA_CRITICAL_THRESHOLD) dom.staminaFill.classList.add('critical');
   else if (staminaPct <= CONFIG.STAMINA_LOW_THRESHOLD) dom.staminaFill.classList.add('low');
 
+  var hungerPct = gameState.hunger;
+  dom.hungerFill.style.width = hungerPct + '%';
+  dom.hungerValue.textContent = gameState.hunger;
+  dom.hungerFill.classList.remove('low', 'critical');
+  if (hungerPct <= CONFIG.STAMINA_CRITICAL_THRESHOLD) dom.hungerFill.classList.add('critical');
+  else if (hungerPct <= CONFIG.STAMINA_LOW_THRESHOLD) dom.hungerFill.classList.add('low');
+
   var dangerMap = { safe: '安全', warning: '警戒', critical: '危險' };
   dom.statusDanger.textContent = dangerMap[gameState.dangerLevel] || '安全';
   dom.statusDanger.className = 'danger-tag ' + gameState.dangerLevel;
@@ -1069,7 +1076,6 @@ function renderAll() {
     ? ('Lv.' + gameState.awakeningLevel + ' ' + (gameState.awakeningAbility || '') + '（' + gameState.abilityExp + '/' + getAbilityExpNeeded(gameState.awakeningLevel) + '）')
     : '未覺醒';
   dom.statWeather.textContent = gameState.weather;
-  if (dom.statHunger) dom.statHunger.textContent = gameState.hunger;
   if (dom.statCompanions) dom.statCompanions.textContent = gameState.companions.length ? gameState.companions.join('、') : '無';
 
   var factionEntries = [];
