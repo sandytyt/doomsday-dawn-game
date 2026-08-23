@@ -319,5 +319,3 @@ function handleStartGame() {
   showGameScreen();
   requestNextTurn('__START__');
 }
-
-/* ---------
