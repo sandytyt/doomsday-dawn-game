@@ -581,7 +581,7 @@ function handleAIResponse(response) {
     gameState.isDead = true;
     showDeathScreen(status_update.special_event_text || '你的旅程在此結束。');
     saveStateToLocal();
-    syncToNotion(false);
+    syncToNotion(true);
     return;
   } else if (status_update.special_event === 'rescued') {
     showEventModal('🩹', '瀕死獲救', status_update.special_event_text || '有人在最後一刻拉住了你。');
@@ -598,10 +598,11 @@ function handleAIResponse(response) {
   renderOptions(options);
   renderAll();
   saveStateToLocal();
-  syncToNotion(false);
+  syncToNotion(true);
 }
 
-/* silent: true時不彈出alert，用於每回合自動同步；false時用於手動測試按鈕，會明確回報結果 */
+/* silent=true：每回合自動存檔，測試模式下不執行、成功或失敗都只寫console不彈窗。
+   silent=false：手動按下「立即測試同步」按鈕，一律嘗試執行並用alert明確回報結果，方便排查設定問題。 */
 function syncToNotion(silent) {
   if (!CONFIG.NOTION_ENABLED || !CONFIG.NOTION_PROXY_URL || !CONFIG.NOTION_DATABASE_ID) {
     if (!silent) alert('請先填入並儲存 Notion 轉發網址與 Database ID');
