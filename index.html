@@ -111,27 +111,36 @@
 
     <div id="status-panel-full" class="status-panel-full hidden">
       <div class="panel-full-grid">
+        <div class="panel-full-item"><span class="panel-label">性別</span><span id="stat-gender">未指定</span></div>
         <div class="panel-full-item"><span class="panel-label">飢餓</span><span id="stat-hunger">100</span></div>
         <div class="panel-full-item"><span class="panel-label">人性值</span><span id="stat-humanity">--</span></div>
         <div class="panel-full-item"><span class="panel-label">陣營信任</span><span id="stat-faction">--</span></div>
         <div class="panel-full-item"><span class="panel-label">覺醒進度</span><span id="stat-awakening">未覺醒</span></div>
         <div class="panel-full-item"><span class="panel-label">天氣</span><span id="stat-weather">--</span></div>
-        <div class="panel-full-item"><span class="panel-label">隨行隊員</span><span id="stat-companions">無</span></div>
-        <div class="panel-full-item panel-full-item-wide"><span class="panel-label">人物關係</span><span id="stat-relationships">尚無深入接觸的人物</span></div>
+        <div class="panel-full-item panel-full-item-wide"><span class="panel-label">隨行隊員</span><span id="stat-companions">無</span></div>
       </div>
     </div>
 
 
-    <button id="inventory-toggle-btn" class="collapse-toggle-btn inventory-toggle" type="button">
-      <span>🎒 背包（0）</span>
-      <span class="collapse-arrow">▾</span>
-    </button>
+    <div class="toggle-row">
+      <button id="inventory-toggle-btn" class="collapse-toggle-btn inventory-toggle" type="button">
+        <span>🎒 背包（0）</span>
+        <span class="collapse-arrow">▾</span>
+      </button>
+      <button id="npc-toggle-btn" class="collapse-toggle-btn npc-toggle" type="button">
+        <span>📇 人物檔案（0）</span>
+        <span class="collapse-arrow">▾</span>
+      </button>
+    </div>
     <div id="inventory-panel" class="inventory-panel hidden">
       <div class="inventory-header">
         <span>負重狀態：</span>
         <span id="inventory-load-tag" class="inventory-load-tag load-輕裝">輕裝</span>
       </div>
       <div id="inventory-list" class="inventory-list"></div>
+    </div>
+    <div id="npc-panel" class="npc-panel hidden">
+      <div id="npc-list" class="npc-list"></div>
     </div>
 
 
