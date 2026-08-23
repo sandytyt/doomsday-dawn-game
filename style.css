@@ -688,7 +688,7 @@ button {
   margin-top: auto;
 }
 
-.rules-modal {
+.rules-modal, .named-save-modal {
   position: fixed;
   inset: 0;
   z-index: 250;
@@ -699,7 +699,7 @@ button {
   padding: 20px;
 }
 
-.rules-modal-content {
+.rules-modal-content, .named-save-modal-content {
   width: 100%;
   max-width: 420px;
   max-height: 80vh;
@@ -727,10 +727,85 @@ button {
 .rules-modal-body {
   padding: 16px 18px;
   overflow-y: auto;
-  font-size: 12px;
-  line-height: 1.8;
+  font-size: 12.5px;
+  line-height: 1.7;
   color: var(--text-secondary);
-  white-space: pre-wrap;
+}
+
+.rules-modal-body h2 {
+  font-size: 16px;
+  color: var(--accent-red-bright);
+  margin: 18px 0 8px;
+}
+
+.rules-modal-body h2:first-child {
+  margin-top: 0;
+}
+
+.rules-modal-body h3 {
+  font-size: 13px;
+  color: var(--accent-amber);
+  margin: 12px 0 6px;
+}
+
+.rules-modal-body p {
+  margin-bottom: 4px;
+}
+
+.rules-modal-body .rules-li {
+  padding-left: 8px;
+  color: var(--text-secondary);
+}
+
+.named-save-list {
+  padding: 12px 18px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.named-save-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.named-save-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.named-save-name {
+  font-size: 13px;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.named-save-date {
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.named-save-load-btn {
+  width: auto;
+  padding: 8px 14px;
+  font-size: 12px;
+}
+
+.named-save-empty {
+  font-size: 13px;
+  color: var(--text-dim);
+  text-align: center;
+  padding: 20px 0;
 }
 
 .event-modal {
