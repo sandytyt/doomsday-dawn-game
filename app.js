@@ -5,6 +5,7 @@ var NAMED_SAVES_KEY = 'doomsday_dawn_named_saves';
 var APIKEY_KEY_PREFIX = 'doomsday_dawn_apikey_';
 var PROVIDER_KEY = 'doomsday_dawn_provider';
 var NOTION_KEY = 'doomsday_dawn_notion_config';
+var NOTION_SYNC_INTERVAL = 10; // 每N回合自動同步一次Notion（靜默模式）
 
 var ABILITY_LEVEL_THRESHOLDS = [0, 50, 120, 210, 320, 450, 600, 770, 960, 1170];
 
@@ -32,7 +33,7 @@ var gameState = {
   companions: [],
   skillProficiency: {},
   recentTurns: [],
-  summary: '',
+  worldMemory: WorldMemory.createInitial(),
   turnCount: 0,
   lastOptions: [],
   lastPlayerAction: '',
@@ -127,11 +128,14 @@ var SYSTEM_LINES = [];
 SYSTEM_LINES.push('你是《末日黎明：喪屍浩劫》的game master，壓抑寫實心理驚悚調性，禁止幽默或吐槽語氣。');
 SYSTEM_LINES.push('嚴格遵守下方遊戲規則文檔的所有數值、機率與判定邏輯，該文檔已完整提供，不需要重複解釋規則本身，直接依規則生成敘事與數值變化。');
 SYSTEM_LINES.push('NPC具備獨立人性，包含自保、背叛、恐懼下的過度反應，同時也可能有無償犧牲、隱瞞真相保護他人等正向行為，依規則文檔的NPC判定邏輯執行，不套用單一固定模式。');
-SYSTEM_LINES.push('NPC與喪屍的覺醒或進化狀態於背景設定階段獨立判定，不依賴玩家是否目擊或介入。');
+SYSTEM_LINES.push('NPC與喪屍的覺醒或進化狀態於背景設定階段獨立判定，不依賴玩家是否目擊或介入。已登記的NPC與安全區即使主角長期不在場，仍會依世界記憶段落的既有狀態持續發展，不會停滯等待主角出現才變化，你可透過傳聞、路人轉述、環境線索等方式，將背景已發生的變化間接告知主角。');
 SYSTEM_LINES.push('若玩家有隨行NPC加入隊伍，須依規則文檔管理隨行人數上限、資源分攤與隨行NPC死亡判定。');
 SYSTEM_LINES.push('每回合須依規則文檔管理玩家背包物品增減、負重狀態、武器耐久或彈藥、傷勢等級、死亡判定，以及晶核掉落與能力熟練度變化。');
 SYSTEM_LINES.push('禁止重複使用相同場景開場句式或選項措辭，選項必須基於當前具體情境動態生成。');
-SYSTEM_LINES.push('只回傳合法JSON物件，不包含JSON以外文字或Markdown符號。JSON結構：narrative為敘事文字字串；status_update物件包含time_advance_minutes、stamina_change、hunger_change、current_location、danger_level僅可為safe或warning或critical、weather、humanity_change、resonance_change、ability_exp_change、faction_trust_update、inventory_changes陣列每項包含name與quantity與action僅可為add或remove、injury_status僅可為none或minor或severe、companion_changes陣列每項包含name與action僅可為join或leave或die、special_event僅可為none或awakening或multi_awakening或death或rescued或level_up或其他事件代號、special_event_text；options陣列包含2到4個元素，每個元素含id、label、risk_hint。');
+SYSTEM_LINES.push('提示詞中可能包含「長期世界記憶」段落，記載已知安全區、關鍵NPC、勢力歷史與世界重大事件，你必須將其視為已確立的事實持續納入敘事考量，不可忽略、不可與其矛盾。');
+SYSTEM_LINES.push('world_memory_update欄位僅在本回合敘事確實發生下列四類事件之一時才填寫對應子欄位，其餘情況全部留空物件：new_safe_zone（玩家新建立安全區，含name、location、population、facilities陣列）、safe_zone_update（既有安全區的人口或設施異動，含name、population、facilities_add陣列、facilities_remove陣列、faction_relation_note）、npc_major_event（NPC加入、死亡、覺醒、能力習得或關係質變，含name、ability、note、status僅可為alive或dead或missing或unknown）、faction_shift（勢力關係質變如轉為敵對或同盟，非小幅信任度波動，含faction、eventText）、world_landmark（地圖級重大變化如城市淪陷路線打通，含eventText）。');
+SYSTEM_LINES.push('若使用者輸入中出現「請檢查背景演化」的指示，你必須額外填寫background_evolution欄位，基於提示詞中已提供的長期世界記憶段落，獨立推演已登記的NPC、安全區、勢力在主角不在場期間可能發生的變化，結構為npc_updates陣列每項含name與note與可選status與可選ability、safe_zone_updates陣列每項含name與note、faction_updates陣列每項含faction與eventText；若沒有明確要求則此欄位留空物件。');
+SYSTEM_LINES.push('只回傳合法JSON物件，不包含JSON以外文字或Markdown符號。JSON結構：narrative為敘事文字字串；status_update物件包含time_advance_minutes、stamina_change、hunger_change、current_location、danger_level僅可為safe或warning或critical、weather、humanity_change、resonance_change、ability_exp_change、faction_trust_update、inventory_changes陣列每項包含name與quantity與action僅可為add或remove、injury_status僅可為none或minor或severe、companion_changes陣列每項包含name與action僅可為join或leave或die、special_event僅可為none或awakening或multi_awakening或death或rescued或level_up或其他事件代號、special_event_text；world_memory_update物件依上述規則；background_evolution物件依上述規則；options陣列包含2到4個元素，每個元素含id、label、risk_hint。');
 SYSTEM_LINES.push('一般對話或安全區域描寫150至200字，戰鬥探索重大事件描寫350至450字。');
 
 var SYSTEM_INSTRUCTION = SYSTEM_LINES.join(' ');
@@ -451,6 +455,11 @@ function buildContextPayload(playerAction) {
     userText = '玩家選擇的行動：' + playerAction;
   }
 
+  var triggerBackgroundEvolution = WorldMemory.shouldTriggerBackgroundEvolution(gameState.worldMemory, gameState.turnCount);
+  if (triggerBackgroundEvolution) {
+    userText += ' 請檢查背景演化。';
+  }
+
   var inventoryList = gameState.inventory.map(function (it) {
     return it.name + 'x' + it.quantity;
   }).join('、');
@@ -473,9 +482,15 @@ function buildContextPayload(playerAction) {
     recentParts.push('第' + t.turn + '回合劇情：' + t.narrative + ' 玩家行動：' + t.action);
   }
   var recentContext = recentParts.join(' ');
-  var summaryContext = gameState.summary ? ('更早期摘要：' + gameState.summary) : '';
+  var worldMemoryContext = WorldMemory.buildWorldMemoryPrompt(gameState.worldMemory);
 
-  return { userText: userText, statusSnapshot: statusSnapshot, recentContext: recentContext, summaryContext: summaryContext };
+  return {
+    userText: userText,
+    statusSnapshot: statusSnapshot,
+    recentContext: recentContext,
+    worldMemoryContext: worldMemoryContext,
+    triggerBackgroundEvolution: triggerBackgroundEvolution
+  };
 }
 
 function callAIProvider(payload) {
@@ -487,7 +502,7 @@ function callAIProvider(payload) {
 }
 
 function buildFullPrompt(payload) {
-  return payload.statusSnapshot + ' ' + payload.summaryContext + ' 近期回合記錄： ' + (payload.recentContext || '尚無歷史這是開局') + ' 本回合玩家輸入： ' + payload.userText;
+  return payload.statusSnapshot + ' ' + (payload.worldMemoryContext || '') + ' 近期回合記錄： ' + (payload.recentContext || '尚無歷史這是開局') + ' 本回合玩家輸入： ' + payload.userText;
 }
 
 function callGeminiAPI(payload, providerConf) {
@@ -577,11 +592,18 @@ function handleAIResponse(response) {
     gameState.recentTurns.shift();
   }
 
+  if (response.world_memory_update) {
+    gameState.worldMemory = WorldMemory.applyWorldMemoryUpdate(gameState.worldMemory, response.world_memory_update, gameState.turnCount);
+  }
+  if (response.background_evolution) {
+    gameState.worldMemory = WorldMemory.applyBackgroundEvolution(gameState.worldMemory, response.background_evolution, gameState.turnCount);
+  }
+
   if (status_update.special_event === 'death') {
     gameState.isDead = true;
     showDeathScreen(status_update.special_event_text || '你的旅程在此結束。');
     saveStateToLocal();
-    syncToNotion(true);
+    maybeSyncToNotion();
     return;
   } else if (status_update.special_event === 'rescued') {
     showEventModal('🩹', '瀕死獲救', status_update.special_event_text || '有人在最後一刻拉住了你。');
@@ -598,10 +620,17 @@ function handleAIResponse(response) {
   renderOptions(options);
   renderAll();
   saveStateToLocal();
-  syncToNotion(true);
+  maybeSyncToNotion();
 }
 
-/* silent=true：每回合自動存檔，測試模式下不執行、成功或失敗都只寫console不彈窗。
+/* 每N回合才靜默同步一次Notion，避免每回合都發送請求 */
+function maybeSyncToNotion() {
+  if (gameState.turnCount % NOTION_SYNC_INTERVAL === 0) {
+    syncToNotion(true);
+  }
+}
+
+/* silent=true：定期自動存檔，測試模式下不執行、成功或失敗都只寫console不彈窗。
    silent=false：手動按下「立即測試同步」按鈕，一律嘗試執行並用alert明確回報結果，方便排查設定問題。 */
 function syncToNotion(silent) {
   if (!CONFIG.NOTION_ENABLED || !CONFIG.NOTION_PROXY_URL || !CONFIG.NOTION_DATABASE_ID) {
@@ -611,6 +640,9 @@ function syncToNotion(silent) {
   if (gameState.isTestMode && silent) return;
 
   var injuryOption = gameState.injuryStatus || 'none';
+  var lastNarrative = gameState.recentTurns.length ? gameState.recentTurns[gameState.recentTurns.length - 1].narrative : '';
+  var briefSummary = lastNarrative.length > 200 ? lastNarrative.slice(0, 200) + '…' : lastNarrative;
+
   var body = {
     parent: { database_id: CONFIG.NOTION_DATABASE_ID },
     properties: {
@@ -621,6 +653,13 @@ function syncToNotion(silent) {
       '當前地點': { rich_text: [{ text: { content: gameState.location } }] },
       '傷勢': { select: { name: injuryOption } },
       '覺醒等級': { number: gameState.awakeningLevel },
+      '危險等級': { select: { name: gameState.dangerLevel } },
+      '人性值': { number: gameState.humanity },
+      '飢餓值': { number: gameState.hunger },
+      '共鳴值': { number: gameState.resonanceValue },
+      '背包物品': { rich_text: [{ text: { content: gameState.inventory.map(function (it) { return it.name + 'x' + it.quantity; }).join('、') || '無' } }] },
+      '隨行隊員': { rich_text: [{ text: { content: gameState.companions.join('、') || '無' } }] },
+      '前文提要': { rich_text: [{ text: { content: briefSummary || '無' } }] },
       '更新時間': { date: { start: new Date().toISOString() } },
       '存檔JSON': { rich_text: [{ text: { content: JSON.stringify(gameState).slice(0, 1900) } }] }
     }
@@ -1108,6 +1147,7 @@ function saveStateToLocal() {
 
 function restoreState(saved) {
   gameState = Object.assign({}, gameState, saved);
+  gameState.worldMemory = WorldMemory.ensureShape(gameState.worldMemory);
 }
 
 document.addEventListener('DOMContentLoaded', init);
