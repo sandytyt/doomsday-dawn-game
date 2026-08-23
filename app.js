@@ -63,8 +63,9 @@ function cacheDom() {
   dom.charSetupToggle = document.getElementById('char-setup-toggle');
   dom.charSetupFields = document.getElementById('char-setup-fields');
   dom.charNameInput = document.getElementById('char-name-input');
-  dom.charBackgroundInput = document.getElementById('char-background-input');
-  dom.charNotesInput = document.getElementById('char-notes-input');
+  dom.charGenderInput = document.getElementById('char-gender-input');
+  dom.charLocationInput = document.getElementById('char-location-input');
+  dom.charOccupationInput = document.getElementById('char-occupation-input');
   dom.statusTime = document.getElementById('status-time');
   dom.statusLocation = document.getElementById('status-location');
   dom.statusExpandBtn = document.getElementById('status-expand-btn');
@@ -370,8 +371,9 @@ function handleStartGame() {
   localStorage.setItem(APIKEY_KEY_PREFIX + provider, key);
   gameState.charSetup = {
     name: dom.charNameInput.value.trim(),
-    background: dom.charBackgroundInput.value.trim(),
-    notes: dom.charNotesInput.value.trim()
+    gender: dom.charGenderInput.value,
+    location: dom.charLocationInput.value.trim(),
+    occupation: dom.charOccupationInput.value.trim()
   };
   showGameScreen();
   requestNextTurn('__START__');
@@ -457,9 +459,9 @@ function buildContextPayload(playerAction) {
   var userText = '';
   if (playerAction === '__START__') {
     var c = gameState.charSetup;
-    var hasCustom = c.name || c.background || c.notes;
+    var hasCustom = c.name || c.gender || c.location || c.occupation;
     if (hasCustom) {
-      userText = '請開始遊戲，生成開局場景。玩家提供角色參考設定，請自然融入敘事不要生硬照搬。姓名：' + (c.name || '未指定') + '。背景：' + (c.background || '未指定') + '。其他細節：' + (c.notes || '無') + '。不要詢問玩家姓名或性別。';
+      userText = '請開始遊戲，生成開局場景。玩家提供角色參考設定，請自然融入敘事不要生硬照搬。姓名：' + (c.name || '由你自行決定') + '。性別：' + (c.gender || '由你自行決定') + '。末日爆發時所在位置：' + (c.location || '由你自行決定') + '。末世前職業：' + (c.occupation || '由你自行決定') + '。若姓名未指定則自動生成，不要詢問玩家。';
     } else {
       userText = '請開始遊戲。生成開局場景，不要詢問玩家姓名或性別，直接讓玩家以第一人稱進入末日情境。';
     }
