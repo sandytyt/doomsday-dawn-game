@@ -6,9 +6,11 @@
  * 志向系統(aspirations)、人物關係系統(relationships)。
  *
  * 志向系統：四條可疊加、不互斥的長期發展路線，AI依劇情自由判定推進。
- * 關係系統：三軸獨立數值(trust/closeness/romanticTension) + 五階段敘事節點，
- *          階段推進需滿足「已進入目前階段至少5個遊戲內天數」的硬性驗證，
- *          此驗證在程式碼端執行，不依賴AI自行計算天數。
+ * 關係系統：三軸獨立數值(trust/closeness/romanticTension) + 六階段敘事節點。
+ *   acquainted(初識) -> incipient(初萌)：不受天數限制，屬自然認識過程。
+ *   incipient之後每個階段轉換，須已在目前階段停留至少STAGE_MIN_DAYS天，
+ *   此驗證在程式碼端硬性執行，不依賴AI自行計算天數。
+ * NPC死亡或失散後，關係狀態凍結（不可再變動或轉換階段），但保留供玩家回顧。
  */
 
 var WorldMemory = (function () {
@@ -19,10 +21,18 @@ var WorldMemory = (function () {
   var MAX_FACTION_HISTORY = 60;
   var MAX_MAJOR_EVENTS = 60;
   var TEXT_TRUNCATE_LENGTH = 200;
-  var STAGE_MIN_DAYS = 5; // 風險考驗等階段轉換前，須在目前階段停留的最少遊戲內天數
+  var STAGE_MIN_DAYS = 5;
+  var TRIAL_OVERDUE_DAYS = 10; // developing階段停留超過此天數，提示AI可考慮安排風險考驗
 
   var ASPIRATION_KEYS = ['shelterBuilder', 'cureSeeker', 'shadowHunter', 'factionLeader'];
-  var STAGE_ORDER = ['incipient', 'developing', 'critical_trial', 'defining_choice', 'resolved_bond', 'resolved_apart'];
+  var ASPIRATION_LABELS = { shelterBuilder: '庇護建設者', cureSeeker: '治療探索者', shadowHunter: '暗影獵人', factionLeader: '勢力締造者' };
+  var STAGE_ORDER = ['acquainted', 'incipient', 'developing', 'critical_trial', 'defining_choice', 'resolved_bond', 'resolved_apart'];
+  var STAGE_LABELS = {
+    acquainted: '初識', incipient: '初萌', developing: '漸深', critical_trial: '風險考驗',
+    defining_choice: '關鍵抉擇', resolved_bond: '穩定結合', resolved_apart: '疏離懸置'
+  };
+  var NO_LIMIT_TRANSITIONS = { 'acquainted->incipient': true };
+  var NPC_STATUS_LABELS = { alive: '存活', dead: '已死亡', missing: '失散', unknown: '狀態不明' };
 
   function createInitial() {
     var aspirations = {};
@@ -58,6 +68,18 @@ var WorldMemory = (function () {
       });
     }
     if (!worldMemory.relationships) worldMemory.relationships = {};
+    for (var name in worldMemory.relationships) {
+      if (Object.prototype.hasOwnProperty.call(worldMemory.relationships, name)) {
+        var rel = worldMemory.relationships[name];
+        if (!rel.gender) rel.gender = '';
+        if (!Array.isArray(rel.background)) rel.background = [];
+        if (typeof rel.frozen !== 'boolean') rel.frozen = false;
+        if (!rel.npcStatus) rel.npcStatus = 'alive';
+      }
+    }
+    worldMemory.keyNpcs.forEach(function (npc) {
+      if (!npc.gender) npc.gender = '';
+    });
     return worldMemory;
   }
 
@@ -130,15 +152,17 @@ var WorldMemory = (function () {
       var ne = update.npc_major_event;
       var npc = findByName(worldMemory.keyNpcs, ne.name);
       if (!npc) {
-        npc = { name: ne.name, ability: ne.ability || '', relationshipNotes: '', status: ne.status || 'alive', lastKnownLocation: '' };
+        npc = { name: ne.name, gender: ne.gender || '', ability: ne.ability || '', relationshipNotes: '', status: ne.status || 'alive', lastKnownLocation: '' };
         worldMemory.keyNpcs.push(npc);
         capList(worldMemory.keyNpcs, MAX_NPCS);
       }
+      if (ne.gender) npc.gender = ne.gender;
       if (ne.ability) npc.ability = ne.ability;
       if (ne.status) npc.status = ne.status;
       if (ne.note) {
         npc.relationshipNotes = truncateText((npc.relationshipNotes ? npc.relationshipNotes + ' ' : '') + ne.note);
       }
+      syncNpcStatusToRelationship(worldMemory, ne.name, ne.status, turnCount);
     }
 
     if (update.faction_shift && update.faction_shift.faction) {
@@ -175,15 +199,17 @@ var WorldMemory = (function () {
         if (!nu.name) continue;
         var npc = findByName(worldMemory.keyNpcs, nu.name);
         if (!npc) {
-          npc = { name: nu.name, ability: nu.ability || '', relationshipNotes: '', status: nu.status || 'alive', lastKnownLocation: '' };
+          npc = { name: nu.name, gender: nu.gender || '', ability: nu.ability || '', relationshipNotes: '', status: nu.status || 'alive', lastKnownLocation: '' };
           worldMemory.keyNpcs.push(npc);
           capList(worldMemory.keyNpcs, MAX_NPCS);
         }
+        if (nu.gender) npc.gender = nu.gender;
         if (nu.ability) npc.ability = nu.ability;
         if (nu.status) npc.status = nu.status;
         if (nu.note) {
           npc.relationshipNotes = truncateText((npc.relationshipNotes ? npc.relationshipNotes + ' ' : '') + '[背景] ' + nu.note);
         }
+        syncNpcStatusToRelationship(worldMemory, nu.name, nu.status, turnCount);
       }
     }
 
@@ -225,7 +251,8 @@ var WorldMemory = (function () {
   /* ---------- 志向系統 ---------- */
   function applyAspirationUpdate(worldMemory, update, currentDay) {
     worldMemory = ensureShape(worldMemory);
-    if (!update) return worldMemory;
+    var triggeredMilestones = [];
+    if (!update) return { worldMemory: worldMemory, milestones: triggeredMilestones };
 
     ASPIRATION_KEYS.forEach(function (key) {
       var entry = update[key];
@@ -236,32 +263,50 @@ var WorldMemory = (function () {
         asp.progress = clampNum(asp.progress + delta, -100, 500);
       }
       if (entry.milestone_text) {
-        asp.milestones.push({ text: truncateText(entry.milestone_text), day: currentDay });
+        var milestone = { text: truncateText(entry.milestone_text), day: currentDay };
+        asp.milestones.push(milestone);
         if (asp.milestones.length > 20) asp.milestones.splice(0, asp.milestones.length - 20);
+        triggeredMilestones.push({ aspirationKey: key, aspirationLabel: ASPIRATION_LABELS[key], text: milestone.text });
       }
     });
 
-    return worldMemory;
+    return { worldMemory: worldMemory, milestones: triggeredMilestones };
   }
 
-  /* ---------- 關係系統：含5天硬性驗證 ---------- */
+  /* ---------- 關係系統：六階段含天數硬性驗證 ---------- */
   function getOrCreateRelationship(worldMemory, npcName, currentDay) {
     if (!worldMemory.relationships[npcName]) {
       worldMemory.relationships[npcName] = {
+        gender: '',
         trust: 0,
         closeness: 0,
         romanticTension: 0,
-        stage: 'incipient',
+        stage: 'acquainted',
         stageEnteredDay: currentDay,
-        milestones: []
+        background: [],
+        milestones: [],
+        frozen: false,
+        npcStatus: 'alive'
       };
     }
     return worldMemory.relationships[npcName];
   }
 
-  function canTransitionStage(rel, currentDay) {
-    var daysInStage = currentDay - rel.stageEnteredDay;
-    return daysInStage >= STAGE_MIN_DAYS;
+  function syncNpcStatusToRelationship(worldMemory, npcName, status, turnCount) {
+    if (!status || !worldMemory.relationships[npcName]) return;
+    var rel = worldMemory.relationships[npcName];
+    rel.npcStatus = status;
+    if (status === 'dead' || status === 'missing') {
+      rel.frozen = true;
+    } else if (status === 'alive') {
+      rel.frozen = false;
+    }
+  }
+
+  function isTransitionAllowed(fromStage, toStage, currentDay, stageEnteredDay) {
+    var key = fromStage + '->' + toStage;
+    if (NO_LIMIT_TRANSITIONS[key]) return true;
+    return (currentDay - stageEnteredDay) >= STAGE_MIN_DAYS;
   }
 
   function applyRelationshipUpdate(worldMemory, update, currentDay) {
@@ -269,6 +314,17 @@ var WorldMemory = (function () {
     if (!update || !update.npc_name) return worldMemory;
 
     var rel = getOrCreateRelationship(worldMemory, update.npc_name, currentDay);
+
+    if (rel.frozen) {
+      // NPC已死亡或失散，關係凍結，僅允許補充背景資訊，不再變動數值或階段
+      if (update.background_note) {
+        rel.background.push({ text: truncateText(update.background_note), day: currentDay });
+        if (rel.background.length > 30) rel.background.splice(0, rel.background.length - 30);
+      }
+      return worldMemory;
+    }
+
+    if (update.gender) rel.gender = update.gender;
 
     if (typeof update.trust_delta === 'number') {
       rel.trust = clampNum(rel.trust + update.trust_delta, 0, 100);
@@ -280,8 +336,13 @@ var WorldMemory = (function () {
       rel.romanticTension = clampNum(rel.romanticTension + update.romantic_tension_delta, 0, 100);
     }
 
+    if (update.background_note) {
+      rel.background.push({ text: truncateText(update.background_note), day: currentDay });
+      if (rel.background.length > 30) rel.background.splice(0, rel.background.length - 30);
+    }
+
     if (update.stage_transition && STAGE_ORDER.indexOf(update.stage_transition) !== -1) {
-      if (canTransitionStage(rel, currentDay)) {
+      if (isTransitionAllowed(rel.stage, update.stage_transition, currentDay, rel.stageEnteredDay)) {
         rel.stage = update.stage_transition;
         rel.stageEnteredDay = currentDay;
         if (update.note) {
@@ -289,7 +350,6 @@ var WorldMemory = (function () {
           if (rel.milestones.length > 15) rel.milestones.splice(0, rel.milestones.length - 15);
         }
       }
-      // 若尚未滿5天，忽略此次階段轉換請求，但數值變化仍已套用（上方已處理）
     } else if (update.note) {
       rel.milestones.push({ text: truncateText(update.note), day: currentDay, stage: rel.stage });
       if (rel.milestones.length > 15) rel.milestones.splice(0, rel.milestones.length - 15);
@@ -314,9 +374,8 @@ var WorldMemory = (function () {
 
     if (worldMemory.keyNpcs.length > 0) {
       var npcTexts = worldMemory.keyNpcs.map(function (n) {
-        var statusMap = { alive: '存活', dead: '已死亡', missing: '失散', unknown: '狀態不明' };
-        var statusText = statusMap[n.status] || n.status;
-        return n.name + '（能力：' + (n.ability || '無特殊能力') + '，狀態：' + statusText + (n.relationshipNotes ? '，經歷：' + n.relationshipNotes : '') + '）';
+        var statusText = NPC_STATUS_LABELS[n.status] || n.status;
+        return n.name + '（' + (n.gender ? n.gender + '，' : '') + '能力：' + (n.ability || '無特殊能力') + '，狀態：' + statusText + (n.relationshipNotes ? '，經歷：' + n.relationshipNotes : '') + '）';
       });
       parts.push('關鍵NPC記錄： ' + npcTexts.join('； '));
     }
@@ -337,13 +396,12 @@ var WorldMemory = (function () {
       parts.push('世界重大事件紀要： ' + eventTexts.join('； '));
     }
 
-    var aspirationLabels = { shelterBuilder: '庇護建設者', cureSeeker: '治療探索者', shadowHunter: '暗影獵人', factionLeader: '勢力締造者' };
     var aspirationTexts = ASPIRATION_KEYS.filter(function (key) {
       return worldMemory.aspirations[key].progress !== 0 || worldMemory.aspirations[key].milestones.length > 0;
     }).map(function (key) {
       var asp = worldMemory.aspirations[key];
       var latestMilestone = asp.milestones.length ? asp.milestones[asp.milestones.length - 1].text : '';
-      return aspirationLabels[key] + '（進度' + asp.progress + (latestMilestone ? '，最新進展：' + latestMilestone : '') + '）';
+      return ASPIRATION_LABELS[key] + '（進度' + asp.progress + (latestMilestone ? '，最新進展：' + latestMilestone : '') + '）';
     });
     if (aspirationTexts.length > 0) {
       parts.push('玩家志向發展： ' + aspirationTexts.join('； '));
@@ -351,20 +409,22 @@ var WorldMemory = (function () {
 
     var relNames = Object.keys(worldMemory.relationships);
     if (relNames.length > 0) {
-      var stageLabels = {
-        incipient: '初萌', developing: '漸深', critical_trial: '風險考驗',
-        defining_choice: '關鍵抉擇', resolved_bond: '穩定結合', resolved_apart: '疏離懸置'
-      };
       var relTexts = relNames.map(function (name) {
         var rel = worldMemory.relationships[name];
+        if (rel.frozen) {
+          return name + '（' + (NPC_STATUS_LABELS[rel.npcStatus] || rel.npcStatus) + '，關係已凍結於「' + (STAGE_LABELS[rel.stage] || rel.stage) + '」階段，不可再變動）';
+        }
         var daysInStage = (typeof currentDay === 'number') ? (currentDay - rel.stageEnteredDay) : null;
-        var canAdvance = (daysInStage !== null) ? (daysInStage >= STAGE_MIN_DAYS) : false;
+        var nextStageIdx = STAGE_ORDER.indexOf(rel.stage) + 1;
+        var nextStage = nextStageIdx < STAGE_ORDER.length ? STAGE_ORDER[nextStageIdx] : null;
+        var canAdvance = nextStage ? isTransitionAllowed(rel.stage, nextStage, currentDay, rel.stageEnteredDay) : false;
         var latestMilestone = rel.milestones.length ? rel.milestones[rel.milestones.length - 1].text : '';
-        return name + '（階段：' + (stageLabels[rel.stage] || rel.stage) + '，信任' + rel.trust + '，親密' + rel.closeness + '，浪漫張力' + rel.romanticTension +
+        var overdueHint = (rel.stage === 'developing' && daysInStage !== null && daysInStage >= TRIAL_OVERDUE_DAYS) ? '，該NPC已進入漸深階段較久，可考慮安排風險考驗事件推進關係' : '';
+        return name + '（' + (rel.gender ? rel.gender + '，' : '') + '階段：' + (STAGE_LABELS[rel.stage] || rel.stage) + '，信任' + rel.trust + '，親密' + rel.closeness + '，浪漫張力' + rel.romanticTension +
           '，已於本階段' + (daysInStage !== null ? daysInStage : '?') + '天' + (canAdvance ? '，可推進下一階段' : '，尚未滿' + STAGE_MIN_DAYS + '天不可推進階段') +
-          (latestMilestone ? '，最新事件：' + latestMilestone : '') + '）';
+          (latestMilestone ? '，最新事件：' + latestMilestone : '') + overdueHint + '）';
       });
-      parts.push('人物關係記錄（階段轉換需已在目前階段停留至少' + STAGE_MIN_DAYS + '天，未達天數者請勿觸發stage_transition）： ' + relTexts.join('； '));
+      parts.push('人物關係記錄（初識到初萌的轉換不受天數限制，其後每階段轉換需已在目前階段停留至少' + STAGE_MIN_DAYS + '天，未達天數者請勿觸發stage_transition）： ' + relTexts.join('； '));
     }
 
     if (parts.length === 0) return '';
@@ -381,8 +441,11 @@ var WorldMemory = (function () {
     applyRelationshipUpdate: applyRelationshipUpdate,
     buildWorldMemoryPrompt: buildWorldMemoryPrompt,
     ASPIRATION_KEYS: ASPIRATION_KEYS,
+    ASPIRATION_LABELS: ASPIRATION_LABELS,
     STAGE_ORDER: STAGE_ORDER,
+    STAGE_LABELS: STAGE_LABELS,
     STAGE_MIN_DAYS: STAGE_MIN_DAYS,
+    NPC_STATUS_LABELS: NPC_STATUS_LABELS,
     BACKGROUND_EVOLUTION_INTERVAL: BACKGROUND_EVOLUTION_INTERVAL
   };
 })();
