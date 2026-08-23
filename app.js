@@ -2,13 +2,15 @@
 
 var STATE_KEY = 'doomsday_dawn_save_v1';
 var NAMED_SAVES_KEY = 'doomsday_dawn_named_saves';
-var APIKEY_KEY = 'doomsday_dawn_apikey';
+var APIKEY_KEY_PREFIX = 'doomsday_dawn_apikey_';
+var PROVIDER_KEY = 'doomsday_dawn_provider';
 var NOTION_KEY = 'doomsday_dawn_notion_config';
 
 var ABILITY_LEVEL_THRESHOLDS = [0, 50, 120, 210, 320, 450, 600, 770, 960, 1170];
 
 var gameState = {
   apiKey: '',
+  provider: 'gemini',
   isTestMode: false,
   testScriptIndex: 0,
   time: { day: 1, hour: 6, minute: 0 },
@@ -48,6 +50,7 @@ var dom = {};
 function cacheDom() {
   dom.setupScreen = document.getElementById('setup-screen');
   dom.gameScreen = document.getElementById('game-screen');
+  dom.providerSelect = document.getElementById('provider-select');
   dom.apiKeyInput = document.getElementById('api-key-input');
   dom.startBtn = document.getElementById('start-game-btn');
   dom.testModeBtn = document.getElementById('test-mode-btn');
@@ -104,6 +107,7 @@ function cacheDom() {
   dom.notionProxyInput = document.getElementById('notion-proxy-input');
   dom.notionDbInput = document.getElementById('notion-db-input');
   dom.notionSaveBtn = document.getElementById('notion-save-btn');
+  dom.notionSyncNowBtn = document.getElementById('notion-sync-now-btn');
   dom.eventModal = document.getElementById('event-modal');
   dom.eventModalIcon = document.getElementById('event-modal-icon');
   dom.eventModalTitle = document.getElementById('event-modal-title');
@@ -117,7 +121,6 @@ function cacheDom() {
   dom.namedSaveModal = document.getElementById('named-save-modal');
   dom.namedSaveList = document.getElementById('named-save-list');
   dom.namedSaveClose = document.getElementById('named-save-close');
-  dom.namedSaveMode = '';
 }
 
 var SYSTEM_LINES = [];
@@ -135,6 +138,7 @@ var SYSTEM_INSTRUCTION = SYSTEM_LINES.join(' ');
 
 function init() {
   cacheDom();
+  populateProviderSelect();
   bindEvents();
   loadRulesAndLore();
   loadNotionConfig();
@@ -142,8 +146,26 @@ function init() {
   tryRestoreSavedGame();
 }
 
+function populateProviderSelect() {
+  if (!dom.providerSelect) return;
+  dom.providerSelect.innerHTML = '';
+  for (var key in CONFIG.PROVIDERS) {
+    if (Object.prototype.hasOwnProperty.call(CONFIG.PROVIDERS, key)) {
+      var opt = document.createElement('option');
+      opt.value = key;
+      opt.textContent = CONFIG.PROVIDERS[key].label;
+      dom.providerSelect.appendChild(opt);
+    }
+  }
+  var savedProvider = localStorage.getItem(PROVIDER_KEY) || CONFIG.ACTIVE_PROVIDER;
+  dom.providerSelect.value = savedProvider;
+  var savedKey = localStorage.getItem(APIKEY_KEY_PREFIX + savedProvider);
+  if (savedKey) dom.apiKeyInput.value = savedKey;
+}
+
 function tryRestoreSavedGame() {
-  var savedKey = localStorage.getItem(APIKEY_KEY);
+  var provider = localStorage.getItem(PROVIDER_KEY) || CONFIG.ACTIVE_PROVIDER;
+  var savedKey = localStorage.getItem(APIKEY_KEY_PREFIX + provider);
   var savedStateRaw = localStorage.getItem(STATE_KEY);
   if (!savedStateRaw) return;
 
@@ -151,6 +173,7 @@ function tryRestoreSavedGame() {
     var savedState = JSON.parse(savedStateRaw);
     if (savedState.isTestMode || savedKey) {
       gameState.apiKey = savedKey || '';
+      gameState.provider = provider;
       restoreState(savedState);
       showGameScreen();
       rebuildNarrativeFromHistory();
@@ -217,10 +240,14 @@ function loadNotionConfig() {
     var cfg = JSON.parse(saved);
     if (dom.notionProxyInput) dom.notionProxyInput.value = cfg.proxyUrl || '';
     if (dom.notionDbInput) dom.notionDbInput.value = cfg.dbId || '';
+    CONFIG.NOTION_ENABLED = !!(cfg.proxyUrl && cfg.dbId);
+    CONFIG.NOTION_PROXY_URL = cfg.proxyUrl || '';
+    CONFIG.NOTION_DATABASE_ID = cfg.dbId || '';
   } catch (e) {}
 }
 
 function bindEvents() {
+  dom.providerSelect.addEventListener('change', handleProviderChange);
   dom.startBtn.addEventListener('click', handleStartGame);
   if (dom.testModeBtn) dom.testModeBtn.addEventListener('click', handleStartTestMode);
   dom.importSaveBtn.addEventListener('click', function () { dom.importSaveFile.click(); });
@@ -242,6 +269,7 @@ function bindEvents() {
   if (dom.rulesModalClose) dom.rulesModalClose.addEventListener('click', function () { toggleRulesModal(false); });
   dom.notionSetupToggle.addEventListener('click', function () { toggleCollapse(dom.notionSetupToggle, dom.notionSetupFields); });
   dom.notionSaveBtn.addEventListener('click', handleSaveNotionConfig);
+  dom.notionSyncNowBtn.addEventListener('click', handleNotionSyncNow);
   dom.optionsCollapseToggle.addEventListener('click', handleOptionsCollapseClick);
   dom.actionCollapsedBar.addEventListener('click', handleOptionsCollapseClick);
   dom.inventoryToggleBtn.addEventListener('click', handleInventoryToggleClick);
@@ -250,6 +278,13 @@ function bindEvents() {
   dom.freeInputSend.addEventListener('click', handleFreeInputSend);
   dom.freeInputText.addEventListener('keypress', handleFreeInputKeypress);
   dom.eventModalClose.addEventListener('click', function () { dom.eventModal.classList.add('hidden'); });
+}
+
+function handleProviderChange() {
+  var provider = dom.providerSelect.value;
+  localStorage.setItem(PROVIDER_KEY, provider);
+  var savedKey = localStorage.getItem(APIKEY_KEY_PREFIX + provider);
+  dom.apiKeyInput.value = savedKey || '';
 }
 
 function toggleRulesModal(show) {
@@ -312,14 +347,17 @@ function toggleCollapse(btn, body) {
 }
 
 function handleStartGame() {
+  var provider = dom.providerSelect.value;
   var key = dom.apiKeyInput.value.trim();
   if (!key) {
-    alert('請輸入你的 Google Gemini API 金鑰');
+    alert('請輸入你的 API 金鑰');
     return;
   }
   gameState.apiKey = key;
+  gameState.provider = provider;
   gameState.isTestMode = false;
-  localStorage.setItem(APIKEY_KEY, key);
+  localStorage.setItem(PROVIDER_KEY, provider);
+  localStorage.setItem(APIKEY_KEY_PREFIX + provider, key);
   gameState.charSetup = {
     name: dom.charNameInput.value.trim(),
     background: dom.charBackgroundInput.value.trim(),
@@ -371,7 +409,7 @@ function requestNextTurn(playerAction) {
     gameState.lastPlayerAction = playerAction;
   }
   var contextPayload = buildContextPayload(playerAction);
-  callGeminiAPI(contextPayload).then(function (response) {
+  callAIProvider(contextPayload).then(function (response) {
     handleAIResponse(response);
     isWaitingForAI = false;
     showTyping(false);
@@ -440,9 +478,22 @@ function buildContextPayload(playerAction) {
   return { userText: userText, statusSnapshot: statusSnapshot, recentContext: recentContext, summaryContext: summaryContext };
 }
 
-function callGeminiAPI(payload) {
-  var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + CONFIG.MODEL_NAME + ':generateContent?key=' + gameState.apiKey;
-  var fullPrompt = payload.statusSnapshot + ' ' + payload.summaryContext + ' 近期回合記錄： ' + (payload.recentContext || '尚無歷史這是開局') + ' 本回合玩家輸入： ' + payload.userText;
+function callAIProvider(payload) {
+  var providerConf = CONFIG.PROVIDERS[gameState.provider] || CONFIG.PROVIDERS.gemini;
+  if (providerConf.format === 'gemini') {
+    return callGeminiAPI(payload, providerConf);
+  }
+  return callOpenAICompatibleAPI(payload, providerConf);
+}
+
+function buildFullPrompt(payload) {
+  return payload.statusSnapshot + ' ' + payload.summaryContext + ' 近期回合記錄： ' + (payload.recentContext || '尚無歷史這是開局') + ' 本回合玩家輸入： ' + payload.userText;
+}
+
+function callGeminiAPI(payload, providerConf) {
+  var model = providerConf.defaultModel;
+  var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + gameState.apiKey;
+  var fullPrompt = buildFullPrompt(payload);
 
   var requestBody = {
     system_instruction: {
@@ -476,6 +527,42 @@ function callGeminiAPI(payload) {
   });
 }
 
+function callOpenAICompatibleAPI(payload, providerConf) {
+  var fullPrompt = buildFullPrompt(payload);
+  var systemText = SYSTEM_INSTRUCTION + ' 遊戲規則文檔： ' + gameState.rulesText + ' 世界觀密檔參考資料： ' + gameState.loreText;
+
+  var requestBody = {
+    model: providerConf.defaultModel,
+    messages: [
+      { role: 'system', content: systemText },
+      { role: 'user', content: fullPrompt }
+    ],
+    temperature: 1.0,
+    response_format: { type: 'json_object' }
+  };
+
+  return fetch(providerConf.endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + gameState.apiKey
+    },
+    body: JSON.stringify(requestBody)
+  }).then(function (res) {
+    if (!res.ok) {
+      return res.json().catch(function () { return {}; }).then(function (errData) {
+        var msg = (errData.error && errData.error.message) || ('HTTP ' + res.status);
+        throw new Error(msg);
+      });
+    }
+    return res.json();
+  }).then(function (data) {
+    var rawText = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+    if (!rawText) throw new Error('AI 未回傳有效內容');
+    return JSON.parse(rawText);
+  });
+}
+
 function handleAIResponse(response) {
   var narrative = response.narrative;
   var status_update = response.status_update;
@@ -494,6 +581,7 @@ function handleAIResponse(response) {
     gameState.isDead = true;
     showDeathScreen(status_update.special_event_text || '你的旅程在此結束。');
     saveStateToLocal();
+    syncToNotion();
     return;
   } else if (status_update.special_event === 'rescued') {
     showEventModal('🩹', '瀕死獲救', status_update.special_event_text || '有人在最後一刻拉住了你。');
@@ -510,6 +598,45 @@ function handleAIResponse(response) {
   renderOptions(options);
   renderAll();
   saveStateToLocal();
+  syncToNotion();
+}
+
+function syncToNotion() {
+  if (!CONFIG.NOTION_ENABLED || !CONFIG.NOTION_PROXY_URL || !CONFIG.NOTION_DATABASE_ID) return;
+  if (gameState.isTestMode) return;
+
+  var injuryOption = gameState.injuryStatus || 'none';
+  var body = {
+    parent: { database_id: CONFIG.NOTION_DATABASE_ID },
+    properties: {
+      '存檔名稱': { title: [{ text: { content: '自動同步-第' + gameState.time.day + '天' } }] },
+      '角色姓名': { rich_text: [{ text: { content: gameState.charSetup.name || '未命名倖存者' } }] },
+      '遊戲天數': { number: gameState.time.day },
+      '體力': { number: gameState.stamina },
+      '當前地點': { rich_text: [{ text: { content: gameState.location } }] },
+      '傷勢': { select: { name: injuryOption } },
+      '覺醒等級': { number: gameState.awakeningLevel },
+      '更新時間': { date: { start: new Date().toISOString() } },
+      '存檔JSON': { rich_text: [{ text: { content: JSON.stringify(gameState).slice(0, 1900) } }] }
+    }
+  };
+
+  fetch(CONFIG.NOTION_PROXY_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  }).catch(function (e) {
+    console.warn('Notion 同步失敗:', e);
+  });
+}
+
+function handleNotionSyncNow() {
+  if (!CONFIG.NOTION_ENABLED) {
+    alert('請先填入並儲存 Notion 轉發網址與 Database ID');
+    return;
+  }
+  syncToNotion();
+  alert('已送出同步請求，請至 Notion 檢查是否新增存檔記錄。');
 }
 
 function applyStatusUpdate(update) {
@@ -858,7 +985,7 @@ function handleLoadNamedSave(name) {
   var entry = saves[name];
   if (!entry) return;
   restoreState(entry.gameState);
-  var key = localStorage.getItem(APIKEY_KEY);
+  var key = localStorage.getItem(APIKEY_KEY_PREFIX + gameState.provider);
   if (gameState.isTestMode || key) {
     gameState.apiKey = key || '';
     showGameScreen();
@@ -888,10 +1015,10 @@ function handleImportFile(e) {
     try {
       var saveData = JSON.parse(event.target.result);
       restoreState(saveData.gameState);
-      var key = dom.apiKeyInput.value.trim() || localStorage.getItem(APIKEY_KEY);
+      var key = dom.apiKeyInput.value.trim() || localStorage.getItem(APIKEY_KEY_PREFIX + gameState.provider);
       if (gameState.isTestMode || key) {
         gameState.apiKey = key || '';
-        if (key) localStorage.setItem(APIKEY_KEY, key);
+        if (key) localStorage.setItem(APIKEY_KEY_PREFIX + gameState.provider, key);
         showGameScreen();
         rebuildNarrativeFromHistory();
         renderOptions(gameState.lastOptions);
@@ -941,10 +1068,10 @@ function handleRestart() {
 function handleChangeApiKey() {
   toggleSideMenu(false);
   setTimeout(function () {
-    var newKey = prompt('請輸入新的 Google Gemini API 金鑰：', gameState.apiKey);
+    var newKey = prompt('請輸入新的 API 金鑰：', gameState.apiKey);
     if (newKey && newKey.trim()) {
       gameState.apiKey = newKey.trim();
-      localStorage.setItem(APIKEY_KEY, gameState.apiKey);
+      localStorage.setItem(APIKEY_KEY_PREFIX + gameState.provider, gameState.apiKey);
     }
   }, 200);
 }
