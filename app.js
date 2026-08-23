@@ -581,7 +581,7 @@ function handleAIResponse(response) {
     gameState.isDead = true;
     showDeathScreen(status_update.special_event_text || '你的旅程在此結束。');
     saveStateToLocal();
-    syncToNotion();
+    syncToNotion(false);
     return;
   } else if (status_update.special_event === 'rescued') {
     showEventModal('🩹', '瀕死獲救', status_update.special_event_text || '有人在最後一刻拉住了你。');
@@ -598,18 +598,22 @@ function handleAIResponse(response) {
   renderOptions(options);
   renderAll();
   saveStateToLocal();
-  syncToNotion();
+  syncToNotion(false);
 }
 
-function syncToNotion() {
-  if (!CONFIG.NOTION_ENABLED || !CONFIG.NOTION_PROXY_URL || !CONFIG.NOTION_DATABASE_ID) return;
-  if (gameState.isTestMode) return;
+/* silent: true時不彈出alert，用於每回合自動同步；false時用於手動測試按鈕，會明確回報結果 */
+function syncToNotion(silent) {
+  if (!CONFIG.NOTION_ENABLED || !CONFIG.NOTION_PROXY_URL || !CONFIG.NOTION_DATABASE_ID) {
+    if (!silent) alert('請先填入並儲存 Notion 轉發網址與 Database ID');
+    return;
+  }
+  if (gameState.isTestMode && silent) return;
 
   var injuryOption = gameState.injuryStatus || 'none';
   var body = {
     parent: { database_id: CONFIG.NOTION_DATABASE_ID },
     properties: {
-      '存檔名稱': { title: [{ text: { content: '自動同步-第' + gameState.time.day + '天' } }] },
+      '存檔名稱': { title: [{ text: { content: '同步-第' + gameState.time.day + '天-' + new Date().toLocaleTimeString() } }] },
       '角色姓名': { rich_text: [{ text: { content: gameState.charSetup.name || '未命名倖存者' } }] },
       '遊戲天數': { number: gameState.time.day },
       '體力': { number: gameState.stamina },
@@ -625,18 +629,27 @@ function syncToNotion() {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
+  }).then(function (res) {
+    return res.json().then(function (data) {
+      return { ok: res.ok, data: data };
+    });
+  }).then(function (result) {
+    if (!silent) {
+      if (result.ok) {
+        alert('同步成功！請至 Notion 檢查是否新增存檔記錄。');
+      } else {
+        alert('同步失敗，錯誤內容：' + JSON.stringify(result.data).slice(0, 300));
+      }
+    }
+    console.log('Notion同步結果:', result);
   }).catch(function (e) {
     console.warn('Notion 同步失敗:', e);
+    if (!silent) alert('同步請求失敗：' + e.message);
   });
 }
 
 function handleNotionSyncNow() {
-  if (!CONFIG.NOTION_ENABLED) {
-    alert('請先填入並儲存 Notion 轉發網址與 Database ID');
-    return;
-  }
-  syncToNotion();
-  alert('已送出同步請求，請至 Notion 檢查是否新增存檔記錄。');
+  syncToNotion(false);
 }
 
 function applyStatusUpdate(update) {
