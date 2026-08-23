@@ -163,7 +163,7 @@ SYSTEM_LINES.push('禁止重複使用相同場景開場句式或選項措辭，�
 SYSTEM_LINES.push('提示詞中可能包含「長期世界記憶」段落，記載已知安全區、關鍵NPC、勢力歷史、世界重大事件、玩家志向發展與人物關係記錄，你必須將其視為已確立的事實持續納入敘事考量，不可忽略、不可與其矛盾。');
 SYSTEM_LINES.push('world_memory_update欄位僅在本回合敘事確實發生下列四類事件之一時才填寫對應子欄位，其餘情況全部留空物件：new_safe_zone（玩家新建立安全區，含name、location、population、facilities陣列）、safe_zone_update（既有安全區的人口或設施異動，含name、population、facilities_add陣列、facilities_remove陣列、faction_relation_note）、npc_major_event（NPC加入、死亡、覺醒、能力習得或關係質變，含name、gender、ability、note、status僅可為alive或dead或missing或unknown）、faction_shift（勢力關係質變如轉為敵對或同盟，非小幅信任度波動，含faction、eventText）、world_landmark（地圖級重大變化如城市淪陷路線打通，含eventText）。');
 SYSTEM_LINES.push('若使用者輸入中出現「請檢查背景演化」的指示，你必須額外填寫background_evolution欄位，基於提示詞中已提供的長期世界記憶段落，獨立推演已登記的NPC、安全區、勢力在主角不在場期間可能發生的變化，結構為npc_updates陣列每項含name與note與可選status與可選ability與可選gender、safe_zone_updates陣列每項含name與note、faction_updates陣列每項含faction與eventText；若沒有明確要求則此欄位留空物件。');
-SYSTEM_LINES.push('若玩家取得、修復、使用或失去載具，須依規則文檔載具系統章節管理耐久度、油量、貨艙容量與危險等級雙面效果，車輛類型不限於固定清單，可為任何合理現實車輛，但須依其體型用途歸入對應數值級距。若本回合涉及載具狀態變化，於vehicle_update欄位回報：action僅可為acquire（新獲得載具）、repair（耐久度恢復）、refuel（油量補充）、damage（耐久度受損）、cargo_change（貨艙物品增減）、lose（載具報廢或失去）、set_active（切換使用中載具）之一；vehicle_name為該載具的敘事名稱用於比對識別；vehicle_tier（僅action為acquire時填寫）僅可為light_two_wheel或light_four_wheel或medium或heavy或special_military之一，依車輛體型用途合理判斷；durability_change與fuel_change為對應數值變化的整數；cargo_changes陣列每項包含name與quantity與action（add或remove），僅在action為cargo_change時填寫。若本回合無任何載具狀態變化，此物件整體留空。');
+SYSTEM_LINES.push('若玩家取得、修復、使用或失去載具，須依規則文檔載具系統章節管理耐久度、油量、貨艙容量與危險等級雙面效果，車輛類型不限於固定清單，可為任何合理現實車輛，但須依其體型用途歸入對應數值級距。action為acquire僅可在玩家本回合首次取得全新載具時使用，若該載具已於先前回合登記且非報廢狀態，後續回合對同一輛車的任何操作須使用repair、refuel、damage、cargo_change或set_active，絕對不可對同一輛已存在的載具重複使用acquire，即使敘事措辭或載具描述方式與先前不同也視為同一輛車。若本回合涉及載具狀態變化，於vehicle_update欄位回報：action僅可為acquire（新獲得載具）、repair（耐久度恢復）、refuel（油量補充）、damage（耐久度受損）、cargo_change（貨艙物品增減）、lose（載具報廢或失去）、set_active（切換使用中載具）之一；vehicle_name為該載具的敘事名稱用於比對識別；vehicle_tier（僅action為acquire時填寫）僅可為light_two_wheel或light_four_wheel或medium或heavy或special_military之一，依車輛體型用途合理判斷；durability_change與fuel_change為對應數值變化的整數；cargo_changes陣列每項包含name與quantity與action（add或remove），僅在action為cargo_change時填寫。若本回合無任何載具狀態變化，此物件整體留空。');
 SYSTEM_LINES.push('玩家的長期發展路線由四條志向線構成，彼此不互斥，可同時推進：庇護建設者shelterBuilder專注安全區規模、設施、人口成長；治療探索者cureSeeker專注病毒研究與解藥或疫苗相關進展；暗影獵人shadowHunter專注透過武力與威嚇建立跨陣營恐懼名聲；勢力締造者factionLeader專注在既有陣營內取得實質決策影響力或創建新勢力。每回合若敘事內容明確符合某條志向線的推進條件，於aspiration_update欄位回報對應志向鍵名的物件，內含progress_delta（一個負20至正20之間的整數）與milestone_text（僅達成關鍵性轉折時填寫，否則留空字串）。一回合可同時推進多條志向線，也可以完全不推進任何志向線，不可為了填欄位而勉強編造進度，其餘志向留空物件。');
 SYSTEM_LINES.push('每個具名NPC都有性別gender與三個獨立關係軸：trust信任範圍0到100代表對方是否相信你並願意託付重要事務、closeness親密範圍0到100代表情感靠近程度決定對話深度與私密話題開放與否、romantic_tension浪漫張力範圍0到100僅特定NPC適用代表關係往愛情方向發展的張力與前兩軸獨立運作不必然同步成長。每個NPC關係處於六個敘事階段之一：acquainted初識剛認識僅止於認識彼此存在、incipient初萌開始有一絲交集關係值變動應緩慢、developing漸深開始建立信任與默契、critical_trial風險考驗劇情須安排一次高風險抉擇考驗雙方關係不可透過玩家連續示好跳過此階段、defining_choice關鍵抉擇雙方關係將往結合決裂或維持現狀之一定型此為不可逆敘事節點、resolved_bond穩定結合或resolved_apart疏離懸置為關係定型後的穩定狀態。階段推進有時間限制，唯有初識轉為初萌不受天數限制可隨劇情自然發生，初萌之後每一階段轉換都須提示詞中的長期世界記憶段落標明「可推進下一階段」才可以在stage_transition欄位填入下一階段名稱，若標明「尚未滿5天不可推進階段」則絕對不可填寫stage_transition即使劇情發展看似合適也必須等待。若提示詞標明某NPC已進入漸深階段較久建議安排風險考驗事件，可主動於本回合或近期敘事中安排相應情境。關係推進不應是玩家單方面刷好感度就能達成，必須透過劇情中的具體事件才能真正變動關係軸數值與階段，日常閒聊互動只應造成極小幅度變動即正負1至3點。若某NPC狀態為dead或missing，其關係已被系統凍結，不可再回報trust_delta、closeness_delta、romantic_tension_delta或stage_transition，僅可透過background_note補充該NPC過去的背景資訊。若本回合涉及具名NPC的關係發展或想補充其背景經歷，於relationship_update欄位回報npc_name、gender（若尚未記錄則填寫）、trust_delta、closeness_delta、romantic_tension_delta（不涉及浪漫時留空或0）、stage_transition（僅符合天數條件時才填寫，否則留空字串）、note簡述本次關係變化的具體事由、background_note（僅當本回合透過對話或事件得知該NPC過去背景或經歷時才填寫，是一段可累加的日記式記錄，不覆蓋先前內容，若無新背景資訊則留空字串）；若本回合無任何NPC關係變化，此物件整體留空。');
 SYSTEM_LINES.push('只回傳合法JSON物件，不包含JSON以外文字或Markdown符號。JSON結構：narrative為敘事文字字串；status_update物件包含time_advance_minutes、stamina_change、hunger_change、current_location、danger_level僅可為safe或warning或critical、weather、humanity_change、resonance_change、ability_exp_change、faction_trust_update、inventory_changes陣列每項包含name與quantity與action僅可為add或remove、injury_status僅可為none或minor或severe、vehicle_update物件依上述規則、companion_changes陣列每項包含name與action僅可為join或leave或die、special_event僅可為none或awakening或multi_awakening或death或rescued或level_up或其他事件代號、special_event_text；world_memory_update物件依上述規則；background_evolution物件依上述規則；aspiration_update物件依上述規則；relationship_update物件依上述規則；options陣列包含2到4個元素，每個元素含id、label、risk_hint，其中id欄位只能是大寫字母A、B、C、D，依陣列順序遞增，不可使用其他任何格式如opt_1或數字。');
@@ -1024,7 +1024,26 @@ function findVehicleByName(name) {
 function applyVehicleUpdate(vu) {
   var action = vu.action;
   if (action === 'acquire') {
-    if (findVehicleByName(vu.vehicle_name)) return;
+    // 防止同一輛車因AI措辭不同的名稱被重複新增：
+    // 若已存在名稱高度相似（去除空白、包含關係）的未報廢載具，視為同一輛車，僅更新名稱不新增。
+    var similarVehicle = null;
+    for (var vi = 0; vi < gameState.vehicles.length; vi++) {
+      var existingV = gameState.vehicles[vi];
+      if (existingV.status === 'lost') continue;
+      if (existingV.name === vu.vehicle_name ||
+          existingV.name.indexOf(vu.vehicle_name) !== -1 ||
+          vu.vehicle_name.indexOf(existingV.name) !== -1) {
+        similarVehicle = existingV;
+        break;
+      }
+    }
+    if (similarVehicle) {
+      // 視為對同一輛車的重複描述，僅同步較完整的名稱，不新增載具
+      if (vu.vehicle_name && vu.vehicle_name.length > similarVehicle.name.length) {
+        similarVehicle.name = vu.vehicle_name;
+      }
+      return;
+    }
     var preset = VEHICLE_TIER_PRESETS[vu.vehicle_tier] || VEHICLE_TIER_PRESETS.light_four_wheel;
     var newVehicle = {
       id: 'vehicle_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
