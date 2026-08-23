@@ -571,4 +571,118 @@ button {
   height: 100%;
   overflow-y: auto;
   background: var(--bg-panel);
-  pa
+  padding: 24px 18px;
+  padding-top: max(24px, env(safe-area-inset-top));
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: -8px 0 24px var(--shadow-deep);
+  animation: slide-in-right 0.25s ease;
+  z-index: 2;
+}
+
+@keyframes slide-in-right {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.side-menu-content h2 {
+  font-size: 18px;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+
+.btn-menu {
+  width: 100%;
+  text-align: left;
+  padding: 13px 14px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.btn-menu.btn-danger {
+  color: #e57373;
+  border-color: rgba(139, 30, 30, 0.4);
+}
+
+.side-menu-footer {
+  margin-top: auto;
+}
+
+.event-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.75);
+  padding: 24px;
+}
+
+.event-modal-content {
+  width: 100%;
+  max-width: 340px;
+  background: var(--bg-panel);
+  border: 1px solid var(--accent-red);
+  border-radius: 14px;
+  padding: 28px 22px;
+  text-align: center;
+  box-shadow: 0 0 40px rgba(198, 40, 40, 0.25);
+  animation: fade-in 0.4s ease;
+}
+
+.event-modal-icon {
+  font-size: 36px;
+  margin-bottom: 10px;
+}
+
+.event-modal-content h2 {
+  font-size: 18px;
+  color: var(--accent-red-bright);
+  margin-bottom: 12px;
+  letter-spacing: 1px;
+}
+
+.event-modal-content p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin-bottom: 20px;
+}
+
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.loading-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--border-color);
+  border-top-color: var(--accent-red);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+#narrative-log::-webkit-scrollbar {
+  width: 4px;
+}
+
+#narrative-log::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 2px;
+}
