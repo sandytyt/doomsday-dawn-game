@@ -944,9 +944,11 @@ button {
 .toggle-row {
   display: flex;
   gap: 8px;
+  margin: 8px 14px 0;
 }
 .toggle-row .collapse-toggle-btn {
   flex: 1;
+  margin-bottom: 0;
 }
 
 .npc-panel {
