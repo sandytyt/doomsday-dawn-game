@@ -48,11 +48,6 @@ var gameState = {
   lastPlayerAction: '',
   rulesText: '',
   loreText: '',
-  charSetup: { name: '', gender: '', location: '', occupation: '' }
-};
-
-var gameState = {
-  // ...保留原本所有既有欄位（apiKey, provider, time, stamina 等）不動...
   charSetup: { name: '', gender: '', location: '', occupation: '' },
   vehicles: [],           // 新增：載具清單，每筆 { id, name, tier, durability, maxDurability, fuel, maxFuel, cargoCapacity, cargo: [], status, acquiredDay }
   activeVehicleId: null   // 新增：目前使用中的載具 id，null 代表徒步
