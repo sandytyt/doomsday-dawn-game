@@ -134,6 +134,8 @@ function cacheDom() {
   dom.namedSaveClose = document.getElementById('named-save-close');
   dom.saveTabLocal = document.getElementById('save-tab-local');
   dom.saveTabNotion = document.getElementById('save-tab-notion');
+  dom.hungerFill = document.getElementById('hunger-bar-fill');
+  dom.hungerValue = document.getElementById('hunger-value');
 }
 
 var SYSTEM_LINES = [];
