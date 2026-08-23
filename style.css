@@ -1,6 +1,7 @@
 /* ============================================
-   末日黎明：喪屍浩劫 — 視覺樣式 v2
+   末日黎明：喪屍浩劫 — 視覺樣式 v3
    配色主軸：鐵灰底 + 暗紅警示 + 低飽和度
+   新增：測試模式按鈕樣式
    ============================================ */
 
 :root {
@@ -15,6 +16,7 @@
   --accent-red-bright: #c62828;
   --accent-amber: #b8860b;
   --accent-green: #4a6b4a;
+  --accent-teal: #2f6f6f;
   --shadow-deep: rgba(0, 0, 0, 0.6);
   --font-main: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", -apple-system, sans-serif;
 }
@@ -164,7 +166,24 @@ button {
   background: var(--bg-elevated);
 }
 
-/* ============ 通用摺疊區塊（角色設定 / Notion設定 / 選項摺疊） ============ */
+/* 離線測試模式入口按鈕：刻意用不同色系（青綠）區隔於正式遊玩按鈕 */
+.btn-test {
+  width: 100%;
+  padding: 12px;
+  margin-top: 16px;
+  background: transparent;
+  color: #7fb3b3;
+  border: 1px dashed var(--accent-teal);
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.btn-test:active {
+  background: rgba(47, 111, 111, 0.15);
+}
+
+/* ============ 通用摺疊區塊 ============ */
 
 .collapse-toggle-btn {
   width: 100%;
@@ -206,8 +225,6 @@ button {
   flex-direction: column;
   height: 100%;
 }
-
-/* --- 頂部狀態欄 --- */
 
 #status-bar {
   flex-shrink: 0;
@@ -340,8 +357,6 @@ button {
   transform: rotate(180deg);
 }
 
-/* --- 展開式完整狀態面板 --- */
-
 .status-panel-full {
   flex-shrink: 0;
   background: var(--bg-elevated);
@@ -366,8 +381,6 @@ button {
 .panel-label {
   color: var(--text-dim);
 }
-
-/* --- 中央劇情區 --- */
 
 #narrative-log {
   flex: 1;
@@ -426,8 +439,6 @@ button {
   40% { transform: scale(1); opacity: 1; }
 }
 
-/* --- 底部行動面板 --- */
-
 #action-panel {
   flex-shrink: 0;
   background: var(--bg-panel);
@@ -478,7 +489,6 @@ button {
   margin-top: 4px;
 }
 
-/* 選項摺疊後，改用精簡橫向清單顯示 */
 .options-container.mini-mode {
   flex-direction: row;
   flex-wrap: wrap;
@@ -537,8 +547,6 @@ button {
   cursor: pointer;
 }
 
-/* ============ 側邊選單 ============ */
-
 .side-menu {
   position: fixed;
   top: 0;
@@ -563,10 +571,4 @@ button {
   height: 100%;
   overflow-y: auto;
   background: var(--bg-panel);
-  padding: 24px 18px;
-  padding-top: max(24px, env(safe-area-inset-top));
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  box-shadow: -8px 0 24px var(--shadow-deep);
-  animat
+  pa
