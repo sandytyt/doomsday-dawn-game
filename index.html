@@ -15,23 +15,28 @@
 </head>
 <body>
 
+
 <div id="app">
+
 
   <div id="setup-screen" class="screen">
     <div class="setup-box">
       <h1 class="setup-title">末日黎明</h1>
       <p class="setup-subtitle">喪屍浩劫 · 生存協議</p>
 
+
       <div class="setup-field">
         <label for="provider-select">AI 服務供應商</label>
         <select id="provider-select" class="provider-select"></select>
       </div>
+
 
       <div class="setup-field">
         <label for="api-key-input">API 金鑰</label>
         <input type="password" id="api-key-input" placeholder="貼上對應供應商的 API 金鑰" autocomplete="off">
         <p class="setup-hint">金鑰依供應商分別儲存於本機瀏覽器，不會上傳到任何伺服器。</p>
       </div>
+
 
       <button id="char-setup-toggle" class="collapse-toggle-btn" type="button">
         <span>👤 角色初始設定（選填）</span>
@@ -60,16 +65,28 @@
           <input type="text" id="char-name-input" placeholder="留空則由AI自動生成" maxlength="20">
         </div>
       </div>
+
+
       <button id="start-game-btn" class="btn-primary" type="button">進入末日</button>
+
+
       <div class="setup-divider">或</div>
+
+
       <button id="import-save-btn" class="btn-secondary" type="button">匯入存檔繼續遊玩</button>
       <input type="file" id="import-save-file" accept=".json" hidden>
+
+
       <button id="rules-link-btn" class="btn-link" type="button">📖 查看遊戲規則說明</button>
+
+
       <button id="test-mode-btn" class="btn-test hidden" type="button">🧪 離線測試模式（不消耗API配額）</button>
     </div>
   </div>
 
+
   <div id="game-screen" class="screen hidden">
+
 
     <header id="status-bar">
       <div class="status-row">
@@ -91,6 +108,7 @@
       </div>
     </header>
 
+
     <div id="status-panel-full" class="status-panel-full hidden">
       <div class="panel-full-grid">
         <div class="panel-full-item"><span class="panel-label">飢餓</span><span id="stat-hunger">100</span></div>
@@ -99,8 +117,10 @@
         <div class="panel-full-item"><span class="panel-label">覺醒進度</span><span id="stat-awakening">未覺醒</span></div>
         <div class="panel-full-item"><span class="panel-label">天氣</span><span id="stat-weather">--</span></div>
         <div class="panel-full-item"><span class="panel-label">隨行隊員</span><span id="stat-companions">無</span></div>
+        <div class="panel-full-item panel-full-item-wide"><span class="panel-label">人物關係</span><span id="stat-relationships">尚無深入接觸的人物</span></div>
       </div>
     </div>
+
 
     <button id="inventory-toggle-btn" class="collapse-toggle-btn inventory-toggle" type="button">
       <span>🎒 背包（0）</span>
@@ -114,6 +134,7 @@
       <div id="inventory-list" class="inventory-list"></div>
     </div>
 
+
     <main id="narrative-log">
       <div id="narrative-content"></div>
       <div id="typing-indicator" class="typing-indicator hidden">
@@ -121,8 +142,10 @@
       </div>
     </main>
 
+
     <footer id="action-panel">
       <button id="action-collapsed-bar" class="action-collapsed-bar hidden" type="button">▾ 展開行動選項</button>
+
 
       <button id="options-collapse-toggle" class="collapse-toggle-btn hidden" type="button">
         <span>行動選項</span>
@@ -130,21 +153,26 @@
       </button>
       <div id="options-container" class="options-container"></div>
 
+
       <div id="free-input-row" class="free-input-row hidden">
         <input type="text" id="free-input-text" placeholder="輸入你的行動…" maxlength="200">
         <button id="free-input-send" class="btn-send" type="button">送出</button>
         <button id="free-input-cancel" class="icon-btn" type="button">✕</button>
       </div>
 
+
       <button id="free-input-toggle" class="btn-free-toggle" type="button">✏ 自訂行動</button>
     </footer>
 
+
   </div>
+
 
   <div id="side-menu" class="side-menu hidden">
     <div id="side-menu-backdrop" class="side-menu-backdrop"></div>
     <div class="side-menu-content">
       <h2>選單</h2>
+
 
       <div class="menu-section-label">存檔管理</div>
       <button id="menu-named-save-btn" class="btn-menu" type="button">💾 建立命名存檔</button>
@@ -152,10 +180,12 @@
       <button id="menu-export-btn" class="btn-menu" type="button">📤 匯出存檔為檔案</button>
       <button id="menu-import-btn" class="btn-menu" type="button">📥 匯入存檔檔案</button>
 
+
       <div class="menu-section-label">遊戲設定</div>
       <button id="menu-rules-btn" class="btn-menu" type="button">📖 遊戲規則說明</button>
       <button id="menu-apikey-btn" class="btn-menu" type="button">🔑 更改 API 金鑰</button>
       <button id="menu-restart-btn" class="btn-menu btn-danger" type="button">🔄 重新開始（清空進度）</button>
+
 
       <button id="notion-setup-toggle" class="collapse-toggle-btn" type="button">
         <span>☁ Notion 雲端同步（選填）</span>
@@ -175,11 +205,13 @@
         <p class="setup-hint">尚未部署轉發層前，留空即可，遊戲僅使用本機存檔。啟用後每10回合自動同步一次。可在「讀取存檔」中切換至雲端標籤讀回任一筆記錄。</p>
       </div>
 
+
       <div class="side-menu-footer">
         <button id="menu-close-btn" class="btn-secondary" type="button">關閉</button>
       </div>
     </div>
   </div>
+
 
   <div id="named-save-modal" class="named-save-modal hidden">
     <div class="named-save-modal-content">
@@ -195,6 +227,7 @@
     </div>
   </div>
 
+
   <div id="rules-modal" class="rules-modal hidden">
     <div class="rules-modal-content">
       <div class="rules-modal-header">
@@ -205,6 +238,7 @@
     </div>
   </div>
 
+
   <div id="event-modal" class="event-modal hidden">
     <div class="event-modal-content">
       <div id="event-modal-icon" class="event-modal-icon">⚡</div>
@@ -213,6 +247,7 @@
       <button id="event-modal-close" class="btn-primary" type="button">繼續</button>
     </div>
   </div>
+
 
   <div id="death-screen" class="death-screen hidden">
     <div class="death-screen-content">
@@ -223,11 +258,14 @@
     </div>
   </div>
 
+
   <div id="loading-overlay" class="loading-overlay hidden">
     <div class="loading-spinner"></div>
   </div>
 
+
 </div>
+
 
 <script src="test_script.js"></script>
 <script src="config.js"></script>
