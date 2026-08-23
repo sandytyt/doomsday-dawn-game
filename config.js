@@ -1,11 +1,36 @@
 /* ============================================
    末日黎明：喪屍浩劫 — 個人化設定檔
-   此檔案存放非機密的遊戲參數設定
-   測試劇本已獨立至 test_script.js
    ============================================ */
 
 var CONFIG = {
 
+  PROVIDERS: {
+    gemini: {
+      label: 'Google Gemini',
+      defaultModel: 'gemini-3.5-flash-lite',
+      format: 'gemini'
+    },
+    deepseek: {
+      label: 'DeepSeek',
+      defaultModel: 'deepseek-chat',
+      format: 'openai',
+      endpoint: 'https://api.deepseek.com/chat/completions'
+    },
+    qwen: {
+      label: 'Qwen（通義千問）',
+      defaultModel: 'qwen-plus',
+      format: 'openai',
+      endpoint: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions'
+    },
+    doubao: {
+      label: '豆包',
+      defaultModel: 'doubao-pro-32k',
+      format: 'openai',
+      endpoint: 'https://ark.cn-beijing.volces.com/api/v3/chat/completions'
+    }
+  },
+
+  ACTIVE_PROVIDER: 'gemini',
   MODEL_NAME: 'gemini-3.5-flash-lite',
 
   INITIAL_STAMINA: 100,
