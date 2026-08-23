@@ -1,7 +1,6 @@
 /* ============================================
-   末日黎明：喪屍浩劫 — 核心遊戲引擎 v2
-   修正：存檔還原後劇情空白、選單按鍵失效
-   新增：角色初始設定、Notion設定介面、狀態列與選項摺疊
+   末日黎明：喪屍浩劫 — 核心遊戲引擎 v3
+   新增：離線測試模式（不消耗API配額，使用固定劇本）
    ============================================ */
 
 'use strict';
@@ -14,6 +13,8 @@ const NOTION_KEY = 'doomsday_dawn_notion_config';
 
 let gameState = {
   apiKey: '',
+  isTestMode: false,
+  testScriptIndex: 0,
   time: { day: 1, hour: 6, minute: 0 },
   location: '未知地點',
   stamina: CONFIG.INITIAL_STAMINA,
@@ -44,6 +45,7 @@ const dom = {
   gameScreen: document.getElementById('game-screen'),
   apiKeyInput: document.getElementById('api-key-input'),
   startBtn: document.getElementById('start-game-btn'),
+  testModeBtn: document.getElementById('test-mode-btn'),
   importSaveBtn: document.getElementById('import-save-btn'),
   importSaveFile: document.getElementById('import-save-file'),
 
@@ -169,22 +171,34 @@ function init() {
   bindEvents();
   loadLoreText();
   loadNotionConfig();
+  setupTestModeEntry();
 
   const savedKey = localStorage.getItem(APIKEY_KEY);
   const savedStateRaw = localStorage.getItem(STATE_KEY);
 
-  if (savedKey && savedStateRaw) {
+  if (savedStateRaw) {
     try {
       const savedState = JSON.parse(savedStateRaw);
-      gameState.apiKey = savedKey;
-      restoreState(savedState);
-      showGameScreen();
-      rebuildNarrativeFromHistory();
-      renderOptions(gameState.lastOptions);
-      renderAll();
+      if (savedState.isTestMode || savedKey) {
+        gameState.apiKey = savedKey || '';
+        restoreState(savedState);
+        showGameScreen();
+        rebuildNarrativeFromHistory();
+        renderOptions(gameState.lastOptions);
+        renderAll();
+      }
     } catch (e) {
       console.error('存檔讀取失敗，將顯示開局畫面', e);
     }
+  }
+}
+
+function setupTestModeEntry() {
+  if (!dom.testModeBtn) return;
+  if (CONFIG.TEST_MODE_ENABLED) {
+    dom.testModeBtn.classList.remove('hidden');
+  } else {
+    dom.testModeBtn.classList.add('hidden');
   }
 }
 
@@ -213,6 +227,9 @@ function loadNotionConfig() {
 
 function bindEvents() {
   dom.startBtn.addEventListener('click', handleStartGame);
+  if (dom.testModeBtn) {
+    dom.testModeBtn.addEventListener('click', handleStartTestMode);
+  }
   dom.importSaveBtn.addEventListener('click', () => dom.importSaveFile.click());
   dom.importSaveFile.addEventListener('change', handleImportFile);
 
@@ -272,7 +289,6 @@ function bindEvents() {
 
 function toggleCollapse(btn, body) {
   const isHidden = body.classList.contains('hidden');
-  body.classList.toggle('hidden', !isHidden ? true : false);
   if (isHidden) {
     body.classList.remove('hidden');
     btn.classList.add('expanded');
@@ -282,7 +298,7 @@ function toggleCollapse(btn, body) {
   }
 }
 
-/* ---------- 開局流程 ---------- */
+/* ---------- 開局流程：正式模式 ---------- */
 
 function handleStartGame() {
   const key = dom.apiKeyInput.value.trim();
@@ -291,6 +307,7 @@ function handleStartGame() {
     return;
   }
   gameState.apiKey = key;
+  gameState.isTestMode = false;
   localStorage.setItem(APIKEY_KEY, key);
 
   gameState.charSetup = {
@@ -303,21 +320,4 @@ function handleStartGame() {
   requestNextTurn('__START__');
 }
 
-function showGameScreen() {
-  dom.setupScreen.classList.add('hidden');
-  dom.gameScreen.classList.remove('hidden');
-}
-
-/* ---------- 核心：呼叫 Gemini API ---------- */
-
-async function requestNextTurn(playerAction) {
-  if (isWaitingForAI) return;
-  isWaitingForAI = true;
-  showTyping(true);
-
-  if (playerAction !== '__START__') {
-    appendPlayerAction(playerAction);
-    gameState.lastPlayerAction = playerAction;
-  }
-
-  const contextPayload = buildContext
+/* ---------
