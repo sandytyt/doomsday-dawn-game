@@ -2,34 +2,41 @@
 
 /*
  * world_memory.js
- * 獨立管理長期世界記憶：安全區、關鍵NPC、勢力歷史、重大事件。
- * 目的：取代原本形同虛設的 gameState.summary 字串，
- * 用結構化資料承載超出 recentTurns 滑動視窗的世界觀事實，
- * 避免長期遊玩後AI「忘記」主角建立的安全區、重要NPC等內容。
+ * 獨立管理長期世界記憶：安全區、關鍵NPC、勢力歷史、重大事件、
+ * 志向系統(aspirations)、人物關係系統(relationships)。
  *
- * 兩條獨立更新來源：
- * 1) world_memory_update：主角親身經歷或被明確告知的事件（由AI每回合視情況回報）
- * 2) background_evolution：不依賴主角在場，定期強制觸發的背景世界推演
- *
- * app.js 只需呼叫本檔案提供的函式，不需了解內部資料結構細節。
+ * 志向系統：四條可疊加、不互斥的長期發展路線，AI依劇情自由判定推進。
+ * 關係系統：三軸獨立數值(trust/closeness/romanticTension) + 五階段敘事節點，
+ *          階段推進需滿足「已進入目前階段至少5個遊戲內天數」的硬性驗證，
+ *          此驗證在程式碼端執行，不依賴AI自行計算天數。
  */
 
 var WorldMemory = (function () {
 
-  var BACKGROUND_EVOLUTION_INTERVAL = 8; // 每隔多少回合強制觸發一次背景推演請求
+  var BACKGROUND_EVOLUTION_INTERVAL = 8;
   var MAX_SAFE_ZONES = 20;
   var MAX_NPCS = 40;
   var MAX_FACTION_HISTORY = 60;
   var MAX_MAJOR_EVENTS = 60;
   var TEXT_TRUNCATE_LENGTH = 200;
+  var STAGE_MIN_DAYS = 5; // 風險考驗等階段轉換前，須在目前階段停留的最少遊戲內天數
+
+  var ASPIRATION_KEYS = ['shelterBuilder', 'cureSeeker', 'shadowHunter', 'factionLeader'];
+  var STAGE_ORDER = ['incipient', 'developing', 'critical_trial', 'defining_choice', 'resolved_bond', 'resolved_apart'];
 
   function createInitial() {
+    var aspirations = {};
+    ASPIRATION_KEYS.forEach(function (key) {
+      aspirations[key] = { progress: 0, milestones: [] };
+    });
     return {
       safeZones: [],
       keyNpcs: [],
       factionHistory: [],
       majorEvents: [],
-      lastBackgroundEvolutionTurn: 0
+      lastBackgroundEvolutionTurn: 0,
+      aspirations: aspirations,
+      relationships: {}
     };
   }
 
@@ -40,6 +47,17 @@ var WorldMemory = (function () {
     if (!worldMemory.factionHistory) worldMemory.factionHistory = [];
     if (!worldMemory.majorEvents) worldMemory.majorEvents = [];
     if (typeof worldMemory.lastBackgroundEvolutionTurn !== 'number') worldMemory.lastBackgroundEvolutionTurn = 0;
+    if (!worldMemory.aspirations) {
+      worldMemory.aspirations = {};
+      ASPIRATION_KEYS.forEach(function (key) {
+        worldMemory.aspirations[key] = { progress: 0, milestones: [] };
+      });
+    } else {
+      ASPIRATION_KEYS.forEach(function (key) {
+        if (!worldMemory.aspirations[key]) worldMemory.aspirations[key] = { progress: 0, milestones: [] };
+      });
+    }
+    if (!worldMemory.relationships) worldMemory.relationships = {};
     return worldMemory;
   }
 
@@ -62,17 +80,11 @@ var WorldMemory = (function () {
     }
   }
 
+  function clampNum(val, min, max) {
+    return Math.max(min, Math.min(max, val));
+  }
+
   /* ---------- 主角見聞事件寫入（world_memory_update） ---------- */
-  /*
-   * update 結構（皆為選填，AI只在符合下列類型時才填）：
-   * {
-   *   new_safe_zone: { name, location, population, facilities: [] },
-   *   safe_zone_update: { name, population, facilities_add: [], facilities_remove: [], faction_relation_note },
-   *   npc_major_event: { name, ability, note, status },
-   *   faction_shift: { faction, eventText },
-   *   world_landmark: { eventText }
-   * }
-   */
   function applyWorldMemoryUpdate(worldMemory, update, turnCount) {
     worldMemory = ensureShape(worldMemory);
     if (!update) return worldMemory;
@@ -150,16 +162,6 @@ var WorldMemory = (function () {
   }
 
   /* ---------- 背景推演事件寫入（background_evolution） ---------- */
-  /*
-   * evolution 結構（AI在被要求觸發時填寫，可為空陣列）：
-   * {
-   *   npc_updates: [ { name, note, status, ability } ],
-   *   safe_zone_updates: [ { name, note } ],
-   *   faction_updates: [ { faction, eventText } ]
-   * }
-   * 這些事件標記為背景發生，暫存於同一份資料結構，
-   * 之後AI可透過劇情自然揭露給主角（傳聞、路人轉述等）。
-   */
   function applyBackgroundEvolution(worldMemory, evolution, turnCount) {
     worldMemory = ensureShape(worldMemory);
     if (!evolution) {
@@ -220,8 +222,84 @@ var WorldMemory = (function () {
     return (turnCount - worldMemory.lastBackgroundEvolutionTurn) >= BACKGROUND_EVOLUTION_INTERVAL;
   }
 
+  /* ---------- 志向系統 ---------- */
+  function applyAspirationUpdate(worldMemory, update, currentDay) {
+    worldMemory = ensureShape(worldMemory);
+    if (!update) return worldMemory;
+
+    ASPIRATION_KEYS.forEach(function (key) {
+      var entry = update[key];
+      if (!entry) return;
+      var asp = worldMemory.aspirations[key];
+      if (typeof entry.progress_delta === 'number') {
+        var delta = clampNum(entry.progress_delta, -20, 20);
+        asp.progress = clampNum(asp.progress + delta, -100, 500);
+      }
+      if (entry.milestone_text) {
+        asp.milestones.push({ text: truncateText(entry.milestone_text), day: currentDay });
+        if (asp.milestones.length > 20) asp.milestones.splice(0, asp.milestones.length - 20);
+      }
+    });
+
+    return worldMemory;
+  }
+
+  /* ---------- 關係系統：含5天硬性驗證 ---------- */
+  function getOrCreateRelationship(worldMemory, npcName, currentDay) {
+    if (!worldMemory.relationships[npcName]) {
+      worldMemory.relationships[npcName] = {
+        trust: 0,
+        closeness: 0,
+        romanticTension: 0,
+        stage: 'incipient',
+        stageEnteredDay: currentDay,
+        milestones: []
+      };
+    }
+    return worldMemory.relationships[npcName];
+  }
+
+  function canTransitionStage(rel, currentDay) {
+    var daysInStage = currentDay - rel.stageEnteredDay;
+    return daysInStage >= STAGE_MIN_DAYS;
+  }
+
+  function applyRelationshipUpdate(worldMemory, update, currentDay) {
+    worldMemory = ensureShape(worldMemory);
+    if (!update || !update.npc_name) return worldMemory;
+
+    var rel = getOrCreateRelationship(worldMemory, update.npc_name, currentDay);
+
+    if (typeof update.trust_delta === 'number') {
+      rel.trust = clampNum(rel.trust + update.trust_delta, 0, 100);
+    }
+    if (typeof update.closeness_delta === 'number') {
+      rel.closeness = clampNum(rel.closeness + update.closeness_delta, 0, 100);
+    }
+    if (typeof update.romantic_tension_delta === 'number') {
+      rel.romanticTension = clampNum(rel.romanticTension + update.romantic_tension_delta, 0, 100);
+    }
+
+    if (update.stage_transition && STAGE_ORDER.indexOf(update.stage_transition) !== -1) {
+      if (canTransitionStage(rel, currentDay)) {
+        rel.stage = update.stage_transition;
+        rel.stageEnteredDay = currentDay;
+        if (update.note) {
+          rel.milestones.push({ text: truncateText(update.note), day: currentDay, stage: update.stage_transition });
+          if (rel.milestones.length > 15) rel.milestones.splice(0, rel.milestones.length - 15);
+        }
+      }
+      // 若尚未滿5天，忽略此次階段轉換請求，但數值變化仍已套用（上方已處理）
+    } else if (update.note) {
+      rel.milestones.push({ text: truncateText(update.note), day: currentDay, stage: rel.stage });
+      if (rel.milestones.length > 15) rel.milestones.splice(0, rel.milestones.length - 15);
+    }
+
+    return worldMemory;
+  }
+
   /* ---------- 組裝要塞進AI提示詞的文字段落 ---------- */
-  function buildWorldMemoryPrompt(worldMemory) {
+  function buildWorldMemoryPrompt(worldMemory, currentDay) {
     worldMemory = ensureShape(worldMemory);
     var parts = [];
 
@@ -259,6 +337,36 @@ var WorldMemory = (function () {
       parts.push('世界重大事件紀要： ' + eventTexts.join('； '));
     }
 
+    var aspirationLabels = { shelterBuilder: '庇護建設者', cureSeeker: '治療探索者', shadowHunter: '暗影獵人', factionLeader: '勢力締造者' };
+    var aspirationTexts = ASPIRATION_KEYS.filter(function (key) {
+      return worldMemory.aspirations[key].progress !== 0 || worldMemory.aspirations[key].milestones.length > 0;
+    }).map(function (key) {
+      var asp = worldMemory.aspirations[key];
+      var latestMilestone = asp.milestones.length ? asp.milestones[asp.milestones.length - 1].text : '';
+      return aspirationLabels[key] + '（進度' + asp.progress + (latestMilestone ? '，最新進展：' + latestMilestone : '') + '）';
+    });
+    if (aspirationTexts.length > 0) {
+      parts.push('玩家志向發展： ' + aspirationTexts.join('； '));
+    }
+
+    var relNames = Object.keys(worldMemory.relationships);
+    if (relNames.length > 0) {
+      var stageLabels = {
+        incipient: '初萌', developing: '漸深', critical_trial: '風險考驗',
+        defining_choice: '關鍵抉擇', resolved_bond: '穩定結合', resolved_apart: '疏離懸置'
+      };
+      var relTexts = relNames.map(function (name) {
+        var rel = worldMemory.relationships[name];
+        var daysInStage = (typeof currentDay === 'number') ? (currentDay - rel.stageEnteredDay) : null;
+        var canAdvance = (daysInStage !== null) ? (daysInStage >= STAGE_MIN_DAYS) : false;
+        var latestMilestone = rel.milestones.length ? rel.milestones[rel.milestones.length - 1].text : '';
+        return name + '（階段：' + (stageLabels[rel.stage] || rel.stage) + '，信任' + rel.trust + '，親密' + rel.closeness + '，浪漫張力' + rel.romanticTension +
+          '，已於本階段' + (daysInStage !== null ? daysInStage : '?') + '天' + (canAdvance ? '，可推進下一階段' : '，尚未滿' + STAGE_MIN_DAYS + '天不可推進階段') +
+          (latestMilestone ? '，最新事件：' + latestMilestone : '') + '）';
+      });
+      parts.push('人物關係記錄（階段轉換需已在目前階段停留至少' + STAGE_MIN_DAYS + '天，未達天數者請勿觸發stage_transition）： ' + relTexts.join('； '));
+    }
+
     if (parts.length === 0) return '';
     return '【長期世界記憶，務必納入考量，不可忽略或遺忘】 ' + parts.join(' ');
   }
@@ -269,7 +377,12 @@ var WorldMemory = (function () {
     applyWorldMemoryUpdate: applyWorldMemoryUpdate,
     applyBackgroundEvolution: applyBackgroundEvolution,
     shouldTriggerBackgroundEvolution: shouldTriggerBackgroundEvolution,
+    applyAspirationUpdate: applyAspirationUpdate,
+    applyRelationshipUpdate: applyRelationshipUpdate,
     buildWorldMemoryPrompt: buildWorldMemoryPrompt,
+    ASPIRATION_KEYS: ASPIRATION_KEYS,
+    STAGE_ORDER: STAGE_ORDER,
+    STAGE_MIN_DAYS: STAGE_MIN_DAYS,
     BACKGROUND_EVOLUTION_INTERVAL: BACKGROUND_EVOLUTION_INTERVAL
   };
 })();
