@@ -20,6 +20,9 @@ var gameState = {
   resonanceValue: 0,
   dangerLevel: 'safe',
   weather: '晴',
+  inventory: [],
+  injuryStatus: 'none',
+  isDead: false,
   recentTurns: [],
   summary: '',
   turnCount: 0,
@@ -33,6 +36,7 @@ var gameState = {
 var isWaitingForAI = false;
 var statusExpanded = false;
 var optionsMiniMode = false;
+var inventoryExpanded = false;
 var dom = {};
 
 function cacheDom() {
@@ -55,6 +59,7 @@ function cacheDom() {
   dom.staminaFill = document.getElementById('stamina-bar-fill');
   dom.staminaValue = document.getElementById('stamina-value');
   dom.statusDanger = document.getElementById('status-danger');
+  dom.injuryTag = document.getElementById('injury-tag');
   dom.menuToggleBtn = document.getElementById('menu-toggle-btn');
   dom.statusPanelFull = document.getElementById('status-panel-full');
   dom.statHumanity = document.getElementById('stat-humanity');
@@ -72,6 +77,11 @@ function cacheDom() {
   dom.freeInputSend = document.getElementById('free-input-send');
   dom.freeInputCancel = document.getElementById('free-input-cancel');
   dom.freeInputToggle = document.getElementById('free-input-toggle');
+  dom.actionCollapsedBar = document.getElementById('action-collapsed-bar');
+  dom.inventoryToggleBtn = document.getElementById('inventory-toggle-btn');
+  dom.inventoryPanel = document.getElementById('inventory-panel');
+  dom.inventoryList = document.getElementById('inventory-list');
+  dom.inventoryLoadTag = document.getElementById('inventory-load-tag');
   dom.sideMenu = document.getElementById('side-menu');
   dom.sideMenuBackdrop = document.getElementById('side-menu-backdrop');
   dom.menuExportBtn = document.getElementById('menu-export-btn');
@@ -94,15 +104,17 @@ function cacheDom() {
   dom.rulesModal = document.getElementById('rules-modal');
   dom.rulesModalContent = document.getElementById('rules-modal-content');
   dom.rulesModalClose = document.getElementById('rules-modal-close');
+  dom.deathScreen = document.getElementById('death-screen');
 }
 
 var SYSTEM_LINES = [];
 SYSTEM_LINES.push('你是《末日黎明：喪屍浩劫》的game master，壓抑寫實心理驚悚調性，禁止幽默或吐槽語氣。');
-SYSTEM_LINES.push('嚴格遵守下方遊戲規則文檔的所有數值、機率與判定邏輯，該文檔已完整提供，不需要玩家或你重複解釋規則本身，直接依規則生成敘事與數值變化。');
+SYSTEM_LINES.push('嚴格遵守下方遊戲規則文檔的所有數值、機率與判定邏輯，該文檔已完整提供，不需要重複解釋規則本身，直接依規則生成敘事與數值變化。');
 SYSTEM_LINES.push('NPC具備獨立人性，包含自保、背叛、恐懼下的過度反應，同時也可能有無償犧牲、隱瞞真相保護他人等正向行為，依規則文檔的NPC判定邏輯執行，不套用單一固定模式。');
 SYSTEM_LINES.push('NPC的覺醒狀態於其背景設定階段獨立判定，不依賴玩家是否目擊，玩家可能遇見已完成覺醒的NPC。');
+SYSTEM_LINES.push('每回合須依規則文檔管理玩家背包物品增減、負重狀態、武器耐久或彈藥、傷勢等級與死亡判定。');
 SYSTEM_LINES.push('禁止重複使用相同場景開場句式或選項措辭，選項必須基於當前具體情境動態生成。');
-SYSTEM_LINES.push('只回傳合法JSON物件，不包含JSON以外文字或Markdown符號。JSON結構：narrative為敘事文字字串；status_update物件包含time_advance_minutes、stamina_change、hunger_change、current_location、danger_level僅可為safe或warning或critical、weather、humanity_change、resonance_change、faction_trust_update、special_event僅可為none或awakening或multi_awakening或其他事件代號、special_event_text；options陣列包含2到4個元素，每個元素含id、label、risk_hint。');
+SYSTEM_LINES.push('只回傳合法JSON物件，不包含JSON以外文字或Markdown符號。JSON結構：narrative為敘事文字字串；status_update物件包含time_advance_minutes、stamina_change、hunger_change、current_location、danger_level僅可為safe或warning或critical、weather、humanity_change、resonance_change、faction_trust_update、inventory_changes陣列每項包含name與quantity與action僅可為add或remove、injury_status僅可為none或minor或severe、special_event僅可為none或awakening或multi_awakening或death或rescued或其他事件代號、special_event_text；options陣列包含2到4個元素，每個元素含id、label、risk_hint。');
 SYSTEM_LINES.push('一般對話或安全區域描寫150至200字，戰鬥探索重大事件描寫350至450字。');
 
 var SYSTEM_INSTRUCTION = SYSTEM_LINES.join(' ');
@@ -194,6 +206,8 @@ function bindEvents() {
   dom.notionSetupToggle.addEventListener('click', function () { toggleCollapse(dom.notionSetupToggle, dom.notionSetupFields); });
   dom.notionSaveBtn.addEventListener('click', handleSaveNotionConfig);
   dom.optionsCollapseToggle.addEventListener('click', handleOptionsCollapseClick);
+  dom.actionCollapsedBar.addEventListener('click', handleOptionsCollapseClick);
+  dom.inventoryToggleBtn.addEventListener('click', handleInventoryToggleClick);
   dom.freeInputToggle.addEventListener('click', handleFreeInputToggleClick);
   dom.freeInputCancel.addEventListener('click', handleFreeInputCancelClick);
   dom.freeInputSend.addEventListener('click', handleFreeInputSend);
@@ -220,6 +234,12 @@ function handleMenuToggleClick(e) {
 function handleMenuImportClick() {
   toggleSideMenu(false);
   setTimeout(function () { dom.importSaveFile.click(); }, 200);
+}
+
+function handleInventoryToggleClick() {
+  inventoryExpanded = !inventoryExpanded;
+  dom.inventoryPanel.classList.toggle('hidden', !inventoryExpanded);
+  dom.inventoryToggleBtn.classList.toggle('expanded', inventoryExpanded);
 }
 
 function handleOptionsCollapseClick() {
@@ -301,6 +321,7 @@ function showGameScreen() {
 }
 
 function requestNextTurn(playerAction) {
+  if (gameState.isDead) return;
   if (gameState.isTestMode) {
     playNextTestScript(playerAction);
     return;
@@ -329,6 +350,13 @@ function pad2(n) {
   return n < 10 ? '0' + n : String(n);
 }
 
+function getInventoryLoadLevel() {
+  var count = gameState.inventory.length;
+  if (count <= 5) return '輕裝';
+  if (count <= 10) return '標準';
+  return '超載';
+}
+
 function buildContextPayload(playerAction) {
   var userText = '';
   if (playerAction === '__START__') {
@@ -343,11 +371,17 @@ function buildContextPayload(playerAction) {
     userText = '玩家選擇的行動：' + playerAction;
   }
 
+  var inventoryList = gameState.inventory.map(function (it) {
+    return it.name + 'x' + it.quantity;
+  }).join('、');
+
   var statusSnapshot = '當前狀態：第' + gameState.time.day + '天 ' + pad2(gameState.time.hour) + ':' + pad2(gameState.time.minute) +
     '，地點：' + gameState.location + '，體力：' + gameState.stamina + '/' + gameState.maxStamina +
     '，飢餓：' + gameState.hunger + '，人性值：' + gameState.humanity +
     '，共鳴值：' + gameState.resonanceValue + '，覺醒等級：' + gameState.awakeningLevel +
-    '，危險等級：' + gameState.dangerLevel + '，回合數：' + gameState.turnCount;
+    '，危險等級：' + gameState.dangerLevel + '，傷勢：' + gameState.injuryStatus +
+    '，背包負重：' + getInventoryLoadLevel() + '，持有物品：' + (inventoryList || '無') +
+    '，回合數：' + gameState.turnCount;
 
   var recentParts = [];
   for (var i = 0; i < gameState.recentTurns.length; i++) {
@@ -410,7 +444,14 @@ function handleAIResponse(response) {
     gameState.recentTurns.shift();
   }
 
-  if (status_update.special_event === 'awakening') {
+  if (status_update.special_event === 'death') {
+    gameState.isDead = true;
+    showDeathScreen(status_update.special_event_text || '你的旅程在此結束。');
+    saveStateToLocal();
+    return;
+  } else if (status_update.special_event === 'rescued') {
+    showEventModal('🩹', '瀕死獲救', status_update.special_event_text || '有人在最後一刻拉住了你。');
+  } else if (status_update.special_event === 'awakening') {
     showEventModal('⚡', '異能覺醒', status_update.special_event_text || '你感覺到體內有某種力量正在覺醒');
   } else if (status_update.special_event === 'multi_awakening') {
     showEventModal('⚡⚡', '多重覺醒', status_update.special_event_text || '不只一種力量在你體內同時甦醒');
@@ -441,6 +482,12 @@ function applyStatusUpdate(update) {
   if (typeof update.resonance_change === 'number') {
     gameState.resonanceValue = clamp(gameState.resonanceValue + update.resonance_change, 0, 999);
   }
+  if (update.injury_status) {
+    gameState.injuryStatus = update.injury_status;
+  }
+  if (update.inventory_changes && update.inventory_changes.length) {
+    applyInventoryChanges(update.inventory_changes);
+  }
   if (update.faction_trust_update) {
     for (var faction in update.faction_trust_update) {
       if (Object.prototype.hasOwnProperty.call(update.faction_trust_update, faction)) {
@@ -451,6 +498,33 @@ function applyStatusUpdate(update) {
   }
   if (update.special_event === 'awakening') gameState.awakeningLevel += 1;
   if (update.special_event === 'multi_awakening') gameState.awakeningLevel += 1;
+}
+
+function applyInventoryChanges(changes) {
+  for (var i = 0; i < changes.length; i++) {
+    var change = changes[i];
+    var existing = null;
+    for (var j = 0; j < gameState.inventory.length; j++) {
+      if (gameState.inventory[j].name === change.name) {
+        existing = gameState.inventory[j];
+        break;
+      }
+    }
+    if (change.action === 'remove') {
+      if (existing) {
+        existing.quantity -= (change.quantity || 1);
+        if (existing.quantity <= 0) {
+          gameState.inventory = gameState.inventory.filter(function (it) { return it.name !== change.name; });
+        }
+      }
+    } else {
+      if (existing) {
+        existing.quantity += (change.quantity || 1);
+      } else {
+        gameState.inventory.push({ name: change.name, quantity: change.quantity || 1 });
+      }
+    }
+  }
 }
 
 function advanceTime(minutes) {
@@ -482,6 +556,16 @@ function renderAll() {
   dom.statusDanger.textContent = dangerMap[gameState.dangerLevel] || '安全';
   dom.statusDanger.className = 'danger-tag ' + gameState.dangerLevel;
 
+  var injuryMap = { none: '', minor: '輕傷', severe: '重傷' };
+  var injuryText = injuryMap[gameState.injuryStatus] || '';
+  if (injuryText) {
+    dom.injuryTag.textContent = injuryText;
+    dom.injuryTag.className = 'injury-tag ' + gameState.injuryStatus;
+    dom.injuryTag.classList.remove('hidden');
+  } else {
+    dom.injuryTag.classList.add('hidden');
+  }
+
   dom.statHumanity.textContent = gameState.humanity;
   dom.statAwakening.textContent = gameState.awakeningLevel > 0 ? ('Lv.' + gameState.awakeningLevel + ' ' + (gameState.awakeningAbility || '')) : '未覺醒';
   dom.statWeather.textContent = gameState.weather;
@@ -494,6 +578,30 @@ function renderAll() {
     }
   }
   dom.statFaction.textContent = factionEntries.length ? factionEntries.join(' / ') : '無接觸';
+
+  renderInventory();
+}
+
+function renderInventory() {
+  dom.inventoryList.innerHTML = '';
+  if (gameState.inventory.length === 0) {
+    var emptyEl = document.createElement('div');
+    emptyEl.className = 'inventory-empty';
+    emptyEl.textContent = '背包空無一物';
+    dom.inventoryList.appendChild(emptyEl);
+  } else {
+    for (var i = 0; i < gameState.inventory.length; i++) {
+      var it = gameState.inventory[i];
+      var row = document.createElement('div');
+      row.className = 'inventory-item';
+      row.textContent = it.name + ' x' + it.quantity;
+      dom.inventoryList.appendChild(row);
+    }
+  }
+  var loadLevel = getInventoryLoadLevel();
+  dom.inventoryLoadTag.textContent = loadLevel;
+  dom.inventoryLoadTag.className = 'inventory-load-tag load-' + loadLevel;
+  dom.inventoryToggleBtn.querySelector('span').textContent = '🎒 背包（' + gameState.inventory.length + '）';
 }
 
 function appendGMText(text) {
@@ -553,10 +661,11 @@ function makeOptionClickHandler(opt) {
 }
 
 function applyOptionsDisplayMode() {
-  dom.optionsContainer.classList.toggle('mini-mode', optionsMiniMode);
-  dom.optionsCollapseToggle.classList.toggle('expanded', !optionsMiniMode);
-  var label = dom.optionsCollapseToggle.querySelector('span');
-  if (label) label.textContent = optionsMiniMode ? '行動選項（精簡）' : '行動選項';
+  dom.optionsContainer.classList.toggle('hidden', optionsMiniMode);
+  dom.freeInputToggle.classList.toggle('hidden', optionsMiniMode);
+  dom.freeInputRow.classList.add('hidden');
+  dom.optionsCollapseToggle.classList.toggle('hidden', optionsMiniMode);
+  dom.actionCollapsedBar.classList.toggle('hidden', !optionsMiniMode);
 }
 
 function escapeHtml(str) {
@@ -570,6 +679,16 @@ function showEventModal(icon, title, text) {
   dom.eventModalTitle.textContent = title;
   dom.eventModalText.textContent = text;
   dom.eventModal.classList.remove('hidden');
+}
+
+function showDeathScreen(text) {
+  dom.eventModal.classList.add('hidden');
+  dom.optionsContainer.innerHTML = '';
+  dom.optionsCollapseToggle.classList.add('hidden');
+  dom.freeInputToggle.classList.add('hidden');
+  dom.freeInputRow.classList.add('hidden');
+  dom.deathScreen.querySelector('.death-text').textContent = text;
+  dom.deathScreen.classList.remove('hidden');
 }
 
 function handleFreeInputSend() {
@@ -641,6 +760,9 @@ function rebuildNarrativeFromHistory() {
     gmEl.className = 'narrative-entry gm-text';
     gmEl.textContent = t.narrative;
     dom.narrativeContent.appendChild(gmEl);
+  }
+  if (gameState.isDead) {
+    dom.deathScreen.classList.remove('hidden');
   }
   scrollToBottom();
 }
