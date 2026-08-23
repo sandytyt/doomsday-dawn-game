@@ -940,3 +940,100 @@ button {
   background: var(--border-color);
   border-radius: 2px;
 }
+
+.toggle-row {
+  display: flex;
+  gap: 8px;
+}
+.toggle-row .collapse-toggle-btn {
+  flex: 1;
+}
+
+.npc-panel {
+  margin-top: 8px;
+}
+.npc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.npc-empty {
+  color: #888;
+  text-align: center;
+  padding: 16px;
+}
+.npc-card {
+  border: 1px solid #333;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.npc-card.npc-frozen {
+  opacity: 0.55;
+  filter: grayscale(0.6);
+}
+.npc-card-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #1e1e1e;
+  border: none;
+  color: #eee;
+  cursor: pointer;
+  text-align: left;
+}
+.npc-card-header .npc-name {
+  flex: 1;
+  font-weight: 600;
+}
+.npc-stage-tag {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: #444;
+}
+.npc-card-arrow {
+  transition: transform 0.2s;
+}
+.npc-card-header.expanded .npc-card-arrow {
+  transform: rotate(180deg);
+}
+.npc-card-body {
+  padding: 10px 12px;
+  background: #161616;
+}
+.npc-stats-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: #bbb;
+}
+.npc-background-title {
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 4px;
+}
+.npc-background-entry {
+  font-size: 13px;
+  margin: 4px 0;
+  color: #ccc;
+}
+.npc-background-day {
+  color: #777;
+  margin-right: 4px;
+}
+.npc-background-empty {
+  font-size: 13px;
+  color: #666;
+}
+.npc-milestones {
+  margin-top: 8px;
+  border-top: 1px solid #2a2a2a;
+  padding-top: 8px;
+}
+.panel-full-item-wide {
+  grid-column: 1 / -1;
+}
