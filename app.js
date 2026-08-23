@@ -1,294 +1,101 @@
-'use strict';
+/* ============================================
+   末日黎明：喪屍浩劫 — 個人化設定檔
+   此檔案存放非機密的遊戲參數設定
+   ============================================ */
 
-const STATE_KEY = 'doomsday_dawn_save_v1';
-const APIKEY_KEY = 'doomsday_dawn_apikey';
-const NOTION_KEY = 'doomsday_dawn_notion_config';
+const CONFIG = {
 
-let gameState = {
-  apiKey: '',
-  isTestMode: false,
-  testScriptIndex: 0,
-  time: { day: 1, hour: 6, minute: 0 },
-  location: '未知地點',
-  stamina: CONFIG.INITIAL_STAMINA,
-  maxStamina: CONFIG.INITIAL_STAMINA,
-  humanity: 100,
-  factionTrust: {},
-  awakeningLevel: 0,
-  awakeningAbility: null,
-  dangerLevel: 'safe',
-  weather: '晴',
-  recentTurns: [],
-  summary: '',
-  turnCount: 0,
-  lastOptions: [],
-  lastPlayerAction: '',
-  loreText: '',
-  charSetup: { name: '', background: '', notes: '' }
-};
+  // 使用的 Gemini 模型名稱
+  // 2026/08實測：gemini-2.5-flash-lite 免費層每日僅20次(已大幅調降)
+  // gemini-3.5-flash-lite / gemini-3.1-flash-lite 免費層每日500次，額度遠優於2.5系列，故改用此模型
+  MODEL_NAME: 'gemini-3.5-flash-lite',
 
-let isWaitingForAI = false;
-let statusExpanded = false;
-let optionsMiniMode = false;
+  // 開局初始體力/疲勇度數值上限
+  INITIAL_STAMINA: 100,
 
-const dom = {
-  setupScreen: document.getElementById('setup-screen'),
-  gameScreen: document.getElementById('game-screen'),
-  apiKeyInput: document.getElementById('api-key-input'),
-  startBtn: document.getElementById('start-game-btn'),
-  testModeBtn: document.getElementById('test-mode-btn'),
-  importSaveBtn: document.getElementById('import-save-btn'),
-  importSaveFile: document.getElementById('import-save-file'),
-  charSetupToggle: document.getElementById('char-setup-toggle'),
-  charSetupFields: document.getElementById('char-setup-fields'),
-  charNameInput: document.getElementById('char-name-input'),
-  charBackgroundInput: document.getElementById('char-background-input'),
-  charNotesInput: document.getElementById('char-notes-input'),
-  statusTime: document.getElementById('status-time'),
-  statusLocation: document.getElementById('status-location'),
-  statusExpandBtn: document.getElementById('status-expand-btn'),
-  staminaFill: document.getElementById('stamina-bar-fill'),
-  staminaValue: document.getElementById('stamina-value'),
-  statusDanger: document.getElementById('status-danger'),
-  menuToggleBtn: document.getElementById('menu-toggle-btn'),
-  statusPanelFull: document.getElementById('status-panel-full'),
-  statHumanity: document.getElementById('stat-humanity'),
-  statFaction: document.getElementById('stat-faction'),
-  statAwakening: document.getElementById('stat-awakening'),
-  statWeather: document.getElementById('stat-weather'),
-  narrativeLog: document.getElementById('narrative-log'),
-  narrativeContent: document.getElementById('narrative-content'),
-  typingIndicator: document.getElementById('typing-indicator'),
-  optionsCollapseToggle: document.getElementById('options-collapse-toggle'),
-  optionsContainer: document.getElementById('options-container'),
-  freeInputRow: document.getElementById('free-input-row'),
-  freeInputText: document.getElementById('free-input-text'),
-  freeInputSend: document.getElementById('free-input-send'),
-  freeInputCancel: document.getElementById('free-input-cancel'),
-  freeInputToggle: document.getElementById('free-input-toggle'),
-  sideMenu: document.getElementById('side-menu'),
-  sideMenuBackdrop: document.getElementById('side-menu-backdrop'),
-  menuExportBtn: document.getElementById('menu-export-btn'),
-  menuImportBtn: document.getElementById('menu-import-btn'),
-  menuRestartBtn: document.getElementById('menu-restart-btn'),
-  menuApikeyBtn: document.getElementById('menu-apikey-btn'),
-  menuCloseBtn: document.getElementById('menu-close-btn'),
-  notionSetupToggle: document.getElementById('notion-setup-toggle'),
-  notionSetupFields: document.getElementById('notion-setup-fields'),
-  notionProxyInput: document.getElementById('notion-proxy-input'),
-  notionDbInput: document.getElementById('notion-db-input'),
-  notionSaveBtn: document.getElementById('notion-save-btn'),
-  eventModal: document.getElementById('event-modal'),
-  eventModalIcon: document.getElementById('event-modal-icon'),
-  eventModalTitle: document.getElementById('event-modal-title'),
-  eventModalText: document.getElementById('event-modal-text'),
-  eventModalClose: document.getElementById('event-modal-close'),
-  loadingOverlay: document.getElementById('loading-overlay')
-};
+  // 體力低於此百分比時，畫面觸發警示效果（對應 style.css 的 .low 樣式）
+  STAMINA_LOW_THRESHOLD: 45,
 
-const SYSTEM_INSTRUCTION = [
-  '你是一位嚴謹、壓抑、寫實的末日生存TRPG game master，',
-  '負責運行《末日黎明：喪屍浩劫》。你必須嚴格遵守以下規則：',
-  '',
-  '【核心調性】',
-  '全程保持壓抑、寫實、心理驚悚的敘事氛圍，禁止任何幽默、吐槽、輕鬆插科打諢的語氣。',
-  '每一個描寫都應強調生存壓力、資源稀缺、人性掙扎與環境威脅。',
-  '',
-  '【時間與體力機制】',
-  '玩家每次行動都會推進遊戲時間(依行動性質推進5分鐘至數小時不等)。',
-  '玩家與NPC都需要休息，長時間未休息會導致體力持續下降。',
-  '戰鬥、長途移動、高壓力事件會消耗較多體力；安全區內的休息與睡眠會恢復體力。',
-  '體力歸零時角色會陷入虛脫狀態，必須強制加入劇情轉折讓角色被迫休息或被救援。',
-  '',
-  '【NPC自主行為】',
-  'NPC不是靜止的任務發布器，應有自己的作息、恐懼、疲勞與立場，',
-  '會主動採取符合其動機的行動，不會永遠等待玩家。',
-  '',
-  '【異能覺醒機制】',
-  '不要在開局就給予玩家異能。只有當玩家經歷極端情緒(恐懼、憤怒、絕望、犧牲)',
-  '或做出關鍵抉擇時，你可以自行判斷是否觸發異能覺醒或能力進化。',
-  '若判定觸發覺醒，請在JSON回應的 special_event 欄位標記 "awakening"。',
-  '',
-  '【角色初始設定】',
-  '若玩家提供了角色姓名、背景或自訂細節，請自然地將這些元素融入開局敘事，',
-  '不要生硬地照搬玩家輸入的文字，而是把它們轉化為符合末日情境的角色描寫。',
-  '若玩家未提供，則由你自行生成一個符合情境的角色開場。',
-  '',
-  '【輸出字數規範】',
-  '一般對話或安全區域的細節描寫：150～200字。',
-  '戰鬥、探索、重大突發事件、據點防守：350～450字。',
-  '',
-  '【防重複協議】',
-  '禁止重複使用相同的場景開場句式或選項措辭。',
-  '每輪的行動選項必須基於當前具體情境動態生成，不可套用固定模板。',
-  '禁止在未有新資訊的情況下讓NPC重複相同台詞。',
-  '',
-  '【輸出格式強制規範】',
-  '你必須只回傳一個合法的JSON物件，不可包含任何JSON以外的文字、註解或Markdown符號。',
-  'JSON結構如下：',
-  '{',
-  '  "narrative": "本回合劇情描寫文字",',
-  '  "status_update": {',
-  '    "time_advance_minutes": 數字,',
-  '    "stamina_change": 數字(可負數),',
-  '    "current_location": "地點名稱",',
-  '    "danger_level": "safe"或"warning"或"critical",',
-  '    "weather": "天氣描述",',
-  '    "humanity_change": 數字(可負數，可省略則視為0),',
-  '    "faction_trust_update": {"陣營名稱": 數字變化} (可省略),',
-  '    "special_event": "none"或"awakening"或其他重要事件代號,',
-  '    "special_event_text": "若special_event非none，簡短描述此事件"(可省略)',
-  '  },',
-  '  "options": [',
-  '    {"id": "A", "label": "具體行動描述", "risk_hint": "簡短風險或消耗提示"},',
-  '    {"id": "B", "label": "具體行動描述", "risk_hint": "簡短風險或消耗提示"}',
-  '  ]',
-  '}',
-  'options陣列必須包含2到4個選項。'
-].join('\\n');
+  // 體力低於此百分比時，畫面觸發危急閃爍效果（對應 style.css 的 .critical 樣式）
+  STAMINA_CRITICAL_THRESHOLD: 20,
 
-function init() {
-  bindEvents();
-  loadLoreText();
-  loadNotionConfig();
-  setupTestModeEntry();
+  // 上下文保留的最近完整回合數量（超過會自動捨棄最舊的一筆，僅保留摘要）
+  MAX_RECENT_TURNS: 5,
 
-  const savedKey = localStorage.getItem(APIKEY_KEY);
-  const savedStateRaw = localStorage.getItem(STATE_KEY);
+  /* ------------------------------------------
+     測試模式設定
+     啟用後，開局畫面會出現「離線測試模式」入口，
+     不會呼叫真正的Gemini API，也不消耗任何配額，
+     改用下方 TEST_SCRIPT 預設好的固定劇本，
+     純粹用來驗證UI排版、按鈕互動、狀態欄更新等畫面邏輯。
+     正式上線前，建議將 TEST_MODE_ENABLED 設為 false。
+     ------------------------------------------ */
 
-  if (savedStateRaw) {
-    try {
-      const savedState = JSON.parse(savedStateRaw);
-      if (savedState.isTestMode || savedKey) {
-        gameState.apiKey = savedKey || '';
-        restoreState(savedState);
-        showGameScreen();
-        rebuildNarrativeFromHistory();
-        renderOptions(gameState.lastOptions);
-        renderAll();
-      }
-    } catch (e) {
-      console.error('存檔讀取失敗，將顯示開局畫面', e);
+  TEST_MODE_ENABLED: true,
+
+  // 測試模式的預設劇本，依序播放，格式與真正的AI回應JSON完全相同
+  TEST_SCRIPT: [
+    {
+      narrative: '雨水順著破碎的招牌滴落，你躲在便利店的貨架後，聽著外頭拖行的腳步聲逐漸遠去。手電筒的電量只剩一半，貨架上散落著幾包過期的餅乾。這是你進入這座死城的第一個夜晚，四周只剩下風聲與偶爾傳來的、不屬於人類的低吼。',
+      status_update: {
+        time_advance_minutes: 30,
+        stamina_change: -5,
+        current_location: '廢棄便利店',
+        danger_level: 'warning',
+        weather: '暴雨',
+        special_event: 'none'
+      },
+      options: [
+        { id: 'A', label: '安靜地搜索貨架尋找補給品', risk_hint: '消耗少量體力，可能發現物資' },
+        { id: 'B', label: '躲到收銀台後方等待天亮', risk_hint: '恢復少量體力，但會浪費時間' },
+        { id: 'C', label: '從側門悄悄離開，尋找更安全的地方', risk_hint: '有遇敵風險' }
+      ]
+    },
+    {
+      narrative: '你的動作驚動了角落堆疊的鐵罐，刺耳的聲響在寂靜的店內迴盪。腳步聲瞬間停止，接著急速逼近。心跳聲蓋過了雨聲，你必須立刻做出反應——這是你在這座城市第一次真正感受到死亡的距離有多近。',
+      status_update: {
+        time_advance_minutes: 5,
+        stamina_change: -10,
+        current_location: '廢棄便利店',
+        danger_level: 'critical',
+        weather: '暴雨',
+        humanity_change: 0,
+        special_event: 'none'
+      },
+      options: [
+        { id: 'A', label: '抓起手邊的鐵棍準備迎戰', risk_hint: '高風險，消耗大量體力' },
+        { id: 'B', label: '衝向側門強行突破', risk_hint: '中風險，可能受傷但能脫離' },
+        { id: 'C', label: '屏息躲進貨架夾層', risk_hint: '低風險，但可能被發現' }
+      ]
+    },
+    {
+      narrative: '在生死交關的瞬間，你的視野突然變得異常清晰，四肢傳來一股陌生卻熟悉的力量感，彷彿身體裡有什麼東西終於甦醒。那個畫面只持續了不到一秒，但已經足夠讓你避開致命的攻擊。你喘著氣，看著倒地的威脅，明白自己已經不再是原來的自己。',
+      status_update: {
+        time_advance_minutes: 10,
+        stamina_change: -15,
+        current_location: '廢棄便利店外街道',
+        danger_level: 'warning',
+        weather: '雨勢漸小',
+        humanity_change: -2,
+        special_event: 'awakening',
+        special_event_text: '極限恐懼觸發了你體內潛藏的異變因子，某種未知的感知能力正在覺醒。'
+      },
+      options: [
+        { id: 'A', label: '檢視自己身體的異狀', risk_hint: '' },
+        { id: 'B', label: '趁機遠離現場，尋找棲身之所', risk_hint: '消耗剩餘體力' },
+        { id: 'C', label: '(測試結束，此為離線腳本最後一輪)', risk_hint: '將重複播放第一輪' }
+      ]
     }
-  }
-}
+  ]
 
-function setupTestModeEntry() {
-  if (!dom.testModeBtn) return;
-  if (CONFIG.TEST_MODE_ENABLED) {
-    dom.testModeBtn.classList.remove('hidden');
-  } else {
-    dom.testModeBtn.classList.add('hidden');
-  }
-}
+  /* ------------------------------------------
+     以下為選填：Notion 雲端同步設定
+     若暫時不需要跨裝置同步存檔，保持留空即可，
+     遊戲會自動僅使用瀏覽器本機儲存（localStorage）。
+     ------------------------------------------ */
+  ,
+  NOTION_ENABLED: false,
+  NOTION_PROXY_URL: '',
+  NOTION_DATABASE_ID: ''
 
-function loadLoreText() {
-  fetch('knowledge/virus_lore.txt')
-    .then(function (res) { return res.text(); })
-    .then(function (text) { gameState.loreText = text; })
-    .catch(function (e) {
-      console.warn('無法載入世界觀密檔:', e);
-      gameState.loreText = '';
-    });
-}
-
-function loadNotionConfig() {
-  const saved = localStorage.getItem(NOTION_KEY);
-  if (saved) {
-    try {
-      const cfg = JSON.parse(saved);
-      if (dom.notionProxyInput) dom.notionProxyInput.value = cfg.proxyUrl || '';
-      if (dom.notionDbInput) dom.notionDbInput.value = cfg.dbId || '';
-    } catch (e) {
-      /* 忽略 */
-    }
-  }
-}
-
-function bindEvents() {
-  dom.startBtn.addEventListener('click', handleStartGame);
-  if (dom.testModeBtn) {
-    dom.testModeBtn.addEventListener('click', handleStartTestMode);
-  }
-  dom.importSaveBtn.addEventListener('click', function () { dom.importSaveFile.click(); });
-  dom.importSaveFile.addEventListener('change', handleImportFile);
-
-  dom.charSetupToggle.addEventListener('click', function () {
-    toggleCollapse(dom.charSetupToggle, dom.charSetupFields);
-  });
-
-  dom.statusExpandBtn.addEventListener('click', function () {
-    statusExpanded = !statusExpanded;
-    dom.statusPanelFull.classList.toggle('hidden', !statusExpanded);
-    dom.statusExpandBtn.classList.toggle('expanded', statusExpanded);
-  });
-
-  dom.menuToggleBtn.addEventListener('click', function (e) {
-    e.stopPropagation();
-    toggleSideMenu(true);
-  });
-  dom.sideMenuBackdrop.addEventListener('click', function () { toggleSideMenu(false); });
-  dom.menuCloseBtn.addEventListener('click', function () { toggleSideMenu(false); });
-  dom.menuExportBtn.addEventListener('click', handleExportSave);
-  dom.menuImportBtn.addEventListener('click', function () {
-    toggleSideMenu(false);
-    setTimeout(function () { dom.importSaveFile.click(); }, 200);
-  });
-  dom.menuRestartBtn.addEventListener('click', handleRestart);
-  dom.menuApikeyBtn.addEventListener('click', handleChangeApiKey);
-
-  dom.notionSetupToggle.addEventListener('click', function () {
-    toggleCollapse(dom.notionSetupToggle, dom.notionSetupFields);
-  });
-  dom.notionSaveBtn.addEventListener('click', handleSaveNotionConfig);
-
-  dom.optionsCollapseToggle.addEventListener('click', function () {
-    optionsMiniMode = !optionsMiniMode;
-    applyOptionsDisplayMode();
-  });
-
-  dom.freeInputToggle.addEventListener('click', function () {
-    dom.freeInputRow.classList.remove('hidden');
-    dom.freeInputToggle.classList.add('hidden');
-    dom.freeInputText.focus();
-  });
-  dom.freeInputCancel.addEventListener('click', function () {
-    dom.freeInputRow.classList.add('hidden');
-    dom.freeInputToggle.classList.remove('hidden');
-    dom.freeInputText.value = '';
-  });
-  dom.freeInputSend.addEventListener('click', handleFreeInputSend);
-  dom.freeInputText.addEventListener('keypress', function (e) {
-    if (e.key === 'Enter') handleFreeInputSend();
-  });
-
-  dom.eventModalClose.addEventListener('click', function () {
-    dom.eventModal.classList.add('hidden');
-  });
-}
-
-function toggleCollapse(btn, body) {
-  const isHidden = body.classList.contains('hidden');
-  if (isHidden) {
-    body.classList.remove('hidden');
-    btn.classList.add('expanded');
-  } else {
-    body.classList.add('hidden');
-    btn.classList.remove('expanded');
-  }
-}
-
-function handleStartGame() {
-  const key = dom.apiKeyInput.value.trim();
-  if (!key) {
-    alert('請輸入你的 Google Gemini API 金鑰');
-    return;
-  }
-  gameState.apiKey = key;
-  gameState.isTestMode = false;
-  localStorage.setItem(APIKEY_KEY, key);
-
-  gameState.charSetup = {
-    name: dom.charNameInput.value.trim(),
-    background: dom.charBackgroundInput.value.trim(),
-    notes: dom.charNotesInp
+};
