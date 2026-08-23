@@ -23,9 +23,14 @@
       <p class="setup-subtitle">喪屍浩劫 · 生存協議</p>
 
       <div class="setup-field">
-        <label for="api-key-input">Google Gemini API 金鑰</label>
-        <input type="password" id="api-key-input" placeholder="貼上你的 API 金鑰" autocomplete="off">
-        <p class="setup-hint">金鑰僅儲存於本機瀏覽器，不會上傳到任何伺服器。</p>
+        <label for="provider-select">AI 服務供應商</label>
+        <select id="provider-select" class="provider-select"></select>
+      </div>
+
+      <div class="setup-field">
+        <label for="api-key-input">API 金鑰</label>
+        <input type="password" id="api-key-input" placeholder="貼上對應供應商的 API 金鑰" autocomplete="off">
+        <p class="setup-hint">金鑰依供應商分別儲存於本機瀏覽器，不會上傳到任何伺服器。</p>
       </div>
 
       <button id="char-setup-toggle" class="collapse-toggle-btn" type="button">
@@ -159,7 +164,8 @@
           <input type="text" id="notion-db-input" placeholder="貼上資料庫ID">
         </div>
         <button id="notion-save-btn" class="btn-secondary" type="button">儲存 Notion 設定</button>
-        <p class="setup-hint">尚未部署轉發層前，留空即可，遊戲僅使用本機存檔。</p>
+        <button id="notion-sync-now-btn" class="btn-secondary" type="button">立即測試同步</button>
+        <p class="setup-hint">尚未部署轉發層前，留空即可，遊戲僅使用本機存檔。啟用後每回合自動同步一次。</p>
       </div>
 
       <div class="side-menu-footer">
