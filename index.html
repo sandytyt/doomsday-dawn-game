@@ -39,16 +39,25 @@
       </button>
       <div id="char-setup-fields" class="collapse-body hidden">
         <div class="setup-field">
-          <label for="char-name-input">角色姓名 / 稱呼</label>
+          <label for="char-gender-input">性別</label>
+          <select id="char-gender-input">
+            <option value="">不指定</option>
+            <option value="男性">男性</option>
+            <option value="女性">女性</option>
+            <option value="其他">其他</option>
+          </select>
+        </div>
+        <div class="setup-field">
+          <label for="char-location-input">末日爆發時所在位置</label>
+          <input type="text" id="char-location-input" placeholder="例如：大學宿舍、醫院、郊區獨立屋" maxlength="30">
+        </div>
+        <div class="setup-field">
+          <label for="char-occupation-input">末世前職業</label>
+          <input type="text" id="char-occupation-input" placeholder="例如：軍警、醫護、學生、工程師" maxlength="30">
+        </div>
+        <div class="setup-field">
+          <label for="char-name-input">角色姓名（選填）</label>
           <input type="text" id="char-name-input" placeholder="留空則由AI自動生成" maxlength="20">
-        </div>
-        <div class="setup-field">
-          <label for="char-background-input">背景設定</label>
-          <input type="text" id="char-background-input" placeholder="留空則由AI自動生成" maxlength="60">
-        </div>
-        <div class="setup-field">
-          <label for="char-notes-input">其他自訂細節</label>
-          <input type="text" id="char-notes-input" placeholder="留空則跳過" maxlength="100">
         </div>
       </div>
       <button id="start-game-btn" class="btn-primary" type="button">進入末日</button>
