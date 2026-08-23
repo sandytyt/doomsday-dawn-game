@@ -6,6 +6,7 @@ var APIKEY_KEY_PREFIX = 'doomsday_dawn_apikey_';
 var PROVIDER_KEY = 'doomsday_dawn_provider';
 var NOTION_KEY = 'doomsday_dawn_notion_config';
 var NOTION_SYNC_INTERVAL = 10;
+var NOTION_CHUNK_SIZE = 2000;
 
 var ABILITY_LEVEL_THRESHOLDS = [0, 50, 120, 210, 320, 450, 600, 770, 960, 1170];
 
@@ -39,7 +40,7 @@ var gameState = {
   lastPlayerAction: '',
   rulesText: '',
   loreText: '',
-  charSetup: { name: '', background: '', notes: '' }
+  charSetup: { name: '', gender: '', location: '', occupation: '' }
 };
 
 var isWaitingForAI = false;
@@ -81,6 +82,7 @@ function cacheDom() {
   dom.statWeather = document.getElementById('stat-weather');
   dom.statHunger = document.getElementById('stat-hunger');
   dom.statCompanions = document.getElementById('stat-companions');
+  dom.statRelationships = document.getElementById('stat-relationships');
   dom.narrativeLog = document.getElementById('narrative-log');
   dom.narrativeContent = document.getElementById('narrative-content');
   dom.typingIndicator = document.getElementById('typing-indicator');
@@ -137,10 +139,12 @@ SYSTEM_LINES.push('NPC與喪屍的覺醒或進化狀態於背景設定階段獨�
 SYSTEM_LINES.push('若玩家有隨行NPC加入隊伍，須依規則文檔管理隨行人數上限、資源分攤與隨行NPC死亡判定。');
 SYSTEM_LINES.push('每回合須依規則文檔管理玩家背包物品增減、負重狀態、武器耐久或彈藥、傷勢等級、死亡判定，以及晶核掉落與能力熟練度變化。');
 SYSTEM_LINES.push('禁止重複使用相同場景開場句式或選項措辭，選項必須基於當前具體情境動態生成。');
-SYSTEM_LINES.push('提示詞中可能包含「長期世界記憶」段落，記載已知安全區、關鍵NPC、勢力歷史與世界重大事件，你必須將其視為已確立的事實持續納入敘事考量，不可忽略、不可與其矛盾。');
+SYSTEM_LINES.push('提示詞中可能包含「長期世界記憶」段落，記載已知安全區、關鍵NPC、勢力歷史、世界重大事件、玩家志向發展與人物關係記錄，你必須將其視為已確立的事實持續納入敘事考量，不可忽略、不可與其矛盾。');
 SYSTEM_LINES.push('world_memory_update欄位僅在本回合敘事確實發生下列四類事件之一時才填寫對應子欄位，其餘情況全部留空物件：new_safe_zone（玩家新建立安全區，含name、location、population、facilities陣列）、safe_zone_update（既有安全區的人口或設施異動，含name、population、facilities_add陣列、facilities_remove陣列、faction_relation_note）、npc_major_event（NPC加入、死亡、覺醒、能力習得或關係質變，含name、ability、note、status僅可為alive或dead或missing或unknown）、faction_shift（勢力關係質變如轉為敵對或同盟，非小幅信任度波動，含faction、eventText）、world_landmark（地圖級重大變化如城市淪陷路線打通，含eventText）。');
 SYSTEM_LINES.push('若使用者輸入中出現「請檢查背景演化」的指示，你必須額外填寫background_evolution欄位，基於提示詞中已提供的長期世界記憶段落，獨立推演已登記的NPC、安全區、勢力在主角不在場期間可能發生的變化，結構為npc_updates陣列每項含name與note與可選status與可選ability、safe_zone_updates陣列每項含name與note、faction_updates陣列每項含faction與eventText；若沒有明確要求則此欄位留空物件。');
-SYSTEM_LINES.push('只回傳合法JSON物件，不包含JSON以外文字或Markdown符號。JSON結構：...；options陣列包含2到4個元素，每個元素含id、label、risk_hint，其中id欄位只能是大寫字母A、B、C、D，依陣列順序遞增，不可使用其他任何格式如opt_1或數字。');
+SYSTEM_LINES.push('玩家的長期發展路線由四條志向線構成，彼此不互斥，可同時推進：庇護建設者shelterBuilder專注安全區規模、設施、人口成長；治療探索者cureSeeker專注病毒研究與解藥或疫苗相關進展；暗影獵人shadowHunter專注透過武力與威嚇建立跨陣營恐懼名聲；勢力締造者factionLeader專注在既有陣營內取得實質決策影響力或創建新勢力。每回合若敘事內容明確符合某條志向線的推進條件，於aspiration_update欄位回報對應志向鍵名的物件，內含progress_delta（一個負20至正20之間的整數）與milestone_text（僅達成關鍵性轉折時填寫，否則留空字串）。一回合可同時推進多條志向線，也可以完全不推進任何志向線，不可為了填欄位而勉強編造進度，其餘志向留空物件。');
+SYSTEM_LINES.push('每個具名NPC都有三個獨立關係軸：trust信任範圍0到100代表對方是否相信你並願意託付重要事務、closeness親密範圍0到100代表情感靠近程度決定對話深度與私密話題開放與否、romantic_tension浪漫張力範圍0到100僅特定NPC適用代表關係往愛情方向發展的張力與前兩軸獨立運作不必然同步成長。每個NPC關係處於五個敘事階段之一：incipient初萌剛認識關係值變動應緩慢、developing漸深開始建立信任與默契、critical_trial風險考驗劇情須安排一次高風險抉擇考驗雙方關係不可透過玩家連續示好跳過此階段、defining_choice關鍵抉擇雙方關係將往結合決裂或維持現狀之一定型此為不可逆敘事節點、resolved_bond穩定結合或resolved_apart疏離懸置為關係定型後的穩定狀態。階段推進有嚴格的時間限制，提示詞中的長期世界記憶段落會標明每個NPC是否已在目前階段停留滿5個遊戲內天數，唯有標明「可推進下一階段」時才可以在stage_transition欄位填入下一階段名稱，若標明「尚未滿5天不可推進階段」則絕對不可填寫stage_transition，即使劇情發展看似合適也必須等待。關係推進不應是玩家單方面刷好感度就能達成，必須透過劇情中的具體事件如共同經歷危險、對方主動求助或考驗、意見衝突後的化解或決裂才能真正變動關係軸數值與階段，日常閒聊互動只應造成極小幅度變動即正負1至3點。若本回合涉及具名NPC的關係發展，於relationship_update欄位回報npc_name、trust_delta、closeness_delta、romantic_tension_delta（不涉及浪漫時留空或0）、stage_transition（僅符合上述天數條件時才填寫，否則留空字串）、note簡述本次關係變化的具體事由；若本回合無任何NPC關係變化，此物件整體留空。');
+SYSTEM_LINES.push('只回傳合法JSON物件，不包含JSON以外文字或Markdown符號。JSON結構：narrative為敘事文字字串；status_update物件包含time_advance_minutes、stamina_change、hunger_change、current_location、danger_level僅可為safe或warning或critical、weather、humanity_change、resonance_change、ability_exp_change、faction_trust_update、inventory_changes陣列每項包含name與quantity與action僅可為add或remove、injury_status僅可為none或minor或severe、companion_changes陣列每項包含name與action僅可為join或leave或die、special_event僅可為none或awakening或multi_awakening或death或rescued或level_up或其他事件代號、special_event_text；world_memory_update物件依上述規則；background_evolution物件依上述規則；aspiration_update物件依上述規則；relationship_update物件依上述規則；options陣列包含2到4個元素，每個元素含id、label、risk_hint，其中id欄位只能是大寫字母A、B、C、D，依陣列順序遞增，不可使用其他任何格式如opt_1或數字。');
 SYSTEM_LINES.push('一般對話或安全區域描寫150至200字，戰鬥探索重大事件描寫350至450字。');
 
 var SYSTEM_INSTRUCTION = SYSTEM_LINES.join(' ');
@@ -496,7 +500,7 @@ function buildContextPayload(playerAction) {
     recentParts.push('第' + t.turn + '回合劇情：' + t.narrative + ' 玩家行動：' + t.action);
   }
   var recentContext = recentParts.join(' ');
-  var worldMemoryContext = WorldMemory.buildWorldMemoryPrompt(gameState.worldMemory);
+  var worldMemoryContext = WorldMemory.buildWorldMemoryPrompt(gameState.worldMemory, gameState.time.day);
 
   return {
     userText: userText,
@@ -612,6 +616,12 @@ function handleAIResponse(response) {
   if (response.background_evolution) {
     gameState.worldMemory = WorldMemory.applyBackgroundEvolution(gameState.worldMemory, response.background_evolution, gameState.turnCount);
   }
+  if (response.aspiration_update) {
+    gameState.worldMemory = WorldMemory.applyAspirationUpdate(gameState.worldMemory, response.aspiration_update, gameState.time.day);
+  }
+  if (response.relationship_update) {
+    gameState.worldMemory = WorldMemory.applyRelationshipUpdate(gameState.worldMemory, response.relationship_update, gameState.time.day);
+  }
 
   if (status_update.special_event === 'death') {
     gameState.isDead = true;
@@ -643,30 +653,46 @@ function maybeSyncToNotion() {
   }
 }
 
+function chunkText(text, chunkSize) {
+  var chunks = [];
+  for (var i = 0; i < text.length; i += chunkSize) {
+    chunks.push({ text: { content: text.slice(i, i + chunkSize) } });
+  }
+  if (chunks.length === 0) chunks.push({ text: { content: '' } });
+  return chunks;
+}
+
+function safeRichText(str, maxLen) {
+  var s = str || '';
+  if (s.length > maxLen) s = s.slice(0, maxLen) + '…';
+  return [{ text: { content: s } }];
+}
+
 function buildNotionSyncBody() {
   var injuryOption = gameState.injuryStatus || 'none';
   var lastNarrative = gameState.recentTurns.length ? gameState.recentTurns[gameState.recentTurns.length - 1].narrative : '';
   var briefSummary = lastNarrative.length > 450 ? lastNarrative.slice(0, 450) + '…' : lastNarrative;
+  var fullStateJson = JSON.stringify(gameState);
 
   return {
     parent: { database_id: CONFIG.NOTION_DATABASE_ID },
     properties: {
       '存檔名稱': { title: [{ text: { content: '同步-第' + gameState.time.day + '天-' + new Date().toLocaleTimeString() } }] },
-      '角色姓名': { rich_text: [{ text: { content: gameState.charSetup.name || '未命名倖存者' } }] },
+      '角色姓名': { rich_text: safeRichText(gameState.charSetup.name || '未命名倖存者', 1900) },
       '遊戲天數': { number: gameState.time.day },
       '體力': { number: gameState.stamina },
-      '當前地點': { rich_text: [{ text: { content: gameState.location } }] },
+      '當前地點': { rich_text: safeRichText(gameState.location, 1900) },
       '傷勢': { select: { name: injuryOption } },
       '覺醒等級': { number: gameState.awakeningLevel },
       '危險等級': { select: { name: gameState.dangerLevel } },
       '人性值': { number: gameState.humanity },
       '飢餓值': { number: gameState.hunger },
       '共鳴值': { number: gameState.resonanceValue },
-      '背包物品': { rich_text: [{ text: { content: gameState.inventory.map(function (it) { return it.name + 'x' + it.quantity; }).join('、') || '無' } }] },
-      '隨行隊員': { rich_text: [{ text: { content: gameState.companions.join('、') || '無' } }] },
-      '前文提要': { rich_text: [{ text: { content: briefSummary || '無' } }] },
+      '背包物品': { rich_text: safeRichText(gameState.inventory.map(function (it) { return it.name + 'x' + it.quantity; }).join('、') || '無', 1900) },
+      '隨行隊員': { rich_text: safeRichText(gameState.companions.join('、') || '無', 1900) },
+      '前文提要': { rich_text: safeRichText(briefSummary || '無', 1900) },
       '更新時間': { date: { start: new Date().toISOString() } },
-      '存檔JSON': { rich_text: [{ text: { content: JSON.stringify(gameState).slice(0, 1900) } }] }
+      '存檔JSON': { rich_text: chunkText(fullStateJson, NOTION_CHUNK_SIZE) }
     }
   };
 }
@@ -815,7 +841,8 @@ function renderNotionSaveList() {
       var titleText = (titleArr && titleArr[0] && titleArr[0].plain_text) || '未命名同步記錄';
       var dateText = (props['更新時間'] && props['更新時間'].date && props['更新時間'].date.start) || '';
       var dayNum = (props['遊戲天數'] && props['遊戲天數'].number) || '?';
-      var locText = (props['當前地點'] && props['當前地點'].rich_text && props['當前地點'].rich_text[0] && props['當前地點'].rich_text[0].plain_text) || '';
+      var locArr = props['當前地點'] && props['當前地點'].rich_text;
+      var locText = (locArr && locArr.map(function (t) { return t.plain_text; }).join('')) || '';
 
       var row = document.createElement('div');
       row.className = 'named-save-row';
@@ -853,7 +880,7 @@ function handleLoadNotionSave(idx) {
   }
   try {
     var parsedState = JSON.parse(jsonText);
-    if (!confirm('讀取這筆Notion存檔將覆蓋目前進度，確定繼續嗎？（此存檔JSON因Notion欄位長度限制可能被截斷，若讀取失敗請改用完整匯出檔案）')) return;
+    if (!confirm('讀取這筆Notion存檔將覆蓋目前進度，確定繼續嗎？')) return;
     restoreState(parsedState);
     var key = localStorage.getItem(APIKEY_KEY_PREFIX + gameState.provider);
     if (gameState.isTestMode || key) {
@@ -868,7 +895,7 @@ function handleLoadNotionSave(idx) {
       alert('請先在開局畫面輸入 API 金鑰');
     }
   } catch (e) {
-    alert('這筆Notion存檔JSON內容不完整或格式錯誤，可能因欄位長度限制被截斷，無法讀取。建議改用「匯出/匯入存檔檔案」功能作為完整備份。');
+    alert('這筆Notion存檔JSON內容無法解析，可能已損毀。建議改用「匯出/匯入存檔檔案」功能作為完整備份。');
   }
 }
 
@@ -1020,7 +1047,27 @@ function renderAll() {
   }
   dom.statFaction.textContent = factionEntries.length ? factionEntries.join(' / ') : '無接觸';
 
+  renderRelationships();
   renderInventory();
+}
+
+function renderRelationships() {
+  if (!dom.statRelationships) return;
+  var worldMemory = WorldMemory.ensureShape(gameState.worldMemory);
+  var stageLabels = {
+    incipient: '初萌', developing: '漸深', critical_trial: '風險考驗',
+    defining_choice: '關鍵抉擇', resolved_bond: '穩定結合', resolved_apart: '疏離懸置'
+  };
+  var names = Object.keys(worldMemory.relationships);
+  if (names.length === 0) {
+    dom.statRelationships.textContent = '尚無深入接觸的人物';
+    return;
+  }
+  var texts = names.map(function (name) {
+    var rel = worldMemory.relationships[name];
+    return name + '（' + (stageLabels[rel.stage] || rel.stage) + '）';
+  });
+  dom.statRelationships.textContent = texts.join('、');
 }
 
 function renderInventory() {
@@ -1292,6 +1339,14 @@ function saveStateToLocal() {
 function restoreState(saved) {
   gameState = Object.assign({}, gameState, saved);
   gameState.worldMemory = WorldMemory.ensureShape(gameState.worldMemory);
+  if (!gameState.charSetup || gameState.charSetup.background !== undefined) {
+    gameState.charSetup = {
+      name: (saved.charSetup && saved.charSetup.name) || '',
+      gender: (saved.charSetup && saved.charSetup.gender) || '',
+      location: (saved.charSetup && saved.charSetup.location) || '',
+      occupation: (saved.charSetup && saved.charSetup.occupation) || ''
+    };
+  }
 }
 
 document.addEventListener('DOMContentLoaded', init);
