@@ -77,6 +77,7 @@
           </div>
           <span id="stamina-value" class="stamina-value">100</span>
         </div>
+        <span id="injury-tag" class="injury-tag hidden">輕傷</span>
         <span id="status-danger" class="danger-tag safe">安全</span>
       </div>
     </header>
@@ -91,6 +92,18 @@
       </div>
     </div>
 
+    <button id="inventory-toggle-btn" class="collapse-toggle-btn inventory-toggle" type="button">
+      <span>🎒 背包（0）</span>
+      <span class="collapse-arrow">▾</span>
+    </button>
+    <div id="inventory-panel" class="inventory-panel hidden">
+      <div class="inventory-header">
+        <span>負重狀態：</span>
+        <span id="inventory-load-tag" class="inventory-load-tag load-輕裝">輕裝</span>
+      </div>
+      <div id="inventory-list" class="inventory-list"></div>
+    </div>
+
     <main id="narrative-log">
       <div id="narrative-content"></div>
       <div id="typing-indicator" class="typing-indicator hidden">
@@ -99,6 +112,8 @@
     </main>
 
     <footer id="action-panel">
+      <button id="action-collapsed-bar" class="action-collapsed-bar hidden" type="button">▾ 展開行動選項</button>
+
       <button id="options-collapse-toggle" class="collapse-toggle-btn hidden" type="button">
         <span>行動選項</span>
         <span class="collapse-arrow">▾</span>
@@ -166,6 +181,15 @@
       <h2 id="event-modal-title">異能覺醒</h2>
       <p id="event-modal-text"></p>
       <button id="event-modal-close" class="btn-primary" type="button">繼續</button>
+    </div>
+  </div>
+
+  <div id="death-screen" class="death-screen hidden">
+    <div class="death-screen-content">
+      <div class="death-icon">☠</div>
+      <h2>末日終章</h2>
+      <p class="death-text"></p>
+      <button id="death-restart-btn" class="btn-primary" type="button" onclick="localStorage.removeItem('doomsday_dawn_save_v1'); location.reload();">重新開始</button>
     </div>
   </div>
 
