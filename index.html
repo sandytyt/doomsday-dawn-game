@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#1a1a1a">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="末日黎明">
@@ -16,7 +17,6 @@
 
 <div id="app">
 
-  <!-- ============ 開局金鑰設定畫面 ============ -->
   <div id="setup-screen" class="screen">
     <div class="setup-box">
       <h1 class="setup-title">末日黎明</h1>
@@ -28,7 +28,6 @@
         <p class="setup-hint">金鑰僅儲存於本機瀏覽器，不會上傳到任何伺服器。</p>
       </div>
 
-      <!-- 角色初始設定（選填，可摺疊） -->
       <button id="char-setup-toggle" class="collapse-toggle-btn" type="button">
         <span>👤 角色初始設定（選填）</span>
         <span class="collapse-arrow">▾</span>
@@ -40,11 +39,11 @@
         </div>
         <div class="setup-field">
           <label for="char-background-input">背景設定</label>
-          <input type="text" id="char-background-input" placeholder="例如：前護士、退役軍人、普通學生…" maxlength="60">
+          <input type="text" id="char-background-input" placeholder="留空則由AI自動生成" maxlength="60">
         </div>
         <div class="setup-field">
           <label for="char-notes-input">其他自訂細節</label>
-          <input type="text" id="char-notes-input" placeholder="任何你想加入開局的設定，留空則跳過" maxlength="100">
+          <input type="text" id="char-notes-input" placeholder="留空則跳過" maxlength="100">
         </div>
       </div>
 
@@ -55,14 +54,14 @@
       <button id="import-save-btn" class="btn-secondary" type="button">匯入存檔繼續遊玩</button>
       <input type="file" id="import-save-file" accept=".json" hidden>
 
+      <button id="rules-link-btn" class="btn-link" type="button">📖 查看遊戲規則說明</button>
+
       <button id="test-mode-btn" class="btn-test hidden" type="button">🧪 離線測試模式（不消耗API配額）</button>
     </div>
   </div>
 
-  <!-- ============ 遊戲主畫面 ============ -->
   <div id="game-screen" class="screen hidden">
 
-    <!-- 頂部狀態欄 -->
     <header id="status-bar">
       <div class="status-row">
         <span id="status-time" class="status-item">⏱ 第1天 06:00</span>
@@ -82,9 +81,9 @@
       </div>
     </header>
 
-    <!-- 展開式完整狀態面板（手動切換或關鍵節點自動展開） -->
     <div id="status-panel-full" class="status-panel-full hidden">
       <div class="panel-full-grid">
+        <div class="panel-full-item"><span class="panel-label">飢餓</span><span id="stat-hunger">100</span></div>
         <div class="panel-full-item"><span class="panel-label">人性值</span><span id="stat-humanity">--</span></div>
         <div class="panel-full-item"><span class="panel-label">陣營信任</span><span id="stat-faction">--</span></div>
         <div class="panel-full-item"><span class="panel-label">覺醒進度</span><span id="stat-awakening">未覺醒</span></div>
@@ -92,7 +91,6 @@
       </div>
     </div>
 
-    <!-- 中央劇情捲動區 -->
     <main id="narrative-log">
       <div id="narrative-content"></div>
       <div id="typing-indicator" class="typing-indicator hidden">
@@ -100,7 +98,6 @@
       </div>
     </main>
 
-    <!-- 底部動態行動面板 -->
     <footer id="action-panel">
       <button id="options-collapse-toggle" class="collapse-toggle-btn hidden" type="button">
         <span>行動選項</span>
@@ -119,7 +116,6 @@
 
   </div>
 
-  <!-- ============ 設定側邊選單 ============ -->
   <div id="side-menu" class="side-menu hidden">
     <div id="side-menu-backdrop" class="side-menu-backdrop"></div>
     <div class="side-menu-content">
@@ -127,6 +123,7 @@
 
       <button id="menu-export-btn" class="btn-menu" type="button">📤 匯出存檔</button>
       <button id="menu-import-btn" class="btn-menu" type="button">📥 匯入存檔</button>
+      <button id="menu-rules-btn" class="btn-menu" type="button">📖 遊戲規則說明</button>
       <button id="menu-restart-btn" class="btn-menu btn-danger" type="button">🔄 重新開始（清空進度）</button>
       <button id="menu-apikey-btn" class="btn-menu" type="button">🔑 更改 API 金鑰</button>
 
@@ -153,7 +150,16 @@
     </div>
   </div>
 
-  <!-- ============ 覺醒 / 重要事件特效彈窗 ============ -->
+  <div id="rules-modal" class="rules-modal hidden">
+    <div class="rules-modal-content">
+      <div class="rules-modal-header">
+        <h2>遊戲規則說明</h2>
+        <button id="rules-modal-close" class="icon-btn" type="button">✕</button>
+      </div>
+      <div id="rules-modal-content" class="rules-modal-body"></div>
+    </div>
+  </div>
+
   <div id="event-modal" class="event-modal hidden">
     <div class="event-modal-content">
       <div id="event-modal-icon" class="event-modal-icon">⚡</div>
@@ -163,7 +169,6 @@
     </div>
   </div>
 
-  <!-- 載入中遮罩 -->
   <div id="loading-overlay" class="loading-overlay hidden">
     <div class="loading-spinner"></div>
   </div>
