@@ -1,6 +1,7 @@
 'use strict';
 
 var STATE_KEY = 'doomsday_dawn_save_v1';
+var NAMED_SAVES_KEY = 'doomsday_dawn_named_saves';
 var APIKEY_KEY = 'doomsday_dawn_apikey';
 var NOTION_KEY = 'doomsday_dawn_notion_config';
 
@@ -26,6 +27,8 @@ var gameState = {
   inventory: [],
   injuryStatus: 'none',
   isDead: false,
+  companions: [],
+  skillProficiency: {},
   recentTurns: [],
   summary: '',
   turnCount: 0,
@@ -70,6 +73,7 @@ function cacheDom() {
   dom.statAwakening = document.getElementById('stat-awakening');
   dom.statWeather = document.getElementById('stat-weather');
   dom.statHunger = document.getElementById('stat-hunger');
+  dom.statCompanions = document.getElementById('stat-companions');
   dom.narrativeLog = document.getElementById('narrative-log');
   dom.narrativeContent = document.getElementById('narrative-content');
   dom.typingIndicator = document.getElementById('typing-indicator');
@@ -89,6 +93,8 @@ function cacheDom() {
   dom.sideMenuBackdrop = document.getElementById('side-menu-backdrop');
   dom.menuExportBtn = document.getElementById('menu-export-btn');
   dom.menuImportBtn = document.getElementById('menu-import-btn');
+  dom.menuNamedSaveBtn = document.getElementById('menu-named-save-btn');
+  dom.menuNamedLoadBtn = document.getElementById('menu-named-load-btn');
   dom.menuRestartBtn = document.getElementById('menu-restart-btn');
   dom.menuApikeyBtn = document.getElementById('menu-apikey-btn');
   dom.menuRulesBtn = document.getElementById('menu-rules-btn');
@@ -108,6 +114,10 @@ function cacheDom() {
   dom.rulesModalContent = document.getElementById('rules-modal-content');
   dom.rulesModalClose = document.getElementById('rules-modal-close');
   dom.deathScreen = document.getElementById('death-screen');
+  dom.namedSaveModal = document.getElementById('named-save-modal');
+  dom.namedSaveList = document.getElementById('named-save-list');
+  dom.namedSaveClose = document.getElementById('named-save-close');
+  dom.namedSaveMode = '';
 }
 
 var SYSTEM_LINES = [];
@@ -115,9 +125,10 @@ SYSTEM_LINES.push('你是《末日黎明：喪屍浩劫》的game master，壓�
 SYSTEM_LINES.push('嚴格遵守下方遊戲規則文檔的所有數值、機率與判定邏輯，該文檔已完整提供，不需要重複解釋規則本身，直接依規則生成敘事與數值變化。');
 SYSTEM_LINES.push('NPC具備獨立人性，包含自保、背叛、恐懼下的過度反應，同時也可能有無償犧牲、隱瞞真相保護他人等正向行為，依規則文檔的NPC判定邏輯執行，不套用單一固定模式。');
 SYSTEM_LINES.push('NPC與喪屍的覺醒或進化狀態於背景設定階段獨立判定，不依賴玩家是否目擊或介入。');
+SYSTEM_LINES.push('若玩家有隨行NPC加入隊伍，須依規則文檔管理隨行人數上限、資源分攤與隨行NPC死亡判定。');
 SYSTEM_LINES.push('每回合須依規則文檔管理玩家背包物品增減、負重狀態、武器耐久或彈藥、傷勢等級、死亡判定，以及晶核掉落與能力熟練度變化。');
 SYSTEM_LINES.push('禁止重複使用相同場景開場句式或選項措辭，選項必須基於當前具體情境動態生成。');
-SYSTEM_LINES.push('只回傳合法JSON物件，不包含JSON以外文字或Markdown符號。JSON結構：narrative為敘事文字字串；status_update物件包含time_advance_minutes、stamina_change、hunger_change、current_location、danger_level僅可為safe或warning或critical、weather、humanity_change、resonance_change、ability_exp_change、faction_trust_update、inventory_changes陣列每項包含name與quantity與action僅可為add或remove、injury_status僅可為none或minor或severe、special_event僅可為none或awakening或multi_awakening或death或rescued或level_up或其他事件代號、special_event_text；options陣列包含2到4個元素，每個元素含id、label、risk_hint。');
+SYSTEM_LINES.push('只回傳合法JSON物件，不包含JSON以外文字或Markdown符號。JSON結構：narrative為敘事文字字串；status_update物件包含time_advance_minutes、stamina_change、hunger_change、current_location、danger_level僅可為safe或warning或critical、weather、humanity_change、resonance_change、ability_exp_change、faction_trust_update、inventory_changes陣列每項包含name與quantity與action僅可為add或remove、injury_status僅可為none或minor或severe、companion_changes陣列每項包含name與action僅可為join或leave或die、special_event僅可為none或awakening或multi_awakening或death或rescued或level_up或其他事件代號、special_event_text；options陣列包含2到4個元素，每個元素含id、label、risk_hint。');
 SYSTEM_LINES.push('一般對話或安全區域描寫150至200字，戰鬥探索重大事件描寫350至450字。');
 
 var SYSTEM_INSTRUCTION = SYSTEM_LINES.join(' ');
@@ -160,12 +171,32 @@ function setupTestModeEntry() {
   }
 }
 
+function simpleMarkdownToHtml(text) {
+  var lines = text.split('\n');
+  var html = '';
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    if (line.indexOf('## ') === 0) {
+      html += '<h3>' + escapeHtml(line.slice(3)) + '</h3>';
+    } else if (line.indexOf('# ') === 0) {
+      html += '<h2>' + escapeHtml(line.slice(2)) + '</h2>';
+    } else if (line.indexOf('- ') === 0) {
+      html += '<p class="rules-li">• ' + escapeHtml(line.slice(2)) + '</p>';
+    } else if (line.trim() === '') {
+      html += '';
+    } else {
+      html += '<p>' + escapeHtml(line) + '</p>';
+    }
+  }
+  return html;
+}
+
 function loadRulesAndLore() {
   fetch('game_rules.txt').then(function (res) {
     return res.text();
   }).then(function (text) {
     gameState.rulesText = text;
-    if (dom.rulesModalContent) dom.rulesModalContent.textContent = text;
+    if (dom.rulesModalContent) dom.rulesModalContent.innerHTML = simpleMarkdownToHtml(text);
   }).catch(function () {
     gameState.rulesText = '';
   });
@@ -202,6 +233,9 @@ function bindEvents() {
   dom.menuCloseBtn.addEventListener('click', function () { toggleSideMenu(false); });
   dom.menuExportBtn.addEventListener('click', handleExportSave);
   dom.menuImportBtn.addEventListener('click', handleMenuImportClick);
+  dom.menuNamedSaveBtn.addEventListener('click', handleOpenNamedSave);
+  dom.menuNamedLoadBtn.addEventListener('click', handleOpenNamedLoad);
+  dom.namedSaveClose.addEventListener('click', function () { dom.namedSaveModal.classList.add('hidden'); });
   dom.menuRestartBtn.addEventListener('click', handleRestart);
   dom.menuApikeyBtn.addEventListener('click', handleChangeApiKey);
   if (dom.menuRulesBtn) dom.menuRulesBtn.addEventListener('click', function () { toggleSideMenu(false); setTimeout(function () { toggleRulesModal(true); }, 200); });
@@ -383,6 +417,8 @@ function buildContextPayload(playerAction) {
     return it.name + 'x' + it.quantity;
   }).join('、');
 
+  var companionList = gameState.companions.join('、');
+
   var statusSnapshot = '當前狀態：第' + gameState.time.day + '天 ' + pad2(gameState.time.hour) + ':' + pad2(gameState.time.minute) +
     '，地點：' + gameState.location + '，體力：' + gameState.stamina + '/' + gameState.maxStamina +
     '，飢餓：' + gameState.hunger + '，人性值：' + gameState.humanity +
@@ -390,6 +426,7 @@ function buildContextPayload(playerAction) {
     '，能力熟練度：' + gameState.abilityExp + '/' + getAbilityExpNeeded(gameState.awakeningLevel) +
     '，危險等級：' + gameState.dangerLevel + '，傷勢：' + gameState.injuryStatus +
     '，背包負重：' + getInventoryLoadLevel() + '，持有物品：' + (inventoryList || '無') +
+    '，隨行隊員：' + (companionList || '無') +
     '，回合數：' + gameState.turnCount;
 
   var recentParts = [];
@@ -502,6 +539,9 @@ function applyStatusUpdate(update) {
   if (update.inventory_changes && update.inventory_changes.length) {
     applyInventoryChanges(update.inventory_changes);
   }
+  if (update.companion_changes && update.companion_changes.length) {
+    applyCompanionChanges(update.companion_changes);
+  }
   if (update.faction_trust_update) {
     for (var faction in update.faction_trust_update) {
       if (Object.prototype.hasOwnProperty.call(update.faction_trust_update, faction)) {
@@ -512,6 +552,19 @@ function applyStatusUpdate(update) {
   }
   if (update.special_event === 'awakening') gameState.awakeningLevel = Math.max(gameState.awakeningLevel, 1);
   if (update.special_event === 'multi_awakening') gameState.awakeningLevel = Math.max(gameState.awakeningLevel, 1);
+}
+
+function applyCompanionChanges(changes) {
+  for (var i = 0; i < changes.length; i++) {
+    var change = changes[i];
+    if (change.action === 'join') {
+      if (gameState.companions.indexOf(change.name) === -1 && gameState.companions.length < 2) {
+        gameState.companions.push(change.name);
+      }
+    } else if (change.action === 'leave' || change.action === 'die') {
+      gameState.companions = gameState.companions.filter(function (n) { return n !== change.name; });
+    }
+  }
 }
 
 function applyAbilityExpChange(delta) {
@@ -597,6 +650,7 @@ function renderAll() {
     : '未覺醒';
   dom.statWeather.textContent = gameState.weather;
   if (dom.statHunger) dom.statHunger.textContent = gameState.hunger;
+  if (dom.statCompanions) dom.statCompanions.textContent = gameState.companions.length ? gameState.companions.join('、') : '無';
 
   var factionEntries = [];
   for (var k in gameState.factionTrust) {
@@ -743,6 +797,87 @@ function handleExportSave() {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
   toggleSideMenu(false);
+}
+
+function getNamedSaves() {
+  try {
+    return JSON.parse(localStorage.getItem(NAMED_SAVES_KEY) || '{}');
+  } catch (e) {
+    return {};
+  }
+}
+
+function handleOpenNamedSave() {
+  toggleSideMenu(false);
+  var name = prompt('請輸入此存檔的名稱（例如：維爾赫姆市-覺醒前）：');
+  if (!name || !name.trim()) return;
+  var saves = getNamedSaves();
+  saves[name.trim()] = { savedAt: new Date().toISOString(), gameState: gameState };
+  localStorage.setItem(NAMED_SAVES_KEY, JSON.stringify(saves));
+  alert('已儲存命名存檔：' + name.trim());
+}
+
+function handleOpenNamedLoad() {
+  toggleSideMenu(false);
+  var saves = getNamedSaves();
+  var names = Object.keys(saves);
+  dom.namedSaveList.innerHTML = '';
+  if (names.length === 0) {
+    var emptyEl = document.createElement('div');
+    emptyEl.className = 'named-save-empty';
+    emptyEl.textContent = '目前沒有任何命名存檔';
+    dom.namedSaveList.appendChild(emptyEl);
+  } else {
+    names.forEach(function (name) {
+      var row = document.createElement('div');
+      row.className = 'named-save-row';
+      var info = document.createElement('div');
+      info.className = 'named-save-info';
+      info.innerHTML = '<span class="named-save-name">' + escapeHtml(name) + '</span><span class="named-save-date">' + saves[name].savedAt.slice(0, 16).replace('T', ' ') + '</span>';
+      var loadBtn = document.createElement('button');
+      loadBtn.className = 'btn-secondary named-save-load-btn';
+      loadBtn.type = 'button';
+      loadBtn.textContent = '讀取';
+      loadBtn.addEventListener('click', function () { handleLoadNamedSave(name); });
+      var delBtn = document.createElement('button');
+      delBtn.className = 'icon-btn';
+      delBtn.type = 'button';
+      delBtn.textContent = '✕';
+      delBtn.addEventListener('click', function () { handleDeleteNamedSave(name); });
+      row.appendChild(info);
+      row.appendChild(loadBtn);
+      row.appendChild(delBtn);
+      dom.namedSaveList.appendChild(row);
+    });
+  }
+  dom.namedSaveModal.classList.remove('hidden');
+}
+
+function handleLoadNamedSave(name) {
+  var saves = getNamedSaves();
+  var entry = saves[name];
+  if (!entry) return;
+  restoreState(entry.gameState);
+  var key = localStorage.getItem(APIKEY_KEY);
+  if (gameState.isTestMode || key) {
+    gameState.apiKey = key || '';
+    showGameScreen();
+    rebuildNarrativeFromHistory();
+    renderOptions(gameState.lastOptions);
+    renderAll();
+    saveStateToLocal();
+    dom.namedSaveModal.classList.add('hidden');
+  } else {
+    alert('請先在開局畫面輸入 API 金鑰');
+  }
+}
+
+function handleDeleteNamedSave(name) {
+  if (!confirm('刪除命名存檔「' + name + '」？')) return;
+  var saves = getNamedSaves();
+  delete saves[name];
+  localStorage.setItem(NAMED_SAVES_KEY, JSON.stringify(saves));
+  handleOpenNamedLoad();
 }
 
 function handleImportFile(e) {
