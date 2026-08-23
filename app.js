@@ -5,7 +5,7 @@ var NAMED_SAVES_KEY = 'doomsday_dawn_named_saves';
 var APIKEY_KEY_PREFIX = 'doomsday_dawn_apikey_';
 var PROVIDER_KEY = 'doomsday_dawn_provider';
 var NOTION_KEY = 'doomsday_dawn_notion_config';
-var NOTION_SYNC_INTERVAL = 10; // 每N回合自動同步一次Notion（靜默模式）
+var NOTION_SYNC_INTERVAL = 10;
 
 var ABILITY_LEVEL_THRESHOLDS = [0, 50, 120, 210, 320, 450, 600, 770, 960, 1170];
 
@@ -46,6 +46,8 @@ var isWaitingForAI = false;
 var statusExpanded = false;
 var optionsMiniMode = false;
 var inventoryExpanded = false;
+var currentSaveTab = 'local';
+var notionSavesCache = [];
 var dom = {};
 
 function cacheDom() {
@@ -98,7 +100,7 @@ function cacheDom() {
   dom.menuExportBtn = document.getElementById('menu-export-btn');
   dom.menuImportBtn = document.getElementById('menu-import-btn');
   dom.menuNamedSaveBtn = document.getElementById('menu-named-save-btn');
-  dom.menuNamedLoadBtn = document.getElementById('menu-named-load-btn');
+  dom.menuSaveManagerBtn = document.getElementById('menu-save-manager-btn');
   dom.menuRestartBtn = document.getElementById('menu-restart-btn');
   dom.menuApikeyBtn = document.getElementById('menu-apikey-btn');
   dom.menuRulesBtn = document.getElementById('menu-rules-btn');
@@ -122,6 +124,8 @@ function cacheDom() {
   dom.namedSaveModal = document.getElementById('named-save-modal');
   dom.namedSaveList = document.getElementById('named-save-list');
   dom.namedSaveClose = document.getElementById('named-save-close');
+  dom.saveTabLocal = document.getElementById('save-tab-local');
+  dom.saveTabNotion = document.getElementById('save-tab-notion');
 }
 
 var SYSTEM_LINES = [];
@@ -265,8 +269,10 @@ function bindEvents() {
   dom.menuExportBtn.addEventListener('click', handleExportSave);
   dom.menuImportBtn.addEventListener('click', handleMenuImportClick);
   dom.menuNamedSaveBtn.addEventListener('click', handleOpenNamedSave);
-  dom.menuNamedLoadBtn.addEventListener('click', handleOpenNamedLoad);
+  dom.menuSaveManagerBtn.addEventListener('click', handleOpenSaveManager);
   dom.namedSaveClose.addEventListener('click', function () { dom.namedSaveModal.classList.add('hidden'); });
+  dom.saveTabLocal.addEventListener('click', function () { switchSaveTab('local'); });
+  dom.saveTabNotion.addEventListener('click', function () { switchSaveTab('notion'); });
   dom.menuRestartBtn.addEventListener('click', handleRestart);
   dom.menuApikeyBtn.addEventListener('click', handleChangeApiKey);
   if (dom.menuRulesBtn) dom.menuRulesBtn.addEventListener('click', function () { toggleSideMenu(false); setTimeout(function () { toggleRulesModal(true); }, 200); });
@@ -387,6 +393,12 @@ function playNextTestScript(playerAction) {
   showTyping(true);
   setTimeout(function () {
     var script = CONFIG.TEST_SCRIPT;
+    if (!script || script.length === 0) {
+      appendGMText('測試劇本尚未載入（test_script.js 可能未成功部署），暫時無法繼續測試模式。');
+      renderOptions([{ id: 'RETRY', label: '重新嘗試', risk_hint: '' }]);
+      showTyping(false);
+      return;
+    }
     var step = script[gameState.testScriptIndex % script.length];
     gameState.testScriptIndex += 1;
     handleAIResponse(step);
@@ -623,27 +635,18 @@ function handleAIResponse(response) {
   maybeSyncToNotion();
 }
 
-/* 每N回合才靜默同步一次Notion，避免每回合都發送請求 */
 function maybeSyncToNotion() {
   if (gameState.turnCount % NOTION_SYNC_INTERVAL === 0) {
     syncToNotion(true);
   }
 }
 
-/* silent=true：定期自動存檔，測試模式下不執行、成功或失敗都只寫console不彈窗。
-   silent=false：手動按下「立即測試同步」按鈕，一律嘗試執行並用alert明確回報結果，方便排查設定問題。 */
-function syncToNotion(silent) {
-  if (!CONFIG.NOTION_ENABLED || !CONFIG.NOTION_PROXY_URL || !CONFIG.NOTION_DATABASE_ID) {
-    if (!silent) alert('請先填入並儲存 Notion 轉發網址與 Database ID');
-    return;
-  }
-  if (gameState.isTestMode && silent) return;
-
+function buildNotionSyncBody() {
   var injuryOption = gameState.injuryStatus || 'none';
   var lastNarrative = gameState.recentTurns.length ? gameState.recentTurns[gameState.recentTurns.length - 1].narrative : '';
   var briefSummary = lastNarrative.length > 200 ? lastNarrative.slice(0, 200) + '…' : lastNarrative;
 
-  var body = {
+  return {
     parent: { database_id: CONFIG.NOTION_DATABASE_ID },
     properties: {
       '存檔名稱': { title: [{ text: { content: '同步-第' + gameState.time.day + '天-' + new Date().toLocaleTimeString() } }] },
@@ -664,6 +667,16 @@ function syncToNotion(silent) {
       '存檔JSON': { rich_text: [{ text: { content: JSON.stringify(gameState).slice(0, 1900) } }] }
     }
   };
+}
+
+function syncToNotion(silent) {
+  if (!CONFIG.NOTION_ENABLED || !CONFIG.NOTION_PROXY_URL || !CONFIG.NOTION_DATABASE_ID) {
+    if (!silent) alert('請先填入並儲存 Notion 轉發網址與 Database ID');
+    return;
+  }
+  if (gameState.isTestMode && silent) return;
+
+  var body = buildNotionSyncBody();
 
   fetch(CONFIG.NOTION_PROXY_URL, {
     method: 'POST',
@@ -690,6 +703,171 @@ function syncToNotion(silent) {
 
 function handleNotionSyncNow() {
   syncToNotion(false);
+}
+
+/* ---------- 存檔管理彈窗：本機/Notion雙標籤 ---------- */
+
+function handleOpenSaveManager() {
+  toggleSideMenu(false);
+  currentSaveTab = 'local';
+  updateSaveTabUI();
+  renderLocalSaveList();
+  dom.namedSaveModal.classList.remove('hidden');
+}
+
+function switchSaveTab(tab) {
+  currentSaveTab = tab;
+  updateSaveTabUI();
+  if (tab === 'local') {
+    renderLocalSaveList();
+  } else {
+    renderNotionSaveList();
+  }
+}
+
+function updateSaveTabUI() {
+  dom.saveTabLocal.classList.toggle('active', currentSaveTab === 'local');
+  dom.saveTabNotion.classList.toggle('active', currentSaveTab === 'notion');
+}
+
+function renderLocalSaveList() {
+  var saves = getNamedSaves();
+  var names = Object.keys(saves);
+  dom.namedSaveList.innerHTML = '';
+  if (names.length === 0) {
+    var emptyEl = document.createElement('div');
+    emptyEl.className = 'named-save-empty';
+    emptyEl.textContent = '目前沒有任何命名存檔';
+    dom.namedSaveList.appendChild(emptyEl);
+    return;
+  }
+  names.forEach(function (name) {
+    var row = document.createElement('div');
+    row.className = 'named-save-row';
+    var info = document.createElement('div');
+    info.className = 'named-save-info';
+    info.innerHTML = '<span class="named-save-name">' + escapeHtml(name) + '</span><span class="named-save-date">' + saves[name].savedAt.slice(0, 16).replace('T', ' ') + '</span>';
+    var loadBtn = document.createElement('button');
+    loadBtn.className = 'btn-secondary named-save-load-btn';
+    loadBtn.type = 'button';
+    loadBtn.textContent = '讀取';
+    loadBtn.addEventListener('click', function () { handleLoadNamedSave(name); });
+    var delBtn = document.createElement('button');
+    delBtn.className = 'icon-btn';
+    delBtn.type = 'button';
+    delBtn.textContent = '✕';
+    delBtn.addEventListener('click', function () { handleDeleteNamedSave(name); });
+    row.appendChild(info);
+    row.appendChild(loadBtn);
+    row.appendChild(delBtn);
+    dom.namedSaveList.appendChild(row);
+  });
+}
+
+function renderNotionSaveList() {
+  dom.namedSaveList.innerHTML = '';
+  if (!CONFIG.NOTION_ENABLED || !CONFIG.NOTION_PROXY_URL || !CONFIG.NOTION_DATABASE_ID) {
+    var noConfigEl = document.createElement('div');
+    noConfigEl.className = 'named-save-empty';
+    noConfigEl.textContent = '尚未設定 Notion 雲端同步，請先於選單中儲存轉發網址與 Database ID';
+    dom.namedSaveList.appendChild(noConfigEl);
+    return;
+  }
+
+  var loadingEl = document.createElement('div');
+  loadingEl.className = 'named-save-empty';
+  loadingEl.textContent = '讀取中…';
+  dom.namedSaveList.appendChild(loadingEl);
+
+  var queryUrl = CONFIG.NOTION_PROXY_URL.replace(/\/$/, '') + '/query';
+
+  fetch(queryUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ database_id: CONFIG.NOTION_DATABASE_ID, page_size: 50 })
+  }).then(function (res) {
+    return res.json().then(function (data) {
+      return { ok: res.ok, data: data };
+    });
+  }).then(function (result) {
+    if (currentSaveTab !== 'notion') return;
+    dom.namedSaveList.innerHTML = '';
+    if (!result.ok || !result.data.results) {
+      var errEl = document.createElement('div');
+      errEl.className = 'named-save-empty';
+      errEl.textContent = '讀取失敗：' + JSON.stringify(result.data).slice(0, 200);
+      dom.namedSaveList.appendChild(errEl);
+      return;
+    }
+    notionSavesCache = result.data.results;
+    if (notionSavesCache.length === 0) {
+      var emptyEl = document.createElement('div');
+      emptyEl.className = 'named-save-empty';
+      emptyEl.textContent = 'Notion資料庫中尚無同步記錄';
+      dom.namedSaveList.appendChild(emptyEl);
+      return;
+    }
+    notionSavesCache.forEach(function (page, idx) {
+      var props = page.properties || {};
+      var titleArr = props['存檔名稱'] && props['存檔名稱'].title;
+      var titleText = (titleArr && titleArr[0] && titleArr[0].plain_text) || '未命名同步記錄';
+      var dateText = (props['更新時間'] && props['更新時間'].date && props['更新時間'].date.start) || '';
+      var dayNum = (props['遊戲天數'] && props['遊戲天數'].number) || '?';
+      var locText = (props['當前地點'] && props['當前地點'].rich_text && props['當前地點'].rich_text[0] && props['當前地點'].rich_text[0].plain_text) || '';
+
+      var row = document.createElement('div');
+      row.className = 'named-save-row';
+      var info = document.createElement('div');
+      info.className = 'named-save-info';
+      info.innerHTML = '<span class="named-save-name">' + escapeHtml(titleText) + '（第' + dayNum + '天 ' + escapeHtml(locText) + '）</span><span class="named-save-date">' + escapeHtml(dateText.slice(0, 16).replace('T', ' ')) + '</span>';
+      var loadBtn = document.createElement('button');
+      loadBtn.className = 'btn-secondary named-save-load-btn';
+      loadBtn.type = 'button';
+      loadBtn.textContent = '讀取';
+      loadBtn.addEventListener('click', function () { handleLoadNotionSave(idx); });
+      row.appendChild(info);
+      row.appendChild(loadBtn);
+      dom.namedSaveList.appendChild(row);
+    });
+  }).catch(function (e) {
+    if (currentSaveTab !== 'notion') return;
+    dom.namedSaveList.innerHTML = '';
+    var errEl = document.createElement('div');
+    errEl.className = 'named-save-empty';
+    errEl.textContent = '讀取請求失敗：' + e.message;
+    dom.namedSaveList.appendChild(errEl);
+  });
+}
+
+function handleLoadNotionSave(idx) {
+  var page = notionSavesCache[idx];
+  if (!page) return;
+  var props = page.properties || {};
+  var jsonArr = props['存檔JSON'] && props['存檔JSON'].rich_text;
+  var jsonText = jsonArr && jsonArr.map(function (t) { return t.plain_text; }).join('');
+  if (!jsonText) {
+    alert('這筆記錄沒有可讀取的存檔內容');
+    return;
+  }
+  try {
+    var parsedState = JSON.parse(jsonText);
+    if (!confirm('讀取這筆Notion存檔將覆蓋目前進度，確定繼續嗎？（此存檔JSON因Notion欄位長度限制可能被截斷，若讀取失敗請改用完整匯出檔案）')) return;
+    restoreState(parsedState);
+    var key = localStorage.getItem(APIKEY_KEY_PREFIX + gameState.provider);
+    if (gameState.isTestMode || key) {
+      gameState.apiKey = key || '';
+      showGameScreen();
+      rebuildNarrativeFromHistory();
+      renderOptions(gameState.lastOptions);
+      renderAll();
+      saveStateToLocal();
+      dom.namedSaveModal.classList.add('hidden');
+    } else {
+      alert('請先在開局畫面輸入 API 金鑰');
+    }
+  } catch (e) {
+    alert('這筆Notion存檔JSON內容不完整或格式錯誤，可能因欄位長度限制被截斷，無法讀取。建議改用「匯出/匯入存檔檔案」功能作為完整備份。');
+  }
 }
 
 function applyStatusUpdate(update) {
@@ -997,42 +1175,6 @@ function handleOpenNamedSave() {
   alert('已儲存命名存檔：' + name.trim());
 }
 
-function handleOpenNamedLoad() {
-  toggleSideMenu(false);
-  var saves = getNamedSaves();
-  var names = Object.keys(saves);
-  dom.namedSaveList.innerHTML = '';
-  if (names.length === 0) {
-    var emptyEl = document.createElement('div');
-    emptyEl.className = 'named-save-empty';
-    emptyEl.textContent = '目前沒有任何命名存檔';
-    dom.namedSaveList.appendChild(emptyEl);
-  } else {
-    names.forEach(function (name) {
-      var row = document.createElement('div');
-      row.className = 'named-save-row';
-      var info = document.createElement('div');
-      info.className = 'named-save-info';
-      info.innerHTML = '<span class="named-save-name">' + escapeHtml(name) + '</span><span class="named-save-date">' + saves[name].savedAt.slice(0, 16).replace('T', ' ') + '</span>';
-      var loadBtn = document.createElement('button');
-      loadBtn.className = 'btn-secondary named-save-load-btn';
-      loadBtn.type = 'button';
-      loadBtn.textContent = '讀取';
-      loadBtn.addEventListener('click', function () { handleLoadNamedSave(name); });
-      var delBtn = document.createElement('button');
-      delBtn.className = 'icon-btn';
-      delBtn.type = 'button';
-      delBtn.textContent = '✕';
-      delBtn.addEventListener('click', function () { handleDeleteNamedSave(name); });
-      row.appendChild(info);
-      row.appendChild(loadBtn);
-      row.appendChild(delBtn);
-      dom.namedSaveList.appendChild(row);
-    });
-  }
-  dom.namedSaveModal.classList.remove('hidden');
-}
-
 function handleLoadNamedSave(name) {
   var saves = getNamedSaves();
   var entry = saves[name];
@@ -1057,7 +1199,7 @@ function handleDeleteNamedSave(name) {
   var saves = getNamedSaves();
   delete saves[name];
   localStorage.setItem(NAMED_SAVES_KEY, JSON.stringify(saves));
-  handleOpenNamedLoad();
+  renderLocalSaveList();
 }
 
 function handleImportFile(e) {
