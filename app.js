@@ -47,8 +47,10 @@ var isWaitingForAI = false;
 var statusExpanded = false;
 var optionsMiniMode = false;
 var inventoryExpanded = false;
+var npcExpanded = false;
 var currentSaveTab = 'local';
 var notionSavesCache = [];
+var pendingMilestoneModals = [];
 var dom = {};
 
 function cacheDom() {
@@ -76,13 +78,13 @@ function cacheDom() {
   dom.injuryTag = document.getElementById('injury-tag');
   dom.menuToggleBtn = document.getElementById('menu-toggle-btn');
   dom.statusPanelFull = document.getElementById('status-panel-full');
+  dom.statGender = document.getElementById('stat-gender');
   dom.statHumanity = document.getElementById('stat-humanity');
   dom.statFaction = document.getElementById('stat-faction');
   dom.statAwakening = document.getElementById('stat-awakening');
   dom.statWeather = document.getElementById('stat-weather');
   dom.statHunger = document.getElementById('stat-hunger');
   dom.statCompanions = document.getElementById('stat-companions');
-  dom.statRelationships = document.getElementById('stat-relationships');
   dom.narrativeLog = document.getElementById('narrative-log');
   dom.narrativeContent = document.getElementById('narrative-content');
   dom.typingIndicator = document.getElementById('typing-indicator');
@@ -98,6 +100,9 @@ function cacheDom() {
   dom.inventoryPanel = document.getElementById('inventory-panel');
   dom.inventoryList = document.getElementById('inventory-list');
   dom.inventoryLoadTag = document.getElementById('inventory-load-tag');
+  dom.npcToggleBtn = document.getElementById('npc-toggle-btn');
+  dom.npcPanel = document.getElementById('npc-panel');
+  dom.npcList = document.getElementById('npc-list');
   dom.sideMenu = document.getElementById('side-menu');
   dom.sideMenuBackdrop = document.getElementById('side-menu-backdrop');
   dom.menuExportBtn = document.getElementById('menu-export-btn');
@@ -140,10 +145,10 @@ SYSTEM_LINES.push('若玩家有隨行NPC加入隊伍，須依規則文檔管理�
 SYSTEM_LINES.push('每回合須依規則文檔管理玩家背包物品增減、負重狀態、武器耐久或彈藥、傷勢等級、死亡判定，以及晶核掉落與能力熟練度變化。');
 SYSTEM_LINES.push('禁止重複使用相同場景開場句式或選項措辭，選項必須基於當前具體情境動態生成。');
 SYSTEM_LINES.push('提示詞中可能包含「長期世界記憶」段落，記載已知安全區、關鍵NPC、勢力歷史、世界重大事件、玩家志向發展與人物關係記錄，你必須將其視為已確立的事實持續納入敘事考量，不可忽略、不可與其矛盾。');
-SYSTEM_LINES.push('world_memory_update欄位僅在本回合敘事確實發生下列四類事件之一時才填寫對應子欄位，其餘情況全部留空物件：new_safe_zone（玩家新建立安全區，含name、location、population、facilities陣列）、safe_zone_update（既有安全區的人口或設施異動，含name、population、facilities_add陣列、facilities_remove陣列、faction_relation_note）、npc_major_event（NPC加入、死亡、覺醒、能力習得或關係質變，含name、ability、note、status僅可為alive或dead或missing或unknown）、faction_shift（勢力關係質變如轉為敵對或同盟，非小幅信任度波動，含faction、eventText）、world_landmark（地圖級重大變化如城市淪陷路線打通，含eventText）。');
-SYSTEM_LINES.push('若使用者輸入中出現「請檢查背景演化」的指示，你必須額外填寫background_evolution欄位，基於提示詞中已提供的長期世界記憶段落，獨立推演已登記的NPC、安全區、勢力在主角不在場期間可能發生的變化，結構為npc_updates陣列每項含name與note與可選status與可選ability、safe_zone_updates陣列每項含name與note、faction_updates陣列每項含faction與eventText；若沒有明確要求則此欄位留空物件。');
+SYSTEM_LINES.push('world_memory_update欄位僅在本回合敘事確實發生下列四類事件之一時才填寫對應子欄位，其餘情況全部留空物件：new_safe_zone（玩家新建立安全區，含name、location、population、facilities陣列）、safe_zone_update（既有安全區的人口或設施異動，含name、population、facilities_add陣列、facilities_remove陣列、faction_relation_note）、npc_major_event（NPC加入、死亡、覺醒、能力習得或關係質變，含name、gender、ability、note、status僅可為alive或dead或missing或unknown）、faction_shift（勢力關係質變如轉為敵對或同盟，非小幅信任度波動，含faction、eventText）、world_landmark（地圖級重大變化如城市淪陷路線打通，含eventText）。');
+SYSTEM_LINES.push('若使用者輸入中出現「請檢查背景演化」的指示，你必須額外填寫background_evolution欄位，基於提示詞中已提供的長期世界記憶段落，獨立推演已登記的NPC、安全區、勢力在主角不在場期間可能發生的變化，結構為npc_updates陣列每項含name與note與可選status與可選ability與可選gender、safe_zone_updates陣列每項含name與note、faction_updates陣列每項含faction與eventText；若沒有明確要求則此欄位留空物件。');
 SYSTEM_LINES.push('玩家的長期發展路線由四條志向線構成，彼此不互斥，可同時推進：庇護建設者shelterBuilder專注安全區規模、設施、人口成長；治療探索者cureSeeker專注病毒研究與解藥或疫苗相關進展；暗影獵人shadowHunter專注透過武力與威嚇建立跨陣營恐懼名聲；勢力締造者factionLeader專注在既有陣營內取得實質決策影響力或創建新勢力。每回合若敘事內容明確符合某條志向線的推進條件，於aspiration_update欄位回報對應志向鍵名的物件，內含progress_delta（一個負20至正20之間的整數）與milestone_text（僅達成關鍵性轉折時填寫，否則留空字串）。一回合可同時推進多條志向線，也可以完全不推進任何志向線，不可為了填欄位而勉強編造進度，其餘志向留空物件。');
-SYSTEM_LINES.push('每個具名NPC都有三個獨立關係軸：trust信任範圍0到100代表對方是否相信你並願意託付重要事務、closeness親密範圍0到100代表情感靠近程度決定對話深度與私密話題開放與否、romantic_tension浪漫張力範圍0到100僅特定NPC適用代表關係往愛情方向發展的張力與前兩軸獨立運作不必然同步成長。每個NPC關係處於五個敘事階段之一：incipient初萌剛認識關係值變動應緩慢、developing漸深開始建立信任與默契、critical_trial風險考驗劇情須安排一次高風險抉擇考驗雙方關係不可透過玩家連續示好跳過此階段、defining_choice關鍵抉擇雙方關係將往結合決裂或維持現狀之一定型此為不可逆敘事節點、resolved_bond穩定結合或resolved_apart疏離懸置為關係定型後的穩定狀態。階段推進有嚴格的時間限制，提示詞中的長期世界記憶段落會標明每個NPC是否已在目前階段停留滿5個遊戲內天數，唯有標明「可推進下一階段」時才可以在stage_transition欄位填入下一階段名稱，若標明「尚未滿5天不可推進階段」則絕對不可填寫stage_transition，即使劇情發展看似合適也必須等待。關係推進不應是玩家單方面刷好感度就能達成，必須透過劇情中的具體事件如共同經歷危險、對方主動求助或考驗、意見衝突後的化解或決裂才能真正變動關係軸數值與階段，日常閒聊互動只應造成極小幅度變動即正負1至3點。若本回合涉及具名NPC的關係發展，於relationship_update欄位回報npc_name、trust_delta、closeness_delta、romantic_tension_delta（不涉及浪漫時留空或0）、stage_transition（僅符合上述天數條件時才填寫，否則留空字串）、note簡述本次關係變化的具體事由；若本回合無任何NPC關係變化，此物件整體留空。');
+SYSTEM_LINES.push('每個具名NPC都有性別gender與三個獨立關係軸：trust信任範圍0到100代表對方是否相信你並願意託付重要事務、closeness親密範圍0到100代表情感靠近程度決定對話深度與私密話題開放與否、romantic_tension浪漫張力範圍0到100僅特定NPC適用代表關係往愛情方向發展的張力與前兩軸獨立運作不必然同步成長。每個NPC關係處於六個敘事階段之一：acquainted初識剛認識僅止於認識彼此存在、incipient初萌開始有一絲交集關係值變動應緩慢、developing漸深開始建立信任與默契、critical_trial風險考驗劇情須安排一次高風險抉擇考驗雙方關係不可透過玩家連續示好跳過此階段、defining_choice關鍵抉擇雙方關係將往結合決裂或維持現狀之一定型此為不可逆敘事節點、resolved_bond穩定結合或resolved_apart疏離懸置為關係定型後的穩定狀態。階段推進有時間限制，唯有初識轉為初萌不受天數限制可隨劇情自然發生，初萌之後每一階段轉換都須提示詞中的長期世界記憶段落標明「可推進下一階段」才可以在stage_transition欄位填入下一階段名稱，若標明「尚未滿5天不可推進階段」則絕對不可填寫stage_transition即使劇情發展看似合適也必須等待。若提示詞標明某NPC已進入漸深階段較久建議安排風險考驗事件，可主動於本回合或近期敘事中安排相應情境。關係推進不應是玩家單方面刷好感度就能達成，必須透過劇情中的具體事件才能真正變動關係軸數值與階段，日常閒聊互動只應造成極小幅度變動即正負1至3點。若某NPC狀態為dead或missing，其關係已被系統凍結，不可再回報trust_delta、closeness_delta、romantic_tension_delta或stage_transition，僅可透過background_note補充該NPC過去的背景資訊。若本回合涉及具名NPC的關係發展或想補充其背景經歷，於relationship_update欄位回報npc_name、gender（若尚未記錄則填寫）、trust_delta、closeness_delta、romantic_tension_delta（不涉及浪漫時留空或0）、stage_transition（僅符合天數條件時才填寫，否則留空字串）、note簡述本次關係變化的具體事由、background_note（僅當本回合透過對話或事件得知該NPC過去背景或經歷時才填寫，是一段可累加的日記式記錄，不覆蓋先前內容，若無新背景資訊則留空字串）；若本回合無任何NPC關係變化，此物件整體留空。');
 SYSTEM_LINES.push('只回傳合法JSON物件，不包含JSON以外文字或Markdown符號。JSON結構：narrative為敘事文字字串；status_update物件包含time_advance_minutes、stamina_change、hunger_change、current_location、danger_level僅可為safe或warning或critical、weather、humanity_change、resonance_change、ability_exp_change、faction_trust_update、inventory_changes陣列每項包含name與quantity與action僅可為add或remove、injury_status僅可為none或minor或severe、companion_changes陣列每項包含name與action僅可為join或leave或die、special_event僅可為none或awakening或multi_awakening或death或rescued或level_up或其他事件代號、special_event_text；world_memory_update物件依上述規則；background_evolution物件依上述規則；aspiration_update物件依上述規則；relationship_update物件依上述規則；options陣列包含2到4個元素，每個元素含id、label、risk_hint，其中id欄位只能是大寫字母A、B、C、D，依陣列順序遞增，不可使用其他任何格式如opt_1或數字。');
 SYSTEM_LINES.push('一般對話或安全區域描寫150至200字，戰鬥探索重大事件描寫350至450字。');
 
@@ -288,11 +293,12 @@ function bindEvents() {
   dom.optionsCollapseToggle.addEventListener('click', handleOptionsCollapseClick);
   dom.actionCollapsedBar.addEventListener('click', handleOptionsCollapseClick);
   dom.inventoryToggleBtn.addEventListener('click', handleInventoryToggleClick);
+  dom.npcToggleBtn.addEventListener('click', handleNpcToggleClick);
   dom.freeInputToggle.addEventListener('click', handleFreeInputToggleClick);
   dom.freeInputCancel.addEventListener('click', handleFreeInputCancelClick);
   dom.freeInputSend.addEventListener('click', handleFreeInputSend);
   dom.freeInputText.addEventListener('keypress', handleFreeInputKeypress);
-  dom.eventModalClose.addEventListener('click', function () { dom.eventModal.classList.add('hidden'); });
+  dom.eventModalClose.addEventListener('click', handleEventModalClose);
 }
 
 function handleProviderChange() {
@@ -327,6 +333,13 @@ function handleInventoryToggleClick() {
   inventoryExpanded = !inventoryExpanded;
   dom.inventoryPanel.classList.toggle('hidden', !inventoryExpanded);
   dom.inventoryToggleBtn.classList.toggle('expanded', inventoryExpanded);
+}
+
+function handleNpcToggleClick() {
+  npcExpanded = !npcExpanded;
+  dom.npcPanel.classList.toggle('hidden', !npcExpanded);
+  dom.npcToggleBtn.classList.toggle('expanded', npcExpanded);
+  if (npcExpanded) renderNpcPanel();
 }
 
 function handleOptionsCollapseClick() {
@@ -610,6 +623,8 @@ function handleAIResponse(response) {
     gameState.recentTurns.shift();
   }
 
+  pendingMilestoneModals = [];
+
   if (response.world_memory_update) {
     gameState.worldMemory = WorldMemory.applyWorldMemoryUpdate(gameState.worldMemory, response.world_memory_update, gameState.turnCount);
   }
@@ -617,7 +632,11 @@ function handleAIResponse(response) {
     gameState.worldMemory = WorldMemory.applyBackgroundEvolution(gameState.worldMemory, response.background_evolution, gameState.turnCount);
   }
   if (response.aspiration_update) {
-    gameState.worldMemory = WorldMemory.applyAspirationUpdate(gameState.worldMemory, response.aspiration_update, gameState.time.day);
+    var aspResult = WorldMemory.applyAspirationUpdate(gameState.worldMemory, response.aspiration_update, gameState.time.day);
+    gameState.worldMemory = aspResult.worldMemory;
+    aspResult.milestones.forEach(function (m) {
+      pendingMilestoneModals.push({ icon: '🎯', title: m.aspirationLabel + '志向進展', text: m.text });
+    });
   }
   if (response.relationship_update) {
     gameState.worldMemory = WorldMemory.applyRelationshipUpdate(gameState.worldMemory, response.relationship_update, gameState.time.day);
@@ -630,21 +649,34 @@ function handleAIResponse(response) {
     maybeSyncToNotion();
     return;
   } else if (status_update.special_event === 'rescued') {
-    showEventModal('🩹', '瀕死獲救', status_update.special_event_text || '有人在最後一刻拉住了你。');
+    pendingMilestoneModals.unshift({ icon: '🩹', title: '瀕死獲救', text: status_update.special_event_text || '有人在最後一刻拉住了你。' });
   } else if (status_update.special_event === 'awakening') {
-    showEventModal('⚡', '異能覺醒', status_update.special_event_text || '你感覺到體內有某種力量正在覺醒');
+    pendingMilestoneModals.unshift({ icon: '⚡', title: '異能覺醒', text: status_update.special_event_text || '你感覺到體內有某種力量正在覺醒' });
   } else if (status_update.special_event === 'multi_awakening') {
-    showEventModal('⚡⚡', '多重覺醒', status_update.special_event_text || '不只一種力量在你體內同時甦醒');
+    pendingMilestoneModals.unshift({ icon: '⚡⚡', title: '多重覺醒', text: status_update.special_event_text || '不只一種力量在你體內同時甦醒' });
   } else if (status_update.special_event === 'level_up') {
-    showEventModal('🔺', '能力進化', status_update.special_event_text || '你的能力形態出現了變化');
+    pendingMilestoneModals.unshift({ icon: '🔺', title: '能力進化', text: status_update.special_event_text || '你的能力形態出現了變化' });
   } else if (status_update.special_event && status_update.special_event !== 'none') {
-    showEventModal('❗', '重要事件', status_update.special_event_text || '發生了重要的事情');
+    pendingMilestoneModals.unshift({ icon: '❗', title: '重要事件', text: status_update.special_event_text || '發生了重要的事情' });
   }
 
   renderOptions(options);
   renderAll();
   saveStateToLocal();
   maybeSyncToNotion();
+
+  showNextPendingModal();
+}
+
+function showNextPendingModal() {
+  if (pendingMilestoneModals.length === 0) return;
+  var next = pendingMilestoneModals.shift();
+  showEventModal(next.icon, next.title, next.text);
+}
+
+function handleEventModalClose() {
+  dom.eventModal.classList.add('hidden');
+  showNextPendingModal();
 }
 
 function maybeSyncToNotion() {
@@ -1031,6 +1063,7 @@ function renderAll() {
     dom.injuryTag.classList.add('hidden');
   }
 
+  if (dom.statGender) dom.statGender.textContent = gameState.charSetup.gender || '未指定';
   dom.statHumanity.textContent = gameState.humanity;
   dom.statAwakening.textContent = gameState.awakeningLevel > 0
     ? ('Lv.' + gameState.awakeningLevel + ' ' + (gameState.awakeningAbility || '') + '（' + gameState.abilityExp + '/' + getAbilityExpNeeded(gameState.awakeningLevel) + '）')
@@ -1047,27 +1080,85 @@ function renderAll() {
   }
   dom.statFaction.textContent = factionEntries.length ? factionEntries.join(' / ') : '無接觸';
 
-  renderRelationships();
   renderInventory();
+  if (npcExpanded) renderNpcPanel();
+  updateNpcToggleLabel();
 }
 
-function renderRelationships() {
-  if (!dom.statRelationships) return;
+function updateNpcToggleLabel() {
+  if (!dom.npcToggleBtn) return;
   var worldMemory = WorldMemory.ensureShape(gameState.worldMemory);
-  var stageLabels = {
-    incipient: '初萌', developing: '漸深', critical_trial: '風險考驗',
-    defining_choice: '關鍵抉擇', resolved_bond: '穩定結合', resolved_apart: '疏離懸置'
-  };
+  var count = Object.keys(worldMemory.relationships).length;
+  dom.npcToggleBtn.querySelector('span').textContent = '📇 人物檔案（' + count + '）';
+}
+
+function renderNpcPanel() {
+  if (!dom.npcList) return;
+  var worldMemory = WorldMemory.ensureShape(gameState.worldMemory);
   var names = Object.keys(worldMemory.relationships);
+  dom.npcList.innerHTML = '';
+
   if (names.length === 0) {
-    dom.statRelationships.textContent = '尚無深入接觸的人物';
+    var emptyEl = document.createElement('div');
+    emptyEl.className = 'npc-empty';
+    emptyEl.textContent = '尚未與任何人物建立深入接觸';
+    dom.npcList.appendChild(emptyEl);
     return;
   }
-  var texts = names.map(function (name) {
+
+  names.forEach(function (name) {
     var rel = worldMemory.relationships[name];
-    return name + '（' + (stageLabels[rel.stage] || rel.stage) + '）';
+    var card = document.createElement('div');
+    card.className = 'npc-card' + (rel.frozen ? ' npc-frozen' : '');
+
+    var header = document.createElement('button');
+    header.type = 'button';
+    header.className = 'npc-card-header';
+    var stageLabel = WorldMemory.STAGE_LABELS[rel.stage] || rel.stage;
+    var statusLabel = rel.frozen ? '（' + (WorldMemory.NPC_STATUS_LABELS[rel.npcStatus] || rel.npcStatus) + '）' : '';
+    header.innerHTML = '<span class="npc-name">' + escapeHtml(name) + statusLabel + '</span>' +
+      '<span class="npc-stage-tag stage-' + rel.stage + '">' + escapeHtml(stageLabel) + '</span>' +
+      '<span class="npc-card-arrow">▾</span>';
+
+    var body = document.createElement('div');
+    body.className = 'npc-card-body hidden';
+
+    var statsHtml = '<div class="npc-stats-row">' +
+      (rel.gender ? '<span class="npc-stat-item">性別：' + escapeHtml(rel.gender) + '</span>' : '') +
+      '<span class="npc-stat-item">信任 ' + rel.trust + '</span>' +
+      '<span class="npc-stat-item">親密 ' + rel.closeness + '</span>' +
+      '<span class="npc-stat-item">浪漫張力 ' + rel.romanticTension + '</span>' +
+      '</div>';
+
+    var backgroundHtml = '';
+    if (rel.background && rel.background.length > 0) {
+      backgroundHtml = '<div class="npc-background"><div class="npc-background-title">背景與經歷</div>' +
+        rel.background.map(function (b) {
+          return '<p class="npc-background-entry"><span class="npc-background-day">第' + b.day + '天</span> ' + escapeHtml(b.text) + '</p>';
+        }).join('') + '</div>';
+    } else {
+      backgroundHtml = '<div class="npc-background"><p class="npc-background-empty">尚無已知背景資訊</p></div>';
+    }
+
+    var milestonesHtml = '';
+    if (rel.milestones && rel.milestones.length > 0) {
+      milestonesHtml = '<div class="npc-milestones"><div class="npc-background-title">關係事件</div>' +
+        rel.milestones.slice(-8).map(function (m) {
+          return '<p class="npc-background-entry"><span class="npc-background-day">第' + m.day + '天</span> ' + escapeHtml(m.text) + '</p>';
+        }).join('') + '</div>';
+    }
+
+    body.innerHTML = statsHtml + backgroundHtml + milestonesHtml;
+
+    header.addEventListener('click', function () {
+      body.classList.toggle('hidden');
+      header.classList.toggle('expanded');
+    });
+
+    card.appendChild(header);
+    card.appendChild(body);
+    dom.npcList.appendChild(card);
   });
-  dom.statRelationships.textContent = texts.join('、');
 }
 
 function renderInventory() {
