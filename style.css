@@ -338,6 +338,26 @@ button {
   animation: pulse-critical 1s infinite;
 }
 
+.injury-tag {
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.injury-tag.minor {
+  background: rgba(184, 134, 11, 0.25);
+  color: #d4a017;
+}
+
+.injury-tag.severe {
+  background: rgba(139, 30, 30, 0.3);
+  color: #e57373;
+  animation: pulse-critical 1s infinite;
+}
+
 .icon-btn {
   background: none;
   border: none;
@@ -378,6 +398,72 @@ button {
 }
 
 .panel-label {
+  color: var(--text-dim);
+}
+
+.inventory-toggle {
+  margin: 8px 14px 0;
+  width: calc(100% - 28px);
+}
+
+.inventory-panel {
+  flex-shrink: 0;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border-color);
+  padding: 10px 14px;
+  margin: 0 14px 8px;
+  border-radius: 8px;
+  animation: slide-down 0.25s ease;
+}
+
+.inventory-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.inventory-load-tag {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.inventory-load-tag.load-輕裝 {
+  background: rgba(74, 107, 74, 0.25);
+  color: #8fbc8f;
+}
+
+.inventory-load-tag.load-標準 {
+  background: rgba(184, 134, 11, 0.25);
+  color: #d4a017;
+}
+
+.inventory-load-tag.load-超載 {
+  background: rgba(139, 30, 30, 0.3);
+  color: #e57373;
+}
+
+.inventory-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.inventory-item {
+  font-size: 11px;
+  padding: 4px 10px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  color: var(--text-primary);
+}
+
+.inventory-empty {
+  font-size: 12px;
   color: var(--text-dim);
 }
 
@@ -446,6 +532,16 @@ button {
   padding-bottom: max(12px, env(safe-area-inset-bottom));
 }
 
+.action-collapsed-bar {
+  width: 100%;
+  padding: 10px;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 12px;
+  cursor: pointer;
+}
+
 .options-container {
   display: flex;
   flex-direction: column;
@@ -482,22 +578,6 @@ button {
   font-size: 11px;
   color: var(--text-dim);
   margin-top: 4px;
-}
-
-.options-container.mini-mode {
-  flex-direction: row;
-  flex-wrap: wrap;
-}
-
-.options-container.mini-mode .option-btn {
-  width: auto;
-  flex: 1 1 auto;
-  padding: 9px 12px;
-  font-size: 12px;
-}
-
-.options-container.mini-mode .option-risk {
-  display: none;
 }
 
 .btn-free-toggle {
@@ -693,6 +773,43 @@ button {
   color: var(--text-secondary);
   line-height: 1.7;
   margin-bottom: 20px;
+}
+
+.death-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  padding: 24px;
+}
+
+.death-screen-content {
+  width: 100%;
+  max-width: 340px;
+  text-align: center;
+}
+
+.death-icon {
+  font-size: 48px;
+  color: var(--accent-red);
+  margin-bottom: 16px;
+}
+
+.death-screen-content h2 {
+  font-size: 22px;
+  color: var(--text-primary);
+  letter-spacing: 2px;
+  margin-bottom: 16px;
+}
+
+.death-text {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.8;
+  margin-bottom: 28px;
 }
 
 .loading-overlay {
