@@ -4,6 +4,8 @@ var STATE_KEY = 'doomsday_dawn_save_v1';
 var APIKEY_KEY = 'doomsday_dawn_apikey';
 var NOTION_KEY = 'doomsday_dawn_notion_config';
 
+var ABILITY_LEVEL_THRESHOLDS = [0, 50, 120, 210, 320, 450, 600, 770, 960, 1170];
+
 var gameState = {
   apiKey: '',
   isTestMode: false,
@@ -17,6 +19,7 @@ var gameState = {
   factionTrust: {},
   awakeningLevel: 0,
   awakeningAbility: null,
+  abilityExp: 0,
   resonanceValue: 0,
   dangerLevel: 'safe',
   weather: '晴',
@@ -111,10 +114,10 @@ var SYSTEM_LINES = [];
 SYSTEM_LINES.push('你是《末日黎明：喪屍浩劫》的game master，壓抑寫實心理驚悚調性，禁止幽默或吐槽語氣。');
 SYSTEM_LINES.push('嚴格遵守下方遊戲規則文檔的所有數值、機率與判定邏輯，該文檔已完整提供，不需要重複解釋規則本身，直接依規則生成敘事與數值變化。');
 SYSTEM_LINES.push('NPC具備獨立人性，包含自保、背叛、恐懼下的過度反應，同時也可能有無償犧牲、隱瞞真相保護他人等正向行為，依規則文檔的NPC判定邏輯執行，不套用單一固定模式。');
-SYSTEM_LINES.push('NPC的覺醒狀態於其背景設定階段獨立判定，不依賴玩家是否目擊，玩家可能遇見已完成覺醒的NPC。');
-SYSTEM_LINES.push('每回合須依規則文檔管理玩家背包物品增減、負重狀態、武器耐久或彈藥、傷勢等級與死亡判定。');
+SYSTEM_LINES.push('NPC與喪屍的覺醒或進化狀態於背景設定階段獨立判定，不依賴玩家是否目擊或介入。');
+SYSTEM_LINES.push('每回合須依規則文檔管理玩家背包物品增減、負重狀態、武器耐久或彈藥、傷勢等級、死亡判定，以及晶核掉落與能力熟練度變化。');
 SYSTEM_LINES.push('禁止重複使用相同場景開場句式或選項措辭，選項必須基於當前具體情境動態生成。');
-SYSTEM_LINES.push('只回傳合法JSON物件，不包含JSON以外文字或Markdown符號。JSON結構：narrative為敘事文字字串；status_update物件包含time_advance_minutes、stamina_change、hunger_change、current_location、danger_level僅可為safe或warning或critical、weather、humanity_change、resonance_change、faction_trust_update、inventory_changes陣列每項包含name與quantity與action僅可為add或remove、injury_status僅可為none或minor或severe、special_event僅可為none或awakening或multi_awakening或death或rescued或其他事件代號、special_event_text；options陣列包含2到4個元素，每個元素含id、label、risk_hint。');
+SYSTEM_LINES.push('只回傳合法JSON物件，不包含JSON以外文字或Markdown符號。JSON結構：narrative為敘事文字字串；status_update物件包含time_advance_minutes、stamina_change、hunger_change、current_location、danger_level僅可為safe或warning或critical、weather、humanity_change、resonance_change、ability_exp_change、faction_trust_update、inventory_changes陣列每項包含name與quantity與action僅可為add或remove、injury_status僅可為none或minor或severe、special_event僅可為none或awakening或multi_awakening或death或rescued或level_up或其他事件代號、special_event_text；options陣列包含2到4個元素，每個元素含id、label、risk_hint。');
 SYSTEM_LINES.push('一般對話或安全區域描寫150至200字，戰鬥探索重大事件描寫350至450字。');
 
 var SYSTEM_INSTRUCTION = SYSTEM_LINES.join(' ');
@@ -357,6 +360,11 @@ function getInventoryLoadLevel() {
   return '超載';
 }
 
+function getAbilityExpNeeded(level) {
+  if (level >= 10) return ABILITY_LEVEL_THRESHOLDS[9];
+  return ABILITY_LEVEL_THRESHOLDS[level];
+}
+
 function buildContextPayload(playerAction) {
   var userText = '';
   if (playerAction === '__START__') {
@@ -379,6 +387,7 @@ function buildContextPayload(playerAction) {
     '，地點：' + gameState.location + '，體力：' + gameState.stamina + '/' + gameState.maxStamina +
     '，飢餓：' + gameState.hunger + '，人性值：' + gameState.humanity +
     '，共鳴值：' + gameState.resonanceValue + '，覺醒等級：' + gameState.awakeningLevel +
+    '，能力熟練度：' + gameState.abilityExp + '/' + getAbilityExpNeeded(gameState.awakeningLevel) +
     '，危險等級：' + gameState.dangerLevel + '，傷勢：' + gameState.injuryStatus +
     '，背包負重：' + getInventoryLoadLevel() + '，持有物品：' + (inventoryList || '無') +
     '，回合數：' + gameState.turnCount;
@@ -455,6 +464,8 @@ function handleAIResponse(response) {
     showEventModal('⚡', '異能覺醒', status_update.special_event_text || '你感覺到體內有某種力量正在覺醒');
   } else if (status_update.special_event === 'multi_awakening') {
     showEventModal('⚡⚡', '多重覺醒', status_update.special_event_text || '不只一種力量在你體內同時甦醒');
+  } else if (status_update.special_event === 'level_up') {
+    showEventModal('🔺', '能力進化', status_update.special_event_text || '你的能力形態出現了變化');
   } else if (status_update.special_event && status_update.special_event !== 'none') {
     showEventModal('❗', '重要事件', status_update.special_event_text || '發生了重要的事情');
   }
@@ -482,6 +493,9 @@ function applyStatusUpdate(update) {
   if (typeof update.resonance_change === 'number') {
     gameState.resonanceValue = clamp(gameState.resonanceValue + update.resonance_change, 0, 999);
   }
+  if (typeof update.ability_exp_change === 'number' && update.ability_exp_change !== 0) {
+    applyAbilityExpChange(update.ability_exp_change);
+  }
   if (update.injury_status) {
     gameState.injuryStatus = update.injury_status;
   }
@@ -496,8 +510,19 @@ function applyStatusUpdate(update) {
       }
     }
   }
-  if (update.special_event === 'awakening') gameState.awakeningLevel += 1;
-  if (update.special_event === 'multi_awakening') gameState.awakeningLevel += 1;
+  if (update.special_event === 'awakening') gameState.awakeningLevel = Math.max(gameState.awakeningLevel, 1);
+  if (update.special_event === 'multi_awakening') gameState.awakeningLevel = Math.max(gameState.awakeningLevel, 1);
+}
+
+function applyAbilityExpChange(delta) {
+  if (gameState.awakeningLevel <= 0) return;
+  gameState.abilityExp += delta;
+  var needed = getAbilityExpNeeded(gameState.awakeningLevel);
+  while (gameState.awakeningLevel < 10 && gameState.abilityExp >= needed) {
+    gameState.abilityExp -= needed;
+    gameState.awakeningLevel += 1;
+    needed = getAbilityExpNeeded(gameState.awakeningLevel);
+  }
 }
 
 function applyInventoryChanges(changes) {
@@ -567,7 +592,9 @@ function renderAll() {
   }
 
   dom.statHumanity.textContent = gameState.humanity;
-  dom.statAwakening.textContent = gameState.awakeningLevel > 0 ? ('Lv.' + gameState.awakeningLevel + ' ' + (gameState.awakeningAbility || '')) : '未覺醒';
+  dom.statAwakening.textContent = gameState.awakeningLevel > 0
+    ? ('Lv.' + gameState.awakeningLevel + ' ' + (gameState.awakeningAbility || '') + '（' + gameState.abilityExp + '/' + getAbilityExpNeeded(gameState.awakeningLevel) + '）')
+    : '未覺醒';
   dom.statWeather.textContent = gameState.weather;
   if (dom.statHunger) dom.statHunger.textContent = gameState.hunger;
 
