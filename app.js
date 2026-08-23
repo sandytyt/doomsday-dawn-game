@@ -139,7 +139,7 @@ SYSTEM_LINES.push('禁止重複使用相同場景開場句式或選項措辭，�
 SYSTEM_LINES.push('提示詞中可能包含「長期世界記憶」段落，記載已知安全區、關鍵NPC、勢力歷史與世界重大事件，你必須將其視為已確立的事實持續納入敘事考量，不可忽略、不可與其矛盾。');
 SYSTEM_LINES.push('world_memory_update欄位僅在本回合敘事確實發生下列四類事件之一時才填寫對應子欄位，其餘情況全部留空物件：new_safe_zone（玩家新建立安全區，含name、location、population、facilities陣列）、safe_zone_update（既有安全區的人口或設施異動，含name、population、facilities_add陣列、facilities_remove陣列、faction_relation_note）、npc_major_event（NPC加入、死亡、覺醒、能力習得或關係質變，含name、ability、note、status僅可為alive或dead或missing或unknown）、faction_shift（勢力關係質變如轉為敵對或同盟，非小幅信任度波動，含faction、eventText）、world_landmark（地圖級重大變化如城市淪陷路線打通，含eventText）。');
 SYSTEM_LINES.push('若使用者輸入中出現「請檢查背景演化」的指示，你必須額外填寫background_evolution欄位，基於提示詞中已提供的長期世界記憶段落，獨立推演已登記的NPC、安全區、勢力在主角不在場期間可能發生的變化，結構為npc_updates陣列每項含name與note與可選status與可選ability、safe_zone_updates陣列每項含name與note、faction_updates陣列每項含faction與eventText；若沒有明確要求則此欄位留空物件。');
-SYSTEM_LINES.push('只回傳合法JSON物件，不包含JSON以外文字或Markdown符號。JSON結構：narrative為敘事文字字串；status_update物件包含time_advance_minutes、stamina_change、hunger_change、current_location、danger_level僅可為safe或warning或critical、weather、humanity_change、resonance_change、ability_exp_change、faction_trust_update、inventory_changes陣列每項包含name與quantity與action僅可為add或remove、injury_status僅可為none或minor或severe、companion_changes陣列每項包含name與action僅可為join或leave或die、special_event僅可為none或awakening或multi_awakening或death或rescued或level_up或其他事件代號、special_event_text；world_memory_update物件依上述規則；background_evolution物件依上述規則；options陣列包含2到4個元素，每個元素含id、label、risk_hint。');
+SYSTEM_LINES.push('只回傳合法JSON物件，不包含JSON以外文字或Markdown符號。JSON結構：...；options陣列包含2到4個元素，每個元素含id、label、risk_hint，其中id欄位只能是大寫字母A、B、C、D，依陣列順序遞增，不可使用其他任何格式如opt_1或數字。');
 SYSTEM_LINES.push('一般對話或安全區域描寫150至200字，戰鬥探索重大事件描寫350至450字。');
 
 var SYSTEM_INSTRUCTION = SYSTEM_LINES.join(' ');
@@ -644,7 +644,7 @@ function maybeSyncToNotion() {
 function buildNotionSyncBody() {
   var injuryOption = gameState.injuryStatus || 'none';
   var lastNarrative = gameState.recentTurns.length ? gameState.recentTurns[gameState.recentTurns.length - 1].narrative : '';
-  var briefSummary = lastNarrative.length > 200 ? lastNarrative.slice(0, 200) + '…' : lastNarrative;
+  var briefSummary = lastNarrative.length > 450 ? lastNarrative.slice(0, 450) + '…' : lastNarrative;
 
   return {
     parent: { database_id: CONFIG.NOTION_DATABASE_ID },
