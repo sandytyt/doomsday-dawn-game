@@ -89,6 +89,7 @@
         <div class="panel-full-item"><span class="panel-label">陣營信任</span><span id="stat-faction">--</span></div>
         <div class="panel-full-item"><span class="panel-label">覺醒進度</span><span id="stat-awakening">未覺醒</span></div>
         <div class="panel-full-item"><span class="panel-label">天氣</span><span id="stat-weather">--</span></div>
+        <div class="panel-full-item"><span class="panel-label">隨行隊員</span><span id="stat-companions">無</span></div>
       </div>
     </div>
 
@@ -138,6 +139,8 @@
 
       <button id="menu-export-btn" class="btn-menu" type="button">📤 匯出存檔</button>
       <button id="menu-import-btn" class="btn-menu" type="button">📥 匯入存檔</button>
+      <button id="menu-named-save-btn" class="btn-menu" type="button">💾 建立命名存檔</button>
+      <button id="menu-named-load-btn" class="btn-menu" type="button">📂 讀取命名存檔</button>
       <button id="menu-rules-btn" class="btn-menu" type="button">📖 遊戲規則說明</button>
       <button id="menu-restart-btn" class="btn-menu btn-danger" type="button">🔄 重新開始（清空進度）</button>
       <button id="menu-apikey-btn" class="btn-menu" type="button">🔑 更改 API 金鑰</button>
@@ -162,6 +165,16 @@
       <div class="side-menu-footer">
         <button id="menu-close-btn" class="btn-secondary" type="button">關閉</button>
       </div>
+    </div>
+  </div>
+
+  <div id="named-save-modal" class="named-save-modal hidden">
+    <div class="named-save-modal-content">
+      <div class="rules-modal-header">
+        <h2>命名存檔</h2>
+        <button id="named-save-close" class="icon-btn" type="button">✕</button>
+      </div>
+      <div id="named-save-list" class="named-save-list"></div>
     </div>
   </div>
 
