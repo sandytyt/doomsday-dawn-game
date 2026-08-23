@@ -10,6 +10,14 @@ var NOTION_CHUNK_SIZE = 2000;
 
 var ABILITY_LEVEL_THRESHOLDS = [0, 50, 120, 210, 320, 450, 600, 770, 960, 1170];
 
+var VEHICLE_TIER_PRESETS = {
+  light_two_wheel: { label: '輕型二輪', cargoCapacity: 5, maxDurability: 60, maxFuel: 40 },
+  light_four_wheel: { label: '輕型四輪', cargoCapacity: 15, maxDurability: 80, maxFuel: 60 },
+  medium: { label: '中型車輛', cargoCapacity: 30, maxDurability: 100, maxFuel: 75 },
+  heavy: { label: '重型車輛', cargoCapacity: 55, maxDurability: 130, maxFuel: 100 },
+  special_military: { label: '特種/軍規車輛', cargoCapacity: 45, maxDurability: 160, maxFuel: 90 }
+};
+
 var gameState = {
   apiKey: '',
   provider: 'gemini',
@@ -43,11 +51,19 @@ var gameState = {
   charSetup: { name: '', gender: '', location: '', occupation: '' }
 };
 
+var gameState = {
+  // ...保留原本所有既有欄位（apiKey, provider, time, stamina 等）不動...
+  charSetup: { name: '', gender: '', location: '', occupation: '' },
+  vehicles: [],           // 新增：載具清單，每筆 { id, name, tier, durability, maxDurability, fuel, maxFuel, cargoCapacity, cargo: [], status, acquiredDay }
+  activeVehicleId: null   // 新增：目前使用中的載具 id，null 代表徒步
+};
+
 var isWaitingForAI = false;
 var statusExpanded = false;
 var optionsMiniMode = false;
 var inventoryExpanded = false;
 var npcExpanded = false;
+var vehicleExpanded = false;
 var currentSaveTab = 'local';
 var notionSavesCache = [];
 var pendingMilestoneModals = [];
@@ -103,6 +119,9 @@ function cacheDom() {
   dom.npcToggleBtn = document.getElementById('npc-toggle-btn');
   dom.npcPanel = document.getElementById('npc-panel');
   dom.npcList = document.getElementById('npc-list');
+  dom.vehicleToggleBtn = document.getElementById('vehicle-toggle-btn');
+  dom.vehiclePanel = document.getElementById('vehicle-panel');
+  dom.vehicleList = document.getElementById('vehicle-list');
   dom.sideMenu = document.getElementById('side-menu');
   dom.sideMenuBackdrop = document.getElementById('side-menu-backdrop');
   dom.menuExportBtn = document.getElementById('menu-export-btn');
@@ -149,9 +168,10 @@ SYSTEM_LINES.push('禁止重複使用相同場景開場句式或選項措辭，�
 SYSTEM_LINES.push('提示詞中可能包含「長期世界記憶」段落，記載已知安全區、關鍵NPC、勢力歷史、世界重大事件、玩家志向發展與人物關係記錄，你必須將其視為已確立的事實持續納入敘事考量，不可忽略、不可與其矛盾。');
 SYSTEM_LINES.push('world_memory_update欄位僅在本回合敘事確實發生下列四類事件之一時才填寫對應子欄位，其餘情況全部留空物件：new_safe_zone（玩家新建立安全區，含name、location、population、facilities陣列）、safe_zone_update（既有安全區的人口或設施異動，含name、population、facilities_add陣列、facilities_remove陣列、faction_relation_note）、npc_major_event（NPC加入、死亡、覺醒、能力習得或關係質變，含name、gender、ability、note、status僅可為alive或dead或missing或unknown）、faction_shift（勢力關係質變如轉為敵對或同盟，非小幅信任度波動，含faction、eventText）、world_landmark（地圖級重大變化如城市淪陷路線打通，含eventText）。');
 SYSTEM_LINES.push('若使用者輸入中出現「請檢查背景演化」的指示，你必須額外填寫background_evolution欄位，基於提示詞中已提供的長期世界記憶段落，獨立推演已登記的NPC、安全區、勢力在主角不在場期間可能發生的變化，結構為npc_updates陣列每項含name與note與可選status與可選ability與可選gender、safe_zone_updates陣列每項含name與note、faction_updates陣列每項含faction與eventText；若沒有明確要求則此欄位留空物件。');
+SYSTEM_LINES.push('若玩家取得、修復、使用或失去載具，須依規則文檔載具系統章節管理耐久度、油量、貨艙容量與危險等級雙面效果，車輛類型不限於固定清單，可為任何合理現實車輛，但須依其體型用途歸入對應數值級距。若本回合涉及載具狀態變化，於vehicle_update欄位回報：action僅可為acquire（新獲得載具）、repair（耐久度恢復）、refuel（油量補充）、damage（耐久度受損）、cargo_change（貨艙物品增減）、lose（載具報廢或失去）、set_active（切換使用中載具）之一；vehicle_name為該載具的敘事名稱用於比對識別；vehicle_tier（僅action為acquire時填寫）僅可為light_two_wheel或light_four_wheel或medium或heavy或special_military之一，依車輛體型用途合理判斷；durability_change與fuel_change為對應數值變化的整數；cargo_changes陣列每項包含name與quantity與action（add或remove），僅在action為cargo_change時填寫。若本回合無任何載具狀態變化，此物件整體留空。');
 SYSTEM_LINES.push('玩家的長期發展路線由四條志向線構成，彼此不互斥，可同時推進：庇護建設者shelterBuilder專注安全區規模、設施、人口成長；治療探索者cureSeeker專注病毒研究與解藥或疫苗相關進展；暗影獵人shadowHunter專注透過武力與威嚇建立跨陣營恐懼名聲；勢力締造者factionLeader專注在既有陣營內取得實質決策影響力或創建新勢力。每回合若敘事內容明確符合某條志向線的推進條件，於aspiration_update欄位回報對應志向鍵名的物件，內含progress_delta（一個負20至正20之間的整數）與milestone_text（僅達成關鍵性轉折時填寫，否則留空字串）。一回合可同時推進多條志向線，也可以完全不推進任何志向線，不可為了填欄位而勉強編造進度，其餘志向留空物件。');
 SYSTEM_LINES.push('每個具名NPC都有性別gender與三個獨立關係軸：trust信任範圍0到100代表對方是否相信你並願意託付重要事務、closeness親密範圍0到100代表情感靠近程度決定對話深度與私密話題開放與否、romantic_tension浪漫張力範圍0到100僅特定NPC適用代表關係往愛情方向發展的張力與前兩軸獨立運作不必然同步成長。每個NPC關係處於六個敘事階段之一：acquainted初識剛認識僅止於認識彼此存在、incipient初萌開始有一絲交集關係值變動應緩慢、developing漸深開始建立信任與默契、critical_trial風險考驗劇情須安排一次高風險抉擇考驗雙方關係不可透過玩家連續示好跳過此階段、defining_choice關鍵抉擇雙方關係將往結合決裂或維持現狀之一定型此為不可逆敘事節點、resolved_bond穩定結合或resolved_apart疏離懸置為關係定型後的穩定狀態。階段推進有時間限制，唯有初識轉為初萌不受天數限制可隨劇情自然發生，初萌之後每一階段轉換都須提示詞中的長期世界記憶段落標明「可推進下一階段」才可以在stage_transition欄位填入下一階段名稱，若標明「尚未滿5天不可推進階段」則絕對不可填寫stage_transition即使劇情發展看似合適也必須等待。若提示詞標明某NPC已進入漸深階段較久建議安排風險考驗事件，可主動於本回合或近期敘事中安排相應情境。關係推進不應是玩家單方面刷好感度就能達成，必須透過劇情中的具體事件才能真正變動關係軸數值與階段，日常閒聊互動只應造成極小幅度變動即正負1至3點。若某NPC狀態為dead或missing，其關係已被系統凍結，不可再回報trust_delta、closeness_delta、romantic_tension_delta或stage_transition，僅可透過background_note補充該NPC過去的背景資訊。若本回合涉及具名NPC的關係發展或想補充其背景經歷，於relationship_update欄位回報npc_name、gender（若尚未記錄則填寫）、trust_delta、closeness_delta、romantic_tension_delta（不涉及浪漫時留空或0）、stage_transition（僅符合天數條件時才填寫，否則留空字串）、note簡述本次關係變化的具體事由、background_note（僅當本回合透過對話或事件得知該NPC過去背景或經歷時才填寫，是一段可累加的日記式記錄，不覆蓋先前內容，若無新背景資訊則留空字串）；若本回合無任何NPC關係變化，此物件整體留空。');
-SYSTEM_LINES.push('只回傳合法JSON物件，不包含JSON以外文字或Markdown符號。JSON結構：narrative為敘事文字字串；status_update物件包含time_advance_minutes、stamina_change、hunger_change、current_location、danger_level僅可為safe或warning或critical、weather、humanity_change、resonance_change、ability_exp_change、faction_trust_update、inventory_changes陣列每項包含name與quantity與action僅可為add或remove、injury_status僅可為none或minor或severe、companion_changes陣列每項包含name與action僅可為join或leave或die、special_event僅可為none或awakening或multi_awakening或death或rescued或level_up或其他事件代號、special_event_text；world_memory_update物件依上述規則；background_evolution物件依上述規則；aspiration_update物件依上述規則；relationship_update物件依上述規則；options陣列包含2到4個元素，每個元素含id、label、risk_hint，其中id欄位只能是大寫字母A、B、C、D，依陣列順序遞增，不可使用其他任何格式如opt_1或數字。');
+SYSTEM_LINES.push('只回傳合法JSON物件，不包含JSON以外文字或Markdown符號。JSON結構：narrative為敘事文字字串；status_update物件包含time_advance_minutes、stamina_change、hunger_change、current_location、danger_level僅可為safe或warning或critical、weather、humanity_change、resonance_change、ability_exp_change、faction_trust_update、inventory_changes陣列每項包含name與quantity與action僅可為add或remove、injury_status僅可為none或minor或severe、vehicle_update物件依上述規則、companion_changes陣列每項包含name與action僅可為join或leave或die、special_event僅可為none或awakening或multi_awakening或death或rescued或level_up或其他事件代號、special_event_text；world_memory_update物件依上述規則；background_evolution物件依上述規則；aspiration_update物件依上述規則；relationship_update物件依上述規則；options陣列包含2到4個元素，每個元素含id、label、risk_hint，其中id欄位只能是大寫字母A、B、C、D，依陣列順序遞增，不可使用其他任何格式如opt_1或數字。');
 SYSTEM_LINES.push('一般對話或安全區域描寫150至200字，戰鬥探索重大事件描寫350至450字。');
 
 var SYSTEM_INSTRUCTION = SYSTEM_LINES.join(' ');
@@ -296,6 +316,7 @@ function bindEvents() {
   dom.actionCollapsedBar.addEventListener('click', handleOptionsCollapseClick);
   dom.inventoryToggleBtn.addEventListener('click', handleInventoryToggleClick);
   dom.npcToggleBtn.addEventListener('click', handleNpcToggleClick);
+  if (dom.vehicleToggleBtn) dom.vehicleToggleBtn.addEventListener('click', handleVehicleToggleClick);
   dom.freeInputToggle.addEventListener('click', handleFreeInputToggleClick);
   dom.freeInputCancel.addEventListener('click', handleFreeInputCancelClick);
   dom.freeInputSend.addEventListener('click', handleFreeInputSend);
@@ -342,6 +363,13 @@ function handleNpcToggleClick() {
   dom.npcPanel.classList.toggle('hidden', !npcExpanded);
   dom.npcToggleBtn.classList.toggle('expanded', npcExpanded);
   if (npcExpanded) renderNpcPanel();
+}
+
+function handleVehicleToggleClick() {
+  vehicleExpanded = !vehicleExpanded;
+  dom.vehiclePanel.classList.toggle('hidden', !vehicleExpanded);
+  dom.vehicleToggleBtn.classList.toggle('expanded', vehicleExpanded);
+  if (vehicleExpanded) renderVehiclePanel();
 }
 
 function handleOptionsCollapseClick() {
@@ -963,6 +991,9 @@ function applyStatusUpdate(update) {
   if (update.companion_changes && update.companion_changes.length) {
     applyCompanionChanges(update.companion_changes);
   }
+  if (update.vehicle_update && update.vehicle_update.action) {
+    applyVehicleUpdate(update.vehicle_update);
+  }
   if (update.faction_trust_update) {
     for (var faction in update.faction_trust_update) {
       if (Object.prototype.hasOwnProperty.call(update.faction_trust_update, faction)) {
@@ -987,6 +1018,87 @@ function applyCompanionChanges(changes) {
     }
   }
 }
+
+function findVehicleByName(name) {
+  for (var i = 0; i < gameState.vehicles.length; i++) {
+    if (gameState.vehicles[i].name === name) return gameState.vehicles[i];
+  }
+  return null;
+}
+
+function applyVehicleUpdate(vu) {
+  var action = vu.action;
+  if (action === 'acquire') {
+    if (findVehicleByName(vu.vehicle_name)) return;
+    var preset = VEHICLE_TIER_PRESETS[vu.vehicle_tier] || VEHICLE_TIER_PRESETS.light_four_wheel;
+    var newVehicle = {
+      id: 'vehicle_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+      name: vu.vehicle_name || '未命名載具',
+      tier: vu.vehicle_tier || 'light_four_wheel',
+      durability: preset.maxDurability,
+      maxDurability: preset.maxDurability,
+      fuel: preset.maxFuel,
+      maxFuel: preset.maxFuel,
+      cargoCapacity: preset.cargoCapacity,
+      cargo: [],
+      status: 'active',
+      acquiredDay: gameState.time.day
+    };
+    gameState.vehicles.push(newVehicle);
+    if (!gameState.activeVehicleId) gameState.activeVehicleId = newVehicle.id;
+    return;
+  }
+  var vehicle = findVehicleByName(vu.vehicle_name);
+  if (!vehicle) return;
+  if (action === 'repair') {
+    if (typeof vu.durability_change === 'number') {
+      vehicle.durability = clamp(vehicle.durability + Math.abs(vu.durability_change), 0, vehicle.maxDurability);
+    }
+  } else if (action === 'refuel') {
+    if (typeof vu.fuel_change === 'number') {
+      vehicle.fuel = clamp(vehicle.fuel + Math.abs(vu.fuel_change), 0, vehicle.maxFuel);
+    }
+  } else if (action === 'damage') {
+    if (typeof vu.durability_change === 'number') {
+      vehicle.durability = clamp(vehicle.durability - Math.abs(vu.durability_change), 0, vehicle.maxDurability);
+    }
+    if (typeof vu.fuel_change === 'number') {
+      vehicle.fuel = clamp(vehicle.fuel - Math.abs(vu.fuel_change), 0, vehicle.maxFuel);
+    }
+    if (vehicle.durability <= 0) {
+      vehicle.status = 'lost';
+      if (gameState.activeVehicleId === vehicle.id) gameState.activeVehicleId = null;
+    }
+  } else if (action === 'cargo_change' && Array.isArray(vu.cargo_changes)) {
+    for (var i = 0; i < vu.cargo_changes.length; i++) {
+      var change = vu.cargo_changes[i];
+      var existing = null;
+      for (var j = 0; j < vehicle.cargo.length; j++) {
+        if (vehicle.cargo[j].name === change.name) { existing = vehicle.cargo[j]; break; }
+      }
+      if (change.action === 'remove') {
+        if (existing) {
+          existing.quantity -= (change.quantity || 1);
+          if (existing.quantity <= 0) {
+            vehicle.cargo = vehicle.cargo.filter(function (it) { return it.name !== change.name; });
+          }
+        }
+      } else {
+        if (existing) {
+          existing.quantity += (change.quantity || 1);
+        } else {
+          vehicle.cargo.push({ name: change.name, quantity: change.quantity || 1 });
+        }
+      }
+    }
+  } else if (action === 'lose') {
+    vehicle.status = 'lost';
+    if (gameState.activeVehicleId === vehicle.id) gameState.activeVehicleId = null;
+  } else if (action === 'set_active') {
+    if (vehicle.status !== 'lost') gameState.activeVehicleId = vehicle.id;
+  }
+}
+
 
 function applyAbilityExpChange(delta) {
   if (gameState.awakeningLevel <= 0) return;
@@ -1091,6 +1203,32 @@ function renderAll() {
   renderInventory();
   if (npcExpanded) renderNpcPanel();
   updateNpcToggleLabel();
+
+  updateVehicleToggleVisibility();
+  if (vehicleExpanded) renderVehiclePanel();
+  updateVehicleToggleLabel();
+
+  /* 同時，在 renderAll() 內尋找 NPC 分頁的可見度控制邏輯位置，
+    若原本沒有依人數決定顯示/隱藏，請新增： */
+  if (dom.npcToggleBtn) {
+    var worldMemoryForVisibility = WorldMemory.ensureShape(gameState.worldMemory);
+    var npcCount = Object.keys(worldMemoryForVisibility.relationships).length;
+    dom.npcToggleBtn.classList.toggle('hidden', npcCount === 0);
+  }
+
+  /* 覺醒進度與陣營信任的條件顯示：在 renderAll() 內，
+    原本設定 dom.statAwakening.textContent 與 dom.statFaction.textContent 
+    的邏輯區塊旁，新增顯示/隱藏控制（需搭配 index.html 將這兩個
+    panel-full-item 各自包上可辨識的容器，例如 id="panel-item-awakening"
+    與 id="panel-item-faction"，方便 JS 直接控制整塊隱藏，而不只是內容文字）： */
+  if (dom.panelItemAwakening) {
+    dom.panelItemAwakening.classList.toggle('hidden', gameState.awakeningLevel <= 0);
+  }
+  if (dom.panelItemFaction) {
+    var hasFactionContact = Object.keys(gameState.factionTrust).length > 0;
+    dom.panelItemFaction.classList.toggle('hidden', !hasFactionContact);
+  }
+
 }
 
 function updateNpcToggleLabel() {
@@ -1098,6 +1236,54 @@ function updateNpcToggleLabel() {
   var worldMemory = WorldMemory.ensureShape(gameState.worldMemory);
   var count = Object.keys(worldMemory.relationships).length;
   dom.npcToggleBtn.querySelector('span').textContent = '📇 人物檔案（' + count + '）';
+}
+
+function updateVehicleToggleVisibility() {
+  if (!dom.vehicleToggleBtn) return;
+  var hasVehicle = gameState.vehicles.some(function (v) { return v.status !== 'lost'; });
+  dom.vehicleToggleBtn.classList.toggle('hidden', !hasVehicle);
+  if (!hasVehicle && vehicleExpanded) {
+    vehicleExpanded = false;
+    dom.vehiclePanel.classList.add('hidden');
+    dom.vehicleToggleBtn.classList.remove('expanded');
+  }
+}
+
+function updateVehicleToggleLabel() {
+  if (!dom.vehicleToggleBtn) return;
+  var activeCount = gameState.vehicles.filter(function (v) { return v.status !== 'lost'; }).length;
+  var span = dom.vehicleToggleBtn.querySelector('span');
+  if (span) span.textContent = '🚗 載具（' + activeCount + '）';
+}
+
+function renderVehiclePanel() {
+  if (!dom.vehicleList) return;
+  dom.vehicleList.innerHTML = '';
+  var activeVehicles = gameState.vehicles.filter(function (v) { return v.status !== 'lost'; });
+  if (activeVehicles.length === 0) {
+    var emptyEl = document.createElement('div');
+    emptyEl.className = 'vehicle-empty';
+    emptyEl.textContent = '尚未擁有任何載具';
+    dom.vehicleList.appendChild(emptyEl);
+    return;
+  }
+  activeVehicles.forEach(function (v) {
+    var card = document.createElement('div');
+    card.className = 'vehicle-card' + (v.id === gameState.activeVehicleId ? ' vehicle-active' : '');
+    var cargoText = v.cargo.length
+      ? v.cargo.map(function (it) { return it.name + ' x' + it.quantity; }).join('、')
+      : '空';
+    card.innerHTML =
+      '<div class="vehicle-card-header">' +
+        '<span class="vehicle-name">' + escapeHtml(v.name) + (v.id === gameState.activeVehicleId ? '（使用中）' : '') + '</span>' +
+      '</div>' +
+      '<div class="vehicle-stat-row">' +
+        '<span>耐久 ' + v.durability + '/' + v.maxDurability + '</span>' +
+        '<span>油量 ' + v.fuel + '/' + v.maxFuel + '</span>' +
+      '</div>' +
+      '<div class="vehicle-cargo-row">貨艙（' + v.cargo.length + '/' + v.cargoCapacity + '）：' + escapeHtml(cargoText) + '</div>';
+    dom.vehicleList.appendChild(card);
+  });
 }
 
 function renderNpcPanel() {
