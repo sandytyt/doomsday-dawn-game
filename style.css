@@ -950,7 +950,13 @@ button {
 }
 
 .npc-panel {
-  margin-top: 8px;
+  flex-shrink: 0;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border-color);
+  padding: 10px 14px;
+  margin: 0 14px 8px;
+  border-radius: 8px;
+  animation: slide-down 0.25s ease;
 }
 .npc-list {
   display: flex;
@@ -958,14 +964,16 @@ button {
   gap: 8px;
 }
 .npc-empty {
-  color: #888;
+  font-size: 12px;
+  color: var(--text-dim);
   text-align: center;
-  padding: 16px;
+  padding: 8px 0;
 }
 .npc-card {
-  border: 1px solid #333;
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   overflow: hidden;
+  background: var(--bg-panel);
 }
 .npc-card.npc-frozen {
   opacity: 0.55;
@@ -977,61 +985,66 @@ button {
   align-items: center;
   gap: 8px;
   padding: 10px 12px;
-  background: #1e1e1e;
+  background: var(--bg-panel);
   border: none;
-  color: #eee;
+  color: var(--text-primary);
   cursor: pointer;
   text-align: left;
+  font-size: 13px;
 }
 .npc-card-header .npc-name {
   flex: 1;
   font-weight: 600;
 }
 .npc-stage-tag {
-  font-size: 12px;
+  font-size: 11px;
   padding: 2px 8px;
   border-radius: 10px;
-  background: #444;
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
 }
 .npc-card-arrow {
-  transition: transform 0.2s;
+  transition: transform 0.25s ease;
+  color: var(--text-secondary);
 }
 .npc-card-header.expanded .npc-card-arrow {
   transform: rotate(180deg);
 }
 .npc-card-body {
   padding: 10px 12px;
-  background: #161616;
+  background: var(--bg-panel);
+  border-top: 1px solid var(--border-color);
 }
 .npc-stats-row {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
   margin-bottom: 8px;
-  font-size: 13px;
-  color: #bbb;
+  font-size: 12px;
+  color: var(--text-secondary);
 }
 .npc-background-title {
-  font-size: 12px;
-  color: #888;
+  font-size: 11px;
+  color: var(--text-dim);
   margin-bottom: 4px;
 }
 .npc-background-entry {
-  font-size: 13px;
+  font-size: 12.5px;
   margin: 4px 0;
-  color: #ccc;
+  color: var(--text-secondary);
+  line-height: 1.6;
 }
 .npc-background-day {
-  color: #777;
+  color: var(--text-dim);
   margin-right: 4px;
 }
 .npc-background-empty {
-  font-size: 13px;
-  color: #666;
+  font-size: 12px;
+  color: var(--text-dim);
 }
 .npc-milestones {
   margin-top: 8px;
-  border-top: 1px solid #2a2a2a;
+  border-top: 1px solid var(--border-color);
   padding-top: 8px;
 }
 .panel-full-item-wide {
