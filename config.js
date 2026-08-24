@@ -70,3 +70,20 @@ function pickRandomNameByGender(gender) {
   }
   return pickRandom(pool);
 }
+
+var FOOD_HUNGER_RECOVERY = {
+  '零食': 12, '乾糧': 12, '口糧': 25, '罐頭': 25, '乾肉': 25,
+  '餅乾': 12, '軍糧': 25, '烹煮': 42, '野味': 42, '熱食': 42,
+  '飽餐': 60, '聚餐': 60, '大餐': 60
+};
+var DEFAULT_FOOD_RECOVERY = 20;
+
+var WATER_ONLY_KEYWORDS = ['水', '飲用水', '礦泉水', '生理食鹽水'];
+
+function isWaterOnly(name) {
+  var hasWaterWord = WATER_ONLY_KEYWORDS.some(function (w) { return name.indexOf(w) !== -1; });
+  if (!hasWaterWord) return false;
+  var foodExclusion = ['湯', '粥', '茶飲', '果汁'];
+  var isActuallyFood = foodExclusion.some(function (w) { return name.indexOf(w) !== -1; });
+  return !isActuallyFood;
+}
