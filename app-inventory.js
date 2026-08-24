@@ -244,13 +244,15 @@ function renderItemsAccordion() {
   locations.push({
     key: '__backpack__',
     label: '隨身背包',
-    items: gameState.inventory
+    items: gameState.inventory,
+    isBackpack: true
   });
   gameState.stashes.forEach(function (s) {
     locations.push({
       key: s.id,
       label: s.locationName,
-      items: s.items
+      items: s.items,
+      isBackpack: false
     });
   });
 
@@ -258,11 +260,18 @@ function renderItemsAccordion() {
     var card = document.createElement('div');
     card.className = 'item-location-card';
 
+    var loadTagHtml = '';
+    if (loc.isBackpack) {
+      var loadLevel = getInventoryLoadLevel();
+      loadTagHtml = '<span class="inventory-load-tag load-' + loadLevel + '">' + loadLevel + '</span>';
+    }
+
     var header = document.createElement('button');
     header.type = 'button';
     header.className = 'item-location-header' + (expandedItemLocations[loc.key] ? ' expanded' : '');
     header.innerHTML =
       '<span class="location-name">' + escapeHtml(loc.label) + '</span>' +
+      loadTagHtml +
       '<span class="location-count">' + loc.items.length + '項</span>' +
       '<span class="item-location-arrow">▾</span>';
 
