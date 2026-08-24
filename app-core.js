@@ -781,6 +781,19 @@ function clamp(val, min, max) {
   return Math.max(min, Math.min(max, val));
 }
 
+function getRiskLevel(riskHint) {
+  if (!riskHint) return 'low';
+  var highKeywords = ['死', '喪屍', '危險', '致命', '重傷', '衝突', '挑釁', '暴露', '追擊', '槲聲', '槪聲'];
+  var mediumKeywords = ['可能', '風險', '難以', '警戒', '驚動', '盤查'];
+  for (var i = 0; i < highKeywords.length; i++) {
+    if (riskHint.indexOf(highKeywords[i]) !== -1) return 'high';
+  }
+  for (var j = 0; j < mediumKeywords.length; j++) {
+    if (riskHint.indexOf(mediumKeywords[j]) !== -1) return 'medium';
+  }
+  return 'low';
+}
+
 function renderAll() {
   var testTag = gameState.isTestMode ? '🧪 ' : '';
   dom.statusTime.textContent = testTag + '⏱ 第' + gameState.time.day + '天 ' + pad2(gameState.time.hour) + ':' + pad2(gameState.time.minute);
@@ -896,7 +909,7 @@ function renderOptions(options) {
   for (var i = 0; i < list.length; i++) {
     var opt = list[i];
     var btn = document.createElement('button');
-    btn.className = 'option-btn';
+    btn.className = 'option-btn risk-' + riskLevel;
     btn.type = 'button';
     var riskHtml = opt.risk_hint ? ('<span class="option-risk">' + escapeHtml(opt.risk_hint) + '</span>') : '';
     btn.innerHTML = '<span class="option-id">' + opt.id + '.</span>' + escapeHtml(opt.label) + riskHtml;
