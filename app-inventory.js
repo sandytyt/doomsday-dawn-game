@@ -1,0 +1,199 @@
+'use strict';
+
+function applyInventoryChanges(changes) {
+  for (var i = 0; i < changes.length; i++) {
+    var change = changes[i];
+    var existing = null;
+    for (var j = 0; j < gameState.inventory.length; j++) {
+      if (gameState.inventory[j].name === change.name) {
+        existing = gameState.inventory[j];
+        break;
+      }
+    }
+    if (change.action === 'remove') {
+      if (existing) {
+        existing.quantity -= (change.quantity || 1);
+        if (existing.quantity <= 0) {
+          gameState.inventory = gameState.inventory.filter(function (it) { return it.name !== change.name; });
+        }
+      }
+    } else {
+      if (existing) {
+        existing.quantity += (change.quantity || 1);
+      } else {
+        gameState.inventory.push({ name: change.name, quantity: change.quantity || 1 });
+      }
+    }
+  }
+}
+
+function findVehicleByName(name) {
+  for (var i = 0; i < gameState.vehicles.length; i++) {
+    if (gameState.vehicles[i].name === name) return gameState.vehicles[i];
+  }
+  return null;
+}
+
+function applyVehicleUpdate(vu) {
+  var action = vu.action;
+  if (action === 'acquire') {
+    // 防止同一輛車因AI措辭不同的名稱被重複新增：
+    // 若已存在名稱高度相似（去除空白、包含關係）的未報廢載具，視為同一輛車，僅更新名稱不新增。
+    var similarVehicle = null;
+    for (var vi = 0; vi < gameState.vehicles.length; vi++) {
+      var existingV = gameState.vehicles[vi];
+      if (existingV.status === 'lost') continue;
+      if (existingV.name === vu.vehicle_name ||
+          existingV.name.indexOf(vu.vehicle_name) !== -1 ||
+          vu.vehicle_name.indexOf(existingV.name) !== -1) {
+        similarVehicle = existingV;
+        break;
+      }
+    }
+    if (similarVehicle) {
+      // 視為對同一輛車的重複描述，僅同步較完整的名稱，不新增載具
+      if (vu.vehicle_name && vu.vehicle_name.length > similarVehicle.name.length) {
+        similarVehicle.name = vu.vehicle_name;
+      }
+      return;
+    }
+    var preset = VEHICLE_TIER_PRESETS[vu.vehicle_tier] || VEHICLE_TIER_PRESETS.light_four_wheel;
+    var newVehicle = {
+      id: 'vehicle_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+      name: vu.vehicle_name || '未命名載具',
+      tier: vu.vehicle_tier || 'light_four_wheel',
+      durability: preset.maxDurability,
+      maxDurability: preset.maxDurability,
+      fuel: preset.maxFuel,
+      maxFuel: preset.maxFuel,
+      cargoCapacity: preset.cargoCapacity,
+      cargo: [],
+      status: 'active',
+      acquiredDay: gameState.time.day
+    };
+    gameState.vehicles.push(newVehicle);
+    if (!gameState.activeVehicleId) gameState.activeVehicleId = newVehicle.id;
+    return;
+  }
+  var vehicle = findVehicleByName(vu.vehicle_name);
+  if (!vehicle) return;
+  if (action === 'repair') {
+    if (typeof vu.durability_change === 'number') {
+      vehicle.durability = clamp(vehicle.durability + Math.abs(vu.durability_change), 0, vehicle.maxDurability);
+    }
+  } else if (action === 'refuel') {
+    if (typeof vu.fuel_change === 'number') {
+      vehicle.fuel = clamp(vehicle.fuel + Math.abs(vu.fuel_change), 0, vehicle.maxFuel);
+    }
+  } else if (action === 'damage') {
+    if (typeof vu.durability_change === 'number') {
+      vehicle.durability = clamp(vehicle.durability - Math.abs(vu.durability_change), 0, vehicle.maxDurability);
+    }
+    if (typeof vu.fuel_change === 'number') {
+      vehicle.fuel = clamp(vehicle.fuel - Math.abs(vu.fuel_change), 0, vehicle.maxFuel);
+    }
+    if (vehicle.durability <= 0) {
+      vehicle.status = 'lost';
+      if (gameState.activeVehicleId === vehicle.id) gameState.activeVehicleId = null;
+    }
+  } else if (action === 'cargo_change' && Array.isArray(vu.cargo_changes)) {
+    for (var i = 0; i < vu.cargo_changes.length; i++) {
+      var change = vu.cargo_changes[i];
+      var existing = null;
+      for (var j = 0; j < vehicle.cargo.length; j++) {
+        if (vehicle.cargo[j].name === change.name) { existing = vehicle.cargo[j]; break; }
+      }
+      if (change.action === 'remove') {
+        if (existing) {
+          existing.quantity -= (change.quantity || 1);
+          if (existing.quantity <= 0) {
+            vehicle.cargo = vehicle.cargo.filter(function (it) { return it.name !== change.name; });
+          }
+        }
+      } else {
+        if (existing) {
+          existing.quantity += (change.quantity || 1);
+        } else {
+          vehicle.cargo.push({ name: change.name, quantity: change.quantity || 1 });
+        }
+      }
+    }
+  } else if (action === 'lose') {
+    vehicle.status = 'lost';
+    if (gameState.activeVehicleId === vehicle.id) gameState.activeVehicleId = null;
+  } else if (action === 'set_active') {
+    if (vehicle.status !== 'lost') gameState.activeVehicleId = vehicle.id;
+  }
+}
+
+function findStashByLocation(locationName) {
+  for (var i = 0; i < gameState.stashes.length; i++) {
+    var s = gameState.stashes[i];
+    if (s.locationName === locationName ||
+        s.locationName.indexOf(locationName) !== -1 ||
+        locationName.indexOf(s.locationName) !== -1) {
+      return s;
+    }
+  }
+  return null;
+}
+
+function applyStashUpdate(su) {
+  if (!su.location_name || !Array.isArray(su.items)) return;
+  var stash = findStashByLocation(su.location_name);
+
+  if (su.action === 'store') {
+    if (!stash) {
+      stash = {
+        id: 'stash_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+        locationName: su.location_name,
+        items: [],
+        createdDay: gameState.time.day,
+        note: ''
+      };
+      gameState.stashes.push(stash);
+    }
+    for (var i = 0; i < su.items.length; i++) {
+      var item = su.items[i];
+      var existing = null;
+      for (var j = 0; j < stash.items.length; j++) {
+        if (stash.items[j].name === item.name) { existing = stash.items[j]; break; }
+      }
+      if (existing) {
+        existing.quantity += (item.quantity || 1);
+      } else {
+        stash.items.push({ name: item.name, quantity: item.quantity || 1 });
+      }
+    }
+  } else if (su.action === 'retrieve') {
+    if (!stash) return;
+    for (var k = 0; k < su.items.length; k++) {
+      var ritem = su.items[k];
+      var existingR = null;
+      for (var m = 0; m < stash.items.length; m++) {
+        if (stash.items[m].name === ritem.name) { existingR = stash.items[m]; break; }
+      }
+      if (existingR) {
+        existingR.quantity -= (ritem.quantity || 1);
+        if (existingR.quantity <= 0) {
+          stash.items = stash.items.filter(function (it) { return it.name !== ritem.name; });
+        }
+      }
+    }
+    // 若暫存點已清空，移除該暫存點記錄
+    if (stash.items.length === 0) {
+      gameState.stashes = gameState.stashes.filter(function (s) { return s.id !== stash.id; });
+    }
+  }
+}
+
+function applyAbilityExpChange(delta) {
+  if (gameState.awakeningLevel <= 0) return;
+  gameState.abilityExp += delta;
+  var needed = getAbilityExpNeeded(gameState.awakeningLevel);
+  while (gameState.awakeningLevel < 10 && gameState.abilityExp >= needed) {
+    gameState.abilityExp -= needed;
+    gameState.awakeningLevel += 1;
+    needed = getAbilityExpNeeded(gameState.awakeningLevel);
+  }
+}
