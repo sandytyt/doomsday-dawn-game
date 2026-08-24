@@ -109,19 +109,23 @@ function cacheDom() {
   dom.freeInputCancel = document.getElementById('free-input-cancel');
   dom.freeInputToggle = document.getElementById('free-input-toggle');
   dom.actionCollapsedBar = document.getElementById('action-collapsed-bar');
-  dom.inventoryToggleBtn = document.getElementById('inventory-toggle-btn');
-  dom.inventoryPanel = document.getElementById('inventory-panel');
   dom.inventoryList = document.getElementById('inventory-list');
   dom.inventoryLoadTag = document.getElementById('inventory-load-tag');
-  dom.npcToggleBtn = document.getElementById('npc-toggle-btn');
-  dom.npcPanel = document.getElementById('npc-panel');
   dom.npcList = document.getElementById('npc-list');
-  dom.vehicleToggleBtn = document.getElementById('vehicle-toggle-btn');
-  dom.vehiclePanel = document.getElementById('vehicle-panel');
   dom.vehicleList = document.getElementById('vehicle-list');
-  dom.stashToggleBtn = document.getElementById('stash-toggle-btn');
-  dom.stashPanel = document.getElementById('stash-panel');
-  dom.stashList = document.getElementById('stash-list');
+  dom.panelsToggleBtn = document.getElementById('panels-toggle-btn');
+  dom.infoPanel = document.getElementById('info-panel');
+  dom.infoPanelBackdrop = document.getElementById('info-panel-backdrop');
+  dom.infoPanelClose = document.getElementById('info-panel-close');
+  dom.itemsSectionToggle = document.getElementById('items-section-toggle');
+  dom.itemsSectionBody = document.getElementById('items-section-body');
+  dom.itemsAccordion = document.getElementById('items-accordion');
+  dom.npcSectionToggle = document.getElementById('npc-section-toggle');
+  dom.npcSectionBody = document.getElementById('npc-section-body');
+  dom.npcList = document.getElementById('npc-list');
+  dom.vehicleSectionToggle = document.getElementById('vehicle-section-toggle');
+  dom.vehicleSectionBody = document.getElementById('vehicle-section-body');
+  dom.vehicleList = document.getElementById('vehicle-list');
   dom.sideMenu = document.getElementById('side-menu');
   dom.sideMenuBackdrop = document.getElementById('side-menu-backdrop');
   dom.menuExportBtn = document.getElementById('menu-export-btn');
@@ -315,15 +319,17 @@ function bindEvents() {
   dom.notionSyncNowBtn.addEventListener('click', handleNotionSyncNow);
   dom.optionsCollapseToggle.addEventListener('click', handleOptionsCollapseClick);
   dom.actionCollapsedBar.addEventListener('click', handleOptionsCollapseClick);
-  dom.inventoryToggleBtn.addEventListener('click', handleInventoryToggleClick);
-  dom.npcToggleBtn.addEventListener('click', handleNpcToggleClick);
-  if (dom.vehicleToggleBtn) dom.vehicleToggleBtn.addEventListener('click', handleVehicleToggleClick);
-  if (dom.stashToggleBtn) dom.stashToggleBtn.addEventListener('click', handleStashToggleClick);
   dom.freeInputToggle.addEventListener('click', handleFreeInputToggleClick);
   dom.freeInputCancel.addEventListener('click', handleFreeInputCancelClick);
   dom.freeInputSend.addEventListener('click', handleFreeInputSend);
   dom.freeInputText.addEventListener('keypress', handleFreeInputKeypress);
   dom.eventModalClose.addEventListener('click', handleEventModalClose);
+  if (dom.panelsToggleBtn) dom.panelsToggleBtn.addEventListener('click', function () { toggleInfoPanel(true); });
+  if (dom.infoPanelBackdrop) dom.infoPanelBackdrop.addEventListener('click', function () { toggleInfoPanel(false); });
+  if (dom.infoPanelClose) dom.infoPanelClose.addEventListener('click', function () { toggleInfoPanel(false); });
+  if (dom.itemsSectionToggle) dom.itemsSectionToggle.addEventListener('click', function () { toggleCollapse(dom.itemsSectionToggle, dom.itemsSectionBody); });
+  if (dom.npcSectionToggle) dom.npcSectionToggle.addEventListener('click', function () { toggleCollapse(dom.npcSectionToggle, dom.npcSectionBody); renderNpcPanel(); });
+  if (dom.vehicleSectionToggle) dom.vehicleSectionToggle.addEventListener('click', function () { toggleCollapse(dom.vehicleSectionToggle, dom.vehicleSectionBody); });
 }
 
 function handleProviderChange() {
@@ -352,33 +358,6 @@ function handleMenuToggleClick(e) {
 function handleMenuImportClick() {
   toggleSideMenu(false);
   setTimeout(function () { dom.importSaveFile.click(); }, 200);
-}
-
-function handleInventoryToggleClick() {
-  inventoryExpanded = !inventoryExpanded;
-  dom.inventoryPanel.classList.toggle('hidden', !inventoryExpanded);
-  dom.inventoryToggleBtn.classList.toggle('expanded', inventoryExpanded);
-}
-
-function handleNpcToggleClick() {
-  npcExpanded = !npcExpanded;
-  dom.npcPanel.classList.toggle('hidden', !npcExpanded);
-  dom.npcToggleBtn.classList.toggle('expanded', npcExpanded);
-  if (npcExpanded) renderNpcPanel();
-}
-
-function handleVehicleToggleClick() {
-  vehicleExpanded = !vehicleExpanded;
-  dom.vehiclePanel.classList.toggle('hidden', !vehicleExpanded);
-  dom.vehicleToggleBtn.classList.toggle('expanded', vehicleExpanded);
-  if (vehicleExpanded) renderVehiclePanel();
-}
-
-function handleStashToggleClick() {
-  stashExpanded = !stashExpanded;
-  dom.stashPanel.classList.toggle('hidden', !stashExpanded);
-  dom.stashToggleBtn.classList.toggle('expanded', stashExpanded);
-  if (stashExpanded) renderStashPanel();
 }
 
 function handleOptionsCollapseClick() {
@@ -410,6 +389,16 @@ function toggleCollapse(btn, body) {
   } else {
     body.classList.add('hidden');
     btn.classList.remove('expanded');
+  }
+}
+
+function toggleInfoPanel(show) {
+  if (!dom.infoPanel) return;
+  dom.infoPanel.classList.toggle('hidden', !show);
+  if (show) {
+    renderItemsAccordion();
+    renderNpcPanel();
+    renderVehiclePanel();
   }
 }
 
@@ -1292,30 +1281,6 @@ function renderAll() {
   }
   dom.statFaction.textContent = factionEntries.length ? factionEntries.join(' / ') : '無接觸';
 
-  renderInventory();
-  if (npcExpanded) renderNpcPanel();
-  updateNpcToggleLabel();
-
-  updateVehicleToggleVisibility();
-  if (vehicleExpanded) renderVehiclePanel();
-  updateVehicleToggleLabel();
-  updateStashToggleVisibility();
-  if (stashExpanded) renderStashPanel();
-  updateStashToggleLabel();
-
-  /* 同時，在 renderAll() 內尋找 NPC 分頁的可見度控制邏輯位置，
-    若原本沒有依人數決定顯示/隱藏，請新增： */
-  if (dom.npcToggleBtn) {
-    var worldMemoryForVisibility = WorldMemory.ensureShape(gameState.worldMemory);
-    var npcCount = Object.keys(worldMemoryForVisibility.relationships).length;
-    dom.npcToggleBtn.classList.toggle('hidden', npcCount === 0);
-  }
-
-  /* 覺醒進度與陣營信任的條件顯示：在 renderAll() 內，
-    原本設定 dom.statAwakening.textContent 與 dom.statFaction.textContent 
-    的邏輯區塊旁，新增顯示/隱藏控制（需搭配 index.html 將這兩個
-    panel-full-item 各自包上可辨識的容器，例如 id="panel-item-awakening"
-    與 id="panel-item-faction"，方便 JS 直接控制整塊隱藏，而不只是內容文字）： */
   if (dom.panelItemAwakening) {
     dom.panelItemAwakening.classList.toggle('hidden', gameState.awakeningLevel <= 0);
   }
@@ -1324,31 +1289,32 @@ function renderAll() {
     dom.panelItemFaction.classList.toggle('hidden', !hasFactionContact);
   }
 
-}
-
-function updateNpcToggleLabel() {
-  if (!dom.npcToggleBtn) return;
-  var worldMemory = WorldMemory.ensureShape(gameState.worldMemory);
-  var count = Object.keys(worldMemory.relationships).length;
-  dom.npcToggleBtn.querySelector('span').textContent = '📇 人物檔案（' + count + '）';
-}
-
-function updateVehicleToggleVisibility() {
-  if (!dom.vehicleToggleBtn) return;
-  var hasVehicle = gameState.vehicles.some(function (v) { return v.status !== 'lost'; });
-  dom.vehicleToggleBtn.classList.toggle('hidden', !hasVehicle);
-  if (!hasVehicle && vehicleExpanded) {
-    vehicleExpanded = false;
-    dom.vehiclePanel.classList.add('hidden');
-    dom.vehicleToggleBtn.classList.remove('expanded');
+  // 側邊面板入口按鈕：人物檔案區塊可見度與數量標籤
+  if (dom.npcSectionToggle) {
+    var wmForVisibility = WorldMemory.ensureShape(gameState.worldMemory);
+    var npcCount = Object.keys(wmForVisibility.relationships).length;
+    dom.npcSectionToggle.classList.toggle('hidden', npcCount === 0);
+    var npcSpan = dom.npcSectionToggle.querySelector('span');
+    if (npcSpan) npcSpan.textContent = '📇 人物檔案（' + npcCount + '）';
   }
-}
 
-function updateVehicleToggleLabel() {
-  if (!dom.vehicleToggleBtn) return;
-  var activeCount = gameState.vehicles.filter(function (v) { return v.status !== 'lost'; }).length;
-  var span = dom.vehicleToggleBtn.querySelector('span');
-  if (span) span.textContent = '🚗 載具（' + activeCount + '）';
+  // 側邊面板入口按鈕：載具區塊可見度與數量標籤
+  if (dom.vehicleSectionToggle) {
+    var hasVehicle = gameState.vehicles.some(function (v) { return v.status !== 'lost'; });
+    dom.vehicleSectionToggle.classList.toggle('hidden', !hasVehicle);
+    var vehicleCount = gameState.vehicles.filter(function (v) { return v.status !== 'lost'; }).length;
+    var vSpan = dom.vehicleSectionToggle.querySelector('span');
+    if (vSpan) vSpan.textContent = '🚗 載具（' + vehicleCount + '）';
+  }
+
+  // 若側邊面板目前是開啟狀態，即時重新渲染內容
+  // （例如玩家在面板開著的狀態下觸發了物資變化）
+  if (dom.infoPanel && !dom.infoPanel.classList.contains('hidden')) {
+    renderItemsAccordion();
+    renderNpcPanel();
+    renderVehiclePanel();
+  }
+
 }
 
 function renderVehiclePanel() {
@@ -1378,46 +1344,6 @@ function renderVehiclePanel() {
       '</div>' +
       '<div class="vehicle-cargo-row">貨艙（' + v.cargo.length + '/' + v.cargoCapacity + '）：' + escapeHtml(cargoText) + '</div>';
     dom.vehicleList.appendChild(card);
-  });
-}
-
-function updateStashToggleVisibility() {
-  if (!dom.stashToggleBtn) return;
-  var hasStash = gameState.stashes.length > 0;
-  dom.stashToggleBtn.classList.toggle('hidden', !hasStash);
-  if (!hasStash && stashExpanded) {
-    stashExpanded = false;
-    dom.stashPanel.classList.add('hidden');
-    dom.stashToggleBtn.classList.remove('expanded');
-  }
-}
-
-function updateStashToggleLabel() {
-  if (!dom.stashToggleBtn) return;
-  var span = dom.stashToggleBtn.querySelector('span');
-  if (span) span.textContent = '📦 暫存點（' + gameState.stashes.length + '）';
-}
-
-function renderStashPanel() {
-  if (!dom.stashList) return;
-  dom.stashList.innerHTML = '';
-  if (gameState.stashes.length === 0) {
-    var emptyEl = document.createElement('div');
-    emptyEl.className = 'stash-empty';
-    emptyEl.textContent = '目前沒有任何暫存物資';
-    dom.stashList.appendChild(emptyEl);
-    return;
-  }
-  gameState.stashes.forEach(function (s) {
-    var card = document.createElement('div');
-    card.className = 'stash-card';
-    var itemsText = s.items.length
-      ? s.items.map(function (it) { return it.name + ' x' + it.quantity; }).join('、')
-      : '空';
-    card.innerHTML =
-      '<div class="stash-card-header"><span class="stash-location">' + escapeHtml(s.locationName) + '</span></div>' +
-      '<div class="stash-items-row">' + escapeHtml(itemsText) + '</div>';
-    dom.stashList.appendChild(card);
   });
 }
 
@@ -1490,26 +1416,65 @@ function renderNpcPanel() {
   });
 }
 
-function renderInventory() {
-  dom.inventoryList.innerHTML = '';
-  if (gameState.inventory.length === 0) {
-    var emptyEl = document.createElement('div');
-    emptyEl.className = 'inventory-empty';
-    emptyEl.textContent = '背包空無一物';
-    dom.inventoryList.appendChild(emptyEl);
-  } else {
-    for (var i = 0; i < gameState.inventory.length; i++) {
-      var it = gameState.inventory[i];
-      var row = document.createElement('div');
-      row.className = 'inventory-item';
-      row.textContent = it.name + ' x' + it.quantity;
-      dom.inventoryList.appendChild(row);
+var expandedItemLocations = {}; // 記錄每個地點分類目前是否展開
+
+function renderItemsAccordion() {
+  if (!dom.itemsAccordion) return;
+  dom.itemsAccordion.innerHTML = '';
+
+  var locations = [];
+  locations.push({
+    key: '__backpack__',
+    label: '隨身背包',
+    items: gameState.inventory
+  });
+  gameState.stashes.forEach(function (s) {
+    locations.push({
+      key: s.id,
+      label: s.locationName,
+      items: s.items
+    });
+  });
+
+  locations.forEach(function (loc) {
+    var card = document.createElement('div');
+    card.className = 'item-location-card';
+
+    var header = document.createElement('button');
+    header.type = 'button';
+    header.className = 'item-location-header' + (expandedItemLocations[loc.key] ? ' expanded' : '');
+    header.innerHTML =
+      '<span class="location-name">' + escapeHtml(loc.label) + '</span>' +
+      '<span class="location-count">' + loc.items.length + '項</span>' +
+      '<span class="item-location-arrow">▾</span>';
+
+    var body = document.createElement('div');
+    body.className = 'item-location-body' + (expandedItemLocations[loc.key] ? '' : ' hidden');
+
+    if (loc.items.length === 0) {
+      var emptyTag = document.createElement('span');
+      emptyTag.className = 'inventory-empty';
+      emptyTag.textContent = '空';
+      body.appendChild(emptyTag);
+    } else {
+      loc.items.forEach(function (it) {
+        var tag = document.createElement('span');
+        tag.className = 'inventory-item';
+        tag.textContent = it.name + ' x' + it.quantity;
+        body.appendChild(tag);
+      });
     }
-  }
-  var loadLevel = getInventoryLoadLevel();
-  dom.inventoryLoadTag.textContent = loadLevel;
-  dom.inventoryLoadTag.className = 'inventory-load-tag load-' + loadLevel;
-  dom.inventoryToggleBtn.querySelector('span').textContent = '🎒 背包（' + gameState.inventory.length + '）';
+
+    header.addEventListener('click', function () {
+      expandedItemLocations[loc.key] = !expandedItemLocations[loc.key];
+      header.classList.toggle('expanded', expandedItemLocations[loc.key]);
+      body.classList.toggle('hidden', !expandedItemLocations[loc.key]);
+    });
+
+    card.appendChild(header);
+    card.appendChild(body);
+    dom.itemsAccordion.appendChild(card);
+  });
 }
 
 function appendGMText(text) {
