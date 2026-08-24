@@ -22,7 +22,7 @@ function applyInventoryChanges(changes) {
         if (existing.quantity <= 0) {
           gameState.inventory = gameState.inventory.filter(function (it) { return it.name !== change.name; });
         }
-        if (isLikelyFood(change.name)) {
+        if (isLikelyFood(change.name) && !isWaterOnly(change.name)) {
           autoHungerRecovery += getFoodRecoveryAmount(change.name) * actualRemoved;
         }
       } else {
