@@ -171,7 +171,7 @@ function cacheDom() {
   dom.profileInjurySection = document.getElementById('profile-injury-section');
   dom.profileInjuryLevel = document.getElementById('profile-injury-level');
   dom.profileInjuryDetail = document.getElementById('profile-injury-detail');
-  domdom.profileAwakeningSection = document.getElementById('profile-awakening-section');
+  dom.profileAwakeningSection = document.getElementById('profile-awakening-section');
   dom.profileAwakeningLevel = document.getElementById('profile-awakening-level');
   dom.profileAwakeningAbility = document.getElementById('profile-awakening-ability');
   dom.profileAwakeningExp = document.getElementById('profile-awakening-exp');dom.profileAwakeningLevel = document.getElementById('profile-awakening-level');
