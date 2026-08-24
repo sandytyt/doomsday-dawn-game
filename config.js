@@ -47,3 +47,26 @@ var CONFIG = {
   NOTION_DATABASE_ID: ''
 
 };
+
+var RANDOM_CHAR_POOL = {
+  namesByGender: {
+    '男': ['楊嘉懿', '湯成弘', '何樂軒', '趙立群', '徐凱文', '陳彥廷', '黃鴻卓', '吳承恩', '霍星宇', '周君之'],
+    '女': ['陳心宜', '黃思齊', '吳凝安', '楊晨曦', '周芷若', '林詩涵', '張夏旋', '劉雨薇', '徐以晴', '謝文心']
+  },
+  genders: ['男', '女'],
+  locations: ['市郊工業區', '舊城區公寓', '沿海漁村', '大學宿舍', '郊區農場', '市中心辦公大樓', '山區小鎮', '港口貨運站', '醫院'],
+  occupations: ['護理系學生', '便利店店員', '貨車司機', '國中教師', '維修技師', '自由撰稿人', '退伍軍人', '餐廳廚師', '醫生', '上班族']
+};
+
+function pickRandom(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function pickRandomNameByGender(gender) {
+  var pool = RANDOM_CHAR_POOL.namesByGender[gender];
+  if (!pool || pool.length === 0) {
+    var merged = RANDOM_CHAR_POOL.namesByGender['男'].concat(RANDOM_CHAR_POOL.namesByGender['女']);
+    return pickRandom(merged);
+  }
+  return pickRandom(pool);
+}
