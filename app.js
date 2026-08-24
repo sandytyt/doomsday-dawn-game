@@ -1385,12 +1385,14 @@ function renderNpcPanel() {
       '<span class="npc-stat-item">浪漫張力 ' + rel.romanticTension + '</span>' +
       '</div>';
 
-    var backgroundHtml = '';
+    var backgroundHtml;
     if (rel.background && rel.background.length > 0) {
-      backgroundHtml = '<div class="npc-background"><div class="npc-background-title">背景與經歷</div>' +
+      backgroundHtml = '<div class="npc-background"><div class="npc-background-title">背景經歷</div>' +
+        '<div class="npc-background-list">' +
         rel.background.map(function (b) {
-          return '<p class="npc-background-entry"><span class="npc-background-day">第' + b.day + '天</span> ' + escapeHtml(b.text) + '</p>';
-        }).join('') + '</div>';
+          return '<p class="npc-background-entry"><span class="npc-background-day">第' + b.day + '天</span>' + escapeHtml(b.text) + '</p>';
+        }).join('') +
+        '</div></div>';
     } else {
       backgroundHtml = '<div class="npc-background"><p class="npc-background-empty">尚無已知背景資訊</p></div>';
     }
