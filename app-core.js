@@ -167,6 +167,9 @@ function cacheDom() {
   dom.profileOccupation = document.getElementById('profile-occupation');
   dom.profileSafezoneList = document.getElementById('profile-safezone-list');
   dom.profileFactionList = document.getElementById('profile-faction-list');
+  dom.profileInjurySection = document.getElementById('profile-injury-section');
+  dom.profileInjuryLevel = document.getElementById('profile-injury-level');
+  dom.profileInjuryDetail = document.getElementById('profile-injury-detail');
 }
 
 var SYSTEM_LINES = [];
