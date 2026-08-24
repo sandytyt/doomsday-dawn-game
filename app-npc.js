@@ -6,8 +6,27 @@ function renderCharProfile() {
   if (dom.profileGender) dom.profileGender.textContent = c.gender || '未指定';
   if (dom.profileLocation) dom.profileLocation.textContent = c.location || '未知';
   if (dom.profileOccupation) dom.profileOccupation.textContent = c.occupation || '未知';
+  renderProfileInjury();
   renderProfileSafezones();
   renderProfileFactions();
+}
+
+function renderProfileInjury() {
+  if (!dom.profileInjurySection) return;
+  if (gameState.injuryStatus === 'none' || !gameState.injuryStatus) {
+    dom.profileInjurySection.classList.add('hidden');
+    return;
+  }
+  dom.profileInjurySection.classList.remove('hidden');
+  var levelMap = { minor: '輕度受傷', severe: '重度受傷' };
+  var levelText = levelMap[gameState.injuryStatus] || gameState.injuryStatus;
+  if (dom.profileInjuryLevel) {
+    dom.profileInjuryLevel.textContent = levelText;
+    dom.profileInjuryLevel.className = 'profile-injury-level ' + gameState.injuryStatus;
+  }
+  if (dom.profileInjuryDetail) {
+    dom.profileInjuryDetail.textContent = gameState.injuryDetail || '傷勢細節未知';
+  }
 }
 
 function renderProfileSafezones() {
