@@ -94,6 +94,7 @@
         <span id="status-time" class="status-item">⏱ 第1天 06:00</span>
         <span id="status-location" class="status-item">📍 未知地點</span>
         <button id="status-expand-btn" class="icon-btn" aria-label="展開狀態" type="button">▾</button>
+        <button id="panels-toggle-btn" class="icon-btn" aria-label="物品與人物" type="button">📋</button>
         <button id="menu-toggle-btn" class="icon-btn" aria-label="選單" type="button">⚙</button>
       </div>
       <div class="status-row">
@@ -140,34 +141,6 @@
           <span class="panel-label">隨行隊員</span><span id="stat-companions"></span>
         </div>
       </div>
-    </div>
-
-    <div class="toggle-grid">
-      <button id="inventory-toggle-btn" class="collapse-toggle-btn inventory-toggle" type="button">
-        <span>🎒 背包（0）</span><span class="collapse-arrow"></span>
-      </button>
-      <button id="npc-toggle-btn" class="collapse-toggle-btn npc-toggle hidden" type="button">
-        <span>📇 人物檔案（0）</span><span class="collapse-arrow"></span>
-      </button>
-      <button id="vehicle-toggle-btn" class="collapse-toggle-btn vehicle-toggle hidden" type="button">
-        <span>🚗 載具（0）</span><span class="collapse-arrow"></span>
-      </button>
-      <button id="stash-toggle-btn" class="collapse-toggle-btn stash-toggle hidden" type="button">
-        <span>📦 暫存點（0）</span><span class="collapse-arrow"></span>
-      </button>
-    </div>
-    <div id="inventory-panel" class="inventory-panel hidden">
-      <div class="inventory-header">
-        <span>負重狀態：</span>
-        <span id="inventory-load-tag" class="inventory-load-tag load-輕裝">輕裝</span>
-      </div>
-      <div id="inventory-list" class="inventory-list"></div>
-    </div>
-    <div id="npc-panel" class="npc-panel hidden">
-      <div id="npc-list" class="npc-list"></div>
-    </div>
-    <div id="vehicle-panel" class="vehicle-panel hidden">
-      <div id="vehicle-list" class="vehicle-list"></div>
     </div>
 
     <main id="narrative-log">
@@ -243,6 +216,44 @@
 
       <div class="side-menu-footer">
         <button id="menu-close-btn" class="btn-secondary" type="button">關閉</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="info-panel" class="side-menu hidden">
+    <div id="info-panel-backdrop" class="side-menu-backdrop"></div>
+    <div class="side-menu-content">
+      <h2>物品與人物</h2>
+  
+      <!-- 分類一：物品（隨身背包 + 所有暫存點，手風琴式） -->
+      <button id="items-section-toggle" class="collapse-toggle-btn" type="button">
+        <span>🎒 物品</span>
+        <span class="collapse-arrow">▾</span>
+      </button>
+      <div id="items-section-body" class="collapse-body hidden">
+        <div id="items-accordion" class="items-accordion"></div>
+      </div>
+  
+      <!-- 分類二：人物檔案（無NPC時整塊隱藏） -->
+      <button id="npc-section-toggle" class="collapse-toggle-btn npc-section hidden" type="button">
+        <span>📇 人物檔案（0）</span>
+        <span class="collapse-arrow">▾</span>
+      </button>
+      <div id="npc-section-body" class="collapse-body hidden">
+        <div id="npc-list" class="npc-list"></div>
+      </div>
+  
+      <!-- 分類三：載具（無載具時整塊隱藏） -->
+      <button id="vehicle-section-toggle" class="collapse-toggle-btn vehicle-section hidden" type="button">
+        <span>🚗 載具（0）</span>
+        <span class="collapse-arrow">▾</span>
+      </button>
+      <div id="vehicle-section-body" class="collapse-body hidden">
+        <div id="vehicle-list" class="vehicle-list"></div>
+      </div>
+  
+      <div class="side-menu-footer">
+        <button id="info-panel-close" class="btn-secondary" type="button">關閉</button>
       </div>
     </div>
   </div>
