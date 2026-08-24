@@ -6,7 +6,9 @@ function renderCharProfile() {
   if (dom.profileGender) dom.profileGender.textContent = c.gender || '未指定';
   if (dom.profileLocation) dom.profileLocation.textContent = c.location || '未知';
   if (dom.profileOccupation) dom.profileOccupation.textContent = c.occupation || '未知';
+
   renderProfileInjury();
+  renderProfileAwakening();
   renderProfileSafezones();
   renderProfileFactions();
 }
@@ -26,6 +28,24 @@ function renderProfileInjury() {
   }
   if (dom.profileInjuryDetail) {
     dom.profileInjuryDetail.textContent = gameState.injuryDetail || '傷勢細節未知';
+  }
+}
+
+function renderProfileAwakening() {
+  if (!dom.profileAwakeningSection) return;
+  if (gameState.awakeningLevel <= 0) {
+    dom.profileAwakeningSection.classList.add('hidden');
+    return;
+  }
+  dom.profileAwakeningSection.classList.remove('hidden');
+  if (dom.profileAwakeningLevel) {
+    dom.profileAwakeningLevel.textContent = 'Lv.' + gameState.awakeningLevel;
+  }
+  if (dom.profileAwakeningAbility) {
+    dom.profileAwakeningAbility.textContent = gameState.awakeningAbility || '尚未顯現';
+  }
+  if (dom.profileAwakeningExp) {
+    dom.profileAwakeningExp.textContent = gameState.abilityExp + ' / ' + getAbilityExpNeeded(gameState.awakeningLevel);
   }
 }
 
