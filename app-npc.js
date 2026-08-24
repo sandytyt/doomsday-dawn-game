@@ -1,3 +1,75 @@
+function renderCharProfile() {
+  var c = gameState.charSetup;
+  if (dom.profileName) dom.profileName.textContent = c.name || '未命名';
+  if (dom.profileGender) dom.profileGender.textContent = c.gender || '未指定';
+  if (dom.profileLocation) dom.profileLocation.textContent = c.location || '未知';
+  if (dom.profileOccupation) dom.profileOccupation.textContent = c.occupation || '未知';
+  renderProfileSafezones();
+  renderProfileFactions();
+}
+
+function renderProfileSafezones() {
+  if (!dom.profileSafezoneList) return;
+  var worldMemory = WorldMemory.ensureShape(gameState.worldMemory);
+  var zones = worldMemory.safeZones || [];
+  dom.profileSafezoneList.innerHTML = '';
+  if (zones.length === 0) {
+    var emptyEl = document.createElement('div');
+    emptyEl.className = 'profile-subentity-empty';
+    emptyEl.textContent = '尚未建立或發現任何安全區';
+    dom.profileSafezoneList.appendChild(emptyEl);
+    return;
+  }
+  zones.forEach(function (zone) {
+    var card = document.createElement('div');
+    card.className = 'profile-safezone-card';
+    var facilitiesText = (zone.facilities && zone.facilities.length)
+      ? zone.facilities.join('、') : '暫無已知設施';
+    var relNote = zone.factionRelations &&
+      (zone.factionRelations.note || zone.factionRelations.backgroundNote);
+    card.innerHTML =
+      '<div class="profile-safezone-header">' +
+        '<span class="profile-safezone-name">' + escapeHtml(zone.name) + '</span>' +
+        '<span class="profile-safezone-pop">人口 ' + (zone.population || 0) + '</span>' +
+      '</div>' +
+      '<div class="profile-safezone-facilities">📍 ' + escapeHtml(zone.location || '位置未知') +
+      ' ・ 設施：' + escapeHtml(facilitiesText) + '</div>' +
+      (relNote ? '<div class="profile-safezone-facilities">' + escapeHtml(relNote) + '</div>' : '');
+    dom.profileSafezoneList.appendChild(card);
+  });
+}
+
+function renderProfileFactions() {
+  if (!dom.profileFactionList) return;
+  var worldMemory = WorldMemory.ensureShape(gameState.worldMemory);
+  dom.profileFactionList.innerHTML = '';
+  var factionNames = Object.keys(gameState.factionTrust || {});
+  if (factionNames.length === 0) {
+    var emptyEl = document.createElement('div');
+    emptyEl.className = 'profile-subentity-empty';
+    emptyEl.textContent = '尚未與任何勢力建立聯繫';
+    dom.profileFactionList.appendChild(emptyEl);
+    return;
+  }
+  var recentHistory = (worldMemory.factionHistory || []).slice(-15);
+  factionNames.forEach(function (faction) {
+    var trust = gameState.factionTrust[faction] || 0;
+    var trustClass = trust > 0 ? 'trust-positive' : (trust < 0 ? 'trust-negative' : 'trust-neutral');
+    var relatedEvents = recentHistory.filter(function (f) { return f.faction === faction; }).slice(-3);
+    var eventsHtml = relatedEvents.map(function (e) {
+      return '<div class="profile-faction-history">第' + e.turnRecorded + '回合： ' + escapeHtml(e.eventText) + '</div>';
+    }).join('');
+    var card = document.createElement('div');
+    card.className = 'profile-faction-card';
+    card.innerHTML =
+      '<div class="profile-faction-header">' +
+        '<span class="profile-faction-name">' + escapeHtml(faction) + '</span>' +
+        '<span class="profile-faction-trust ' + trustClass + '">信任度 ' + trust + '</span>' +
+      '</div>' + eventsHtml;
+    dom.profileFactionList.appendChild(card);
+  });
+}
+
 function renderNpcPanel() {
   if (!dom.npcList) return;
   var worldMemory = WorldMemory.ensureShape(gameState.worldMemory);
