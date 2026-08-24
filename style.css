@@ -1118,3 +1118,25 @@ button {
   color: var(--text-dim);
   line-height: 1.5;
 }
+
+<div id="vehicle-panel" class="vehicle-panel hidden">
+  <div id="vehicle-list" class="vehicle-list"></div>
+</div>
+<div id="stash-panel" class="stash-panel hidden">
+  <div id="stash-list" class="stash-list"></div>
+</div>
+
+<div class="toggle-row">
+  <button id="inventory-toggle-btn" class="collapse-toggle-btn inventory-toggle" type="button">
+    <span>🎒 背包（0）</span><span class="collapse-arrow"></span>
+  </button>
+  <button id="npc-toggle-btn" class="collapse-toggle-btn npc-toggle hidden" type="button">
+    <span>📇 人物檔案（0）</span><span class="collapse-arrow"></span>
+  </button>
+  <button id="vehicle-toggle-btn" class="collapse-toggle-btn vehicle-toggle hidden" type="button">
+    <span>🚗 載具（0）</span><span class="collapse-arrow"></span>
+  </button>
+  <button id="stash-toggle-btn" class="collapse-toggle-btn stash-toggle hidden" type="button">
+    <span>📦 暫存點（0）</span><span class="collapse-arrow"></span>
+  </button>
+</div>
