@@ -38,6 +38,7 @@ var gameState = {
   weather: '晴',
   inventory: [],
   injuryStatus: 'none',
+  injuryDetail: '',
   isDead: false,
   companions: [],
   skillProficiency: {},
@@ -183,7 +184,7 @@ SYSTEM_LINES.push('若玩家取得、修復、使用或失去載具，須依規�
 SYSTEM_LINES.push('若玩家將物資留在特定地點不隨身攜帶，或返回先前暫存地點取回物資，須依規則文檔地點暫存系統章節管理。於stash_update欄位回報：action僅可為store（存入暫存）或retrieve（取回暫存）之一；location_name為該暫存點的地標式簡短名稱，須與先前回合使用過的名稱高度一致以便正確比對；items陣列每項包含name與quantity，action為store時代表本次留下的物品，action為retrieve時代表本次取回的物品。回報stash_update的同時，須同步在inventory_changes回報對應的remove（store時）或add（retrieve時），確保背包與暫存點的物品增減完全對應，不可只更新其中一方。若本回合無任何地點暫存變化，此物件整體留空。');
 SYSTEM_LINES.push('玩家的長期發展路線由四條志向線構成，彼此不互斥，可同時推進：庇護建設者shelterBuilder專注安全區規模、設施、人口成長；治療探索者cureSeeker專注病毒研究與解藥或疫苗相關進展；暗影獵人shadowHunter專注透過武力與威嚇建立跨陣營恐懼名聲；勢力締造者factionLeader專注在既有陣營內取得實質決策影響力或創建新勢力。每回合若敘事內容明確符合某條志向線的推進條件，於aspiration_update欄位回報對應志向鍵名的物件，內含progress_delta（一個負20至正20之間的整數）與milestone_text（僅達成關鍵性轉折時填寫，否則留空字串）。一回合可同時推進多條志向線，也可以完全不推進任何志向線，不可為了填欄位而勉強編造進度，其餘志向留空物件。');
 SYSTEM_LINES.push('每個具名NPC都有性別gender與三個獨立關係軸：trust信任範圍0到100代表對方是否相信你並願意託付重要事務、closeness親密範圍0到100代表情感靠近程度決定對話深度與私密話題開放與否、romantic_tension浪漫張力範圍0到100僅特定NPC適用代表關係往愛情方向發展的張力與前兩軸獨立運作不必然同步成長。每個NPC關係處於六個敘事階段之一：acquainted初識剛認識僅止於認識彼此存在、incipient初萌開始有一絲交集關係值變動應緩慢、developing漸深開始建立信任與默契、critical_trial風險考驗劇情須安排一次高風險抉擇考驗雙方關係不可透過玩家連續示好跳過此階段、defining_choice關鍵抉擇雙方關係將往結合決裂或維持現狀之一定型此為不可逆敘事節點、resolved_bond穩定結合或resolved_apart疏離懸置為關係定型後的穩定狀態。階段推進有時間限制，唯有初識轉為初萌不受天數限制可隨劇情自然發生，初萌之後每一階段轉換都須提示詞中的長期世界記憶段落標明「可推進下一階段」才可以在stage_transition欄位填入下一階段名稱，若標明「尚未滿5天不可推進階段」則絕對不可填寫stage_transition即使劇情發展看似合適也必須等待。若提示詞標明某NPC已進入漸深階段較久建議安排風險考驗事件，可主動於本回合或近期敘事中安排相應情境。關係推進不應是玩家單方面刷好感度就能達成，必須透過劇情中的具體事件才能真正變動關係軸數值與階段，日常閒聊互動只應造成極小幅度變動即正負1至3點。若某NPC狀態為dead或missing，其關係已被系統凍結，不可再回報trust_delta、closeness_delta、romantic_tension_delta或stage_transition，僅可透過background_note補充該NPC過去的背景資訊。若本回合涉及具名NPC的關係發展或想補充其背景經歷，於relationship_update欄位回報npc_name、gender（若尚未記錄則填寫）、trust_delta、closeness_delta、romantic_tension_delta（不涉及浪漫時留空或0）、stage_transition（僅符合天數條件時才填寫，否則留空字串）、note簡述本次關係變化的具體事由、background_note（僅當本回合透過對話或事件得知該NPC過去背景或經歷時才填寫，是一段可累加的日記式記錄，不覆蓋先前內容，若無新背景資訊則留空字串）；若本回合無任何NPC關係變化，此物件整體留空。');
-SYSTEM_LINES.push('只回傳合法JSON物件，不包含JSON以外文字或Markdown符號。JSON結構：narrative為敘事文字字串；status_update物件包含time_advance_minutes、stamina_change、hunger_change、current_location、danger_level僅可為safe或warning或critical、weather、humanity_change、resonance_change、ability_exp_change、faction_trust_update、inventory_changes陣列每項包含name與quantity與action僅可為add或remove、injury_status僅可為none或minor或severe、vehicle_update物件依上述規則、stash_update物件依上述規則、companion_changes陣列每項包含name與action僅可為join或leave或die、special_event僅可為none或awakening或multi_awakening或death或rescued或level_up或其他事件代號、special_event_text；world_memory_update物件依上述規則；background_evolution物件依上述規則；aspiration_update物件依上述規則；relationship_update物件依上述規則；options陣列包含2到4個元素，每個元素含id、label、risk_hint，其中id欄位只能是大寫字母A、B、C、D，依陣列順序遞增，不可使用其他任何格式如opt_1或數字。');
+SYSTEM_LINES.push('只回傳合法JSON物件，不包含JSON以外文字或Markdown符號。JSON結構：narrative為敘事文字字串；status_update物件包含time_advance_minutes、stamina_change、hunger_change、current_location、danger_level僅可為safe或warning或critical、weather、humanity_change、resonance_change、ability_exp_change、faction_trust_update、inventory_changes陣列每項包含name與quantity與action僅可為add或remove、injury_status僅可為none或minor或severe、injury_detail為15字以內的簡短部位與傷勢描述僅在傷勢狀態有變化時填寫否則留空字串、vehicle_update物件依上述規則、stash_update物件依上述規則、companion_changes陣列每項包含name與action僅可為join或leave或die、special_event僅可為none或awakening或multi_awakening或death或rescued或level_up或其他事件代號、special_event_text；world_memory_update物件依上述規則；background_evolution物件依上述規則；aspiration_update物件依上述規則；relationship_update物件依上述規則；options陣列包含2到4個元素，每個元素含id、label、risk_hint，其中id欄位只能是大寫字母A、B、C、D，依陣列順序遞增，不可使用其他任何格式如opt_1或數字。');
 SYSTEM_LINES.push('一般對話或安全區域描寫150至200字，戰鬥探索重大事件描寫350至450字。');
 
 var SYSTEM_INSTRUCTION = SYSTEM_LINES.join(' ');
@@ -746,6 +747,11 @@ function applyStatusUpdate(update) {
   }
   if (update.injury_status) {
     gameState.injuryStatus = update.injury_status;
+    if (update.injury_status === 'none') {
+      gameState.injuryDetail = '';
+    } else if (update.injury_detail) {
+      gameState.injuryDetail = update.injury_detail;
+    }
   }
   if (update.inventory_changes && update.inventory_changes.length) {
     applyInventoryChanges(update.inventory_changes);
