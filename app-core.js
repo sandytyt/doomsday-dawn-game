@@ -35,6 +35,7 @@ var gameState = {
   abilityExp: 0,
   resonanceValue: 0,
   dangerLevel: 'safe',
+  lastActionRiskLevel: 'low',
   weather: '晴',
   inventory: [],
   injuryStatus: 'none',
@@ -170,6 +171,12 @@ function cacheDom() {
   dom.profileInjurySection = document.getElementById('profile-injury-section');
   dom.profileInjuryLevel = document.getElementById('profile-injury-level');
   dom.profileInjuryDetail = document.getElementById('profile-injury-detail');
+  domdom.profileAwakeningSection = document.getElementById('profile-awakening-section');
+  dom.profileAwakeningLevel = document.getElementById('profile-awakening-level');
+  dom.profileAwakeningAbility = document.getElementById('profile-awakening-ability');
+  dom.profileAwakeningExp = document.getElementById('profile-awakening-exp');dom.profileAwakeningLevel = document.getElementById('profile-awakening-level');
+  dom.profileAwakeningAbility = document.getElementById('profile-awakening-ability');
+  dom.profileAwakeningExp = document.getElementById('profile-awakening-exp');
 }
 
 var SYSTEM_LINES = [];
@@ -486,7 +493,7 @@ function requestNextTurn(playerAction) {
   isWaitingForAI = true;
   showTyping(true);
   if (playerAction !== '__START__') {
-    appendPlayerAction(playerAction);
+    appendPlayerAction(playerAction, gameState.lastActionRiskLevel);
     gameState.lastPlayerAction = playerAction;
   }
   var contextPayload = buildContextPayload(playerAction);
@@ -893,9 +900,9 @@ function appendGMText(text) {
   scrollToBottom();
 }
 
-function appendPlayerAction(text) {
+function appendPlayerAction(text, riskLevel) {
   var el = document.createElement('div');
-  el.className = 'narrative-entry player-action';
+  el.className = 'narrative-entry player-action risk-' + (riskLevel || 'low');
   el.textContent = '▸ ' + text;
   dom.narrativeContent.appendChild(el);
   scrollToBottom();
@@ -914,13 +921,14 @@ function showTyping(show) {
 
 function getRiskLevel(riskHint) {
   if (!riskHint) return 'low';
-  var highKeywords = ['死', '喪屍', '危險', '致命', '重傷', '衝突', '挑釁', '暴露', '追擊', '槍聲'];
-  var mediumKeywords = ['可能', '風險', '難以', '警戒', '驚動', '盤查'];
+  var text = riskHint.toLowerCase();
+  var highKeywords = ['死', '喪屍', '危險', '致命', '重傷', '衝突', '挑釁', '暴露', '追擊', '槍聲', 'high risk', 'extreme', 'lethal', 'critical'];
+  var mediumKeywords = ['可能', '風險', '難以', '警戒', '驚動', '盤查', 'moderate', 'medium risk'];
   for (var i = 0; i < highKeywords.length; i++) {
-    if (riskHint.indexOf(highKeywords[i]) !== -1) return 'high';
+    if (text.indexOf(highKeywords[i].toLowerCase()) !== -1) return 'high';
   }
   for (var j = 0; j < mediumKeywords.length; j++) {
-    if (riskHint.indexOf(mediumKeywords[j]) !== -1) return 'medium';
+    if (text.indexOf(mediumKeywords[j].toLowerCase()) !== -1) return 'medium';
   }
   return 'low';
 }
@@ -931,24 +939,28 @@ function renderOptions(options) {
   var list = options || [];
   for (var i = 0; i < list.length; i++) {
     var opt = list[i];
-    var riskLevel = getRiskLevel(opt.risk_hint);
+    var validLevels = ['low', 'medium', 'high'];
+    var riskLevel = (validLevels.indexOf(opt.risk_level) !== -1)
+      ? opt.risk_level
+      : getRiskLevel(opt.risk_hint);
     var btn = document.createElement('button');
     btn.className = 'option-btn risk-' + riskLevel;
     btn.type = 'button';
     var riskHtml = opt.risk_hint ? ('<span class="option-risk">' + escapeHtml(opt.risk_hint) + '</span>') : '';
     btn.innerHTML = '<span class="option-id">' + opt.id + '.</span>' + escapeHtml(opt.label) + riskHtml;
-    btn.addEventListener('click', makeOptionClickHandler(opt));
+    btn.addEventListener('click', makeOptionClickHandler(opt, riskLevel));
     dom.optionsContainer.appendChild(btn);
   }
   dom.optionsCollapseToggle.classList.toggle('hidden', list.length === 0);
   applyOptionsDisplayMode();
 }
 
-function makeOptionClickHandler(opt) {
+function makeOptionClickHandler(opt, riskLevel) {
   return function () {
     if (opt.id === 'RETRY') {
       requestNextTurn(gameState.lastPlayerAction || '__START__');
     } else {
+      gameState.lastActionRiskLevel = riskLevel;
       requestNextTurn(opt.label);
     }
   };
