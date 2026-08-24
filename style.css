@@ -1154,4 +1154,68 @@ button {
   <div id="stash-list" class="stash-list"></div>
 </div>
 
+.items-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 
+.item-location-card {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg-panel);
+}
+
+.item-location-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--bg-panel);
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  text-align: left;
+  font-size: 13px;
+}
+
+.item-location-header .location-name {
+  flex: 1;
+  font-weight: 600;
+}
+
+.item-location-header .location-count {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.item-location-arrow {
+  transition: transform 0.25s ease;
+  color: var(--text-secondary);
+}
+
+.item-location-header.expanded .item-location-arrow {
+  transform: rotate(180deg);
+}
+
+.item-location-body {
+  padding: 10px 12px;
+  background: var(--bg-panel);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.item-location-body.hidden {
+  display: none;
+}
+
+/* 側邊面板本身內容過多時可捲動（呼應問題6的可滾動需求，
+   side-menu-content 原本應已有 overflow-y: auto，
+   若沒有請一併確認新增 */
+.side-menu-content {
+  overflow-y: auto;
+}
