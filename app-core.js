@@ -423,22 +423,19 @@ function handleStartGame() {
   gameState.isTestMode = false;
   localStorage.setItem(PROVIDER_KEY, provider);
   localStorage.setItem(APIKEY_KEY_PREFIX + provider, key);
+
+  var finalGender = dom.charGenderInput.value || pickRandom(RANDOM_CHAR_POOL.genders);
+  var finalName = dom.charNameInput.value.trim() || pickRandomNameByGender(finalGender);
+
   gameState.charSetup = {
-    name: dom.charNameInput.value.trim(),
-    gender: dom.charGenderInput.value,
-    location: dom.charLocationInput.value.trim(),
-    occupation: dom.charOccupationInput.value.trim()
+    name: finalName,
+    gender: finalGender,
+    location: dom.charLocationInput.value.trim() || pickRandom(RANDOM_CHAR_POOL.locations),
+    occupation: dom.charOccupationInput.value.trim() || pickRandom(RANDOM_CHAR_POOL.occupations)
   };
+
   showGameScreen();
   requestNextTurn('__START__');
-}
-
-function handleStartTestMode() {
-  gameState.isTestMode = true;
-  gameState.testScriptIndex = 0;
-  gameState.apiKey = '';
-  showGameScreen();
-  playNextTestScript('__START__');
 }
 
 function playNextTestScript(playerAction) {
@@ -513,9 +510,11 @@ function buildContextPayload(playerAction) {
   var userText = '';
   if (playerAction === '__START__') {
     var c = gameState.charSetup;
-    var hasCustom = c.name || c.gender || c.location || c.occupation;
-    if (hasCustom) {
-      userText = '請開始遊戲，生成開局場景。玩家提供角色參考設定，請自然融入敘事不要生硬照搬。姓名：' + (c.name || '由你自行決定') + '。性別：' + (c.gender || '由你自行決定') + '。末日爆發時所在位置：' + (c.location || '由你自行決定') + '。末世前職業：' + (c.occupation || '由你自行決定') + '。若姓名未指定則自動生成，不要詢問玩家。';
+    if (playerAction === '__START__') {
+      var c = gameState.charSetup;
+      userText = '請開始遊戲，生成開局場景。角色設定：姓名：' + c.name +
+        '。性別：' + c.gender + '。末日爆發時的初始地點：' + c.location +
+        '。末世前職業：' + c.occupation + '。請自然融入敘事，不要生硬列出這些設定，也不要詢問玩家。';
     } else {
       userText = '請開始遊戲。生成開局場景，不要詢問玩家姓名或性別，直接讓玩家以第一人稱進入末日情境。';
     }
