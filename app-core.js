@@ -909,7 +909,6 @@ function scrollToBottom() {
 
 function showTyping(show) {
   dom.typingIndicator.classList.toggle('hidden', !show);
-  dom.loadingOverlay.classList.toggle('hidden', !show);
   if (show) scrollToBottom();
 }
 
