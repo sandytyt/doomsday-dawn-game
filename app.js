@@ -1305,14 +1305,11 @@ function renderAll() {
     if (vSpan) vSpan.textContent = '🚗 載具（' + vehicleCount + '）';
   }
 
-  // 若側邊面板目前是開啟狀態，即時重新渲染內容
-  // （例如玩家在面板開著的狀態下觸發了物資變化）
-  if (dom.infoPanel && !dom.infoPanel.classList.contains('hidden')) {
-    renderItemsAccordion();
-    renderNpcPanel();
-    renderVehiclePanel();
-  }
-
+  // 每回合都重新渲染物品/人物/載具內容，
+  // 確保資料一有變動就同步更新，不受側邊面板開關狀態影響
+  renderItemsAccordion();
+  renderNpcPanel();
+  renderVehiclePanel();
 }
 
 function renderVehiclePanel() {
