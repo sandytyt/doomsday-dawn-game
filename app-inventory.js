@@ -12,14 +12,20 @@ function applyInventoryChanges(changes) {
     }
     if (change.action === 'remove') {
       if (existing) {
-        existing.quantity -= (change.quantity || 1);
+        if (existing.quantity < change.quantity) {
+          console.warn('[物資警告] AI嘗試移除超過庫存的數量：' + change.name +
+            ' 現有' + existing.quantity + '，嘗試移除' + change.quantity);
+        }
+        existing.quantity = Math.max(0, existing.quantity - change.quantity);
         if (existing.quantity <= 0) {
           gameState.inventory = gameState.inventory.filter(function (it) { return it.name !== change.name; });
         }
+      } else {
+        console.warn('[物資警告] AI嘗試移除背包中不存在的物品：' + change.name);
       }
     } else {
       if (existing) {
-        existing.quantity += (change.quantity || 1);
+        existing.quantity += change.quantity || 1;
       } else {
         gameState.inventory.push({ name: change.name, quantity: change.quantity || 1 });
       }
