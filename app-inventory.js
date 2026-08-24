@@ -1,6 +1,7 @@
 'use strict';
 
 function applyInventoryChanges(changes) {
+  var autoHungerRecovery = 0;
   for (var i = 0; i < changes.length; i++) {
     var change = changes[i];
     var existing = null;
@@ -16,9 +17,13 @@ function applyInventoryChanges(changes) {
           console.warn('[物資警告] AI嘗試移除超過庫存的數量：' + change.name +
             ' 現有' + existing.quantity + '，嘗試移除' + change.quantity);
         }
+        var actualRemoved = Math.min(existing.quantity, change.quantity);
         existing.quantity = Math.max(0, existing.quantity - change.quantity);
         if (existing.quantity <= 0) {
           gameState.inventory = gameState.inventory.filter(function (it) { return it.name !== change.name; });
+        }
+        if (isLikelyFood(change.name)) {
+          autoHungerRecovery += getFoodRecoveryAmount(change.name) * actualRemoved;
         }
       } else {
         console.warn('[物資警告] AI嘗試移除背包中不存在的物品：' + change.name);
@@ -31,6 +36,22 @@ function applyInventoryChanges(changes) {
       }
     }
   }
+  return autoHungerRecovery;
+}
+
+function getFoodRecoveryAmount(foodName) {
+  for (var key in FOOD_HUNGER_RECOVERY) {
+    if (foodName.indexOf(key) !== -1) return FOOD_HUNGER_RECOVERY[key];
+  }
+  return DEFAULT_FOOD_RECOVERY;
+}
+
+function isLikelyFood(name) {
+  var foodHints = ['糧', '餅', '肉', '罐頭', '零食', '飯', '菜', '果', '水', '餐'];
+  for (var i = 0; i < foodHints.length; i++) {
+    if (name.indexOf(foodHints[i]) !== -1) return true;
+  }
+  return false;
 }
 
 function findVehicleByName(name) {
