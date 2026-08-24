@@ -1056,6 +1056,34 @@ button {
   border-top: 1px solid var(--border-color);
   padding-top: 8px;
 }
+
+.items-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.item-location-card {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg-panel);
+}
+
+.item-location-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--bg-panel);
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  text-align: left;
+  font-size: 13px;
+}
+
 .panel-full-item-wide {
   grid-column: 1 / -1;
 }
