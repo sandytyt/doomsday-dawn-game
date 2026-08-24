@@ -584,9 +584,21 @@ button {
 }
 
 .option-btn .option-id {
-  color: var(--accent-amber);
   font-weight: 700;
   margin-right: 8px;
+  color: var(--text-dim);
+}
+
+.option-btn.risk-low .option-id {
+  color: var(--accent-green);
+}
+
+.option-btn.risk-medium .option-id {
+  color: var(--accent-amber);
+}
+
+.option-btn.risk-high .option-id {
+  color: var(--accent-red-bright);
 }
 
 .option-btn .option-risk {
