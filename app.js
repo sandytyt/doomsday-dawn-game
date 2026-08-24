@@ -1293,7 +1293,6 @@ function renderAll() {
   if (dom.npcSectionToggle) {
     var wmForVisibility = WorldMemory.ensureShape(gameState.worldMemory);
     var npcCount = Object.keys(wmForVisibility.relationships).length;
-    dom.npcSectionToggle.classList.toggle('hidden', npcCount === 0);
     var npcSpan = dom.npcSectionToggle.querySelector('span');
     if (npcSpan) npcSpan.textContent = '📇 人物檔案（' + npcCount + '）';
   }
@@ -1301,7 +1300,6 @@ function renderAll() {
   // 側邊面板入口按鈕：載具區塊可見度與數量標籤
   if (dom.vehicleSectionToggle) {
     var hasVehicle = gameState.vehicles.some(function (v) { return v.status !== 'lost'; });
-    dom.vehicleSectionToggle.classList.toggle('hidden', !hasVehicle);
     var vehicleCount = gameState.vehicles.filter(function (v) { return v.status !== 'lost'; }).length;
     var vSpan = dom.vehicleSectionToggle.querySelector('span');
     if (vSpan) vSpan.textContent = '🚗 載具（' + vehicleCount + '）';
