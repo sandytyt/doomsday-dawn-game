@@ -1,3 +1,5 @@
+'use strict';
+
 function renderCharProfile() {
   var c = gameState.charSetup;
   if (dom.profileName) dom.profileName.textContent = c.name || '未命名';
