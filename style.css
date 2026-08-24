@@ -1436,3 +1436,36 @@ button {
 .profile-faction-trust.trust-positive { color: #8fbc8f; }
 .profile-faction-trust.trust-negative { color: #e57373; }
 .profile-faction-trust.trust-neutral { color: var(--text-dim); }
+
+.profile-injury-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.profile-injury-level {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.profile-injury-level.minor {
+  background: rgba(184, 134, 11, 0.25);
+  color: #d4a017;
+}
+
+.profile-injury-level.severe {
+  background: rgba(139, 30, 30, 0.3);
+  color: #e57373;
+}
+
+.profile-injury-detail {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
