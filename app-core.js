@@ -847,9 +847,13 @@ function renderAll() {
   }
 
   dom.statHumanity.textContent = gameState.humanity;
-  dom.statAwakening.textContent = gameState.awakeningLevel > 0
-    ? ('Lv.' + gameState.awakeningLevel + ' ' + (gameState.awakeningAbility || '') + '（' + gameState.abilityExp + '/' + getAbilityExpNeeded(gameState.awakeningLevel) + '）')
-    : '未覺醒';
+
+  if (dom.statAwakening) {
+    dom.statAwakening.textContent = gameState.awakeningLevel > 0
+      ? ('Lv.' + gameState.awakeningLevel + ' ' + (gameState.awakeningAbility || '') + '（' + gameState.abilityExp + '/' + getAbilityExpNeeded(gameState.awakeningLevel) + '）')
+      : '未覺醒';
+  }
+
   dom.statWeather.textContent = gameState.weather;
   if (dom.statCompanions) dom.statCompanions.textContent = gameState.companions.length ? gameState.companions.join('、') : '無';
 
@@ -859,7 +863,10 @@ function renderAll() {
       factionEntries.push(k + ':' + gameState.factionTrust[k]);
     }
   }
-  dom.statFaction.textContent = factionEntries.length ? factionEntries.join(' / ') : '無接觸';
+
+  if (dom.statFaction) {
+    dom.statFaction.textContent = factionEntries.length ? factionEntries.join(' / ') : '無接觸';
+  }
 
   if (dom.panelItemAwakening) {
     dom.panelItemAwakening.classList.toggle('hidden', gameState.awakeningLevel <= 0);
@@ -869,7 +876,6 @@ function renderAll() {
     dom.panelItemFaction.classList.toggle('hidden', !hasFactionContact);
   }
 
-  // 側邊面板入口按鈕：人物檔案區塊可見度與數量標籤
   if (dom.npcSectionToggle) {
     var wmForVisibility = WorldMemory.ensureShape(gameState.worldMemory);
     var npcCount = Object.keys(wmForVisibility.relationships).length;
@@ -877,7 +883,6 @@ function renderAll() {
     if (npcSpan) npcSpan.textContent = '📇 人物檔案（' + npcCount + '）';
   }
 
-  // 側邊面板入口按鈕：載具區塊可見度與數量標籤
   if (dom.vehicleSectionToggle) {
     var hasVehicle = gameState.vehicles.some(function (v) { return v.status !== 'lost'; });
     var vehicleCount = gameState.vehicles.filter(function (v) { return v.status !== 'lost'; }).length;
@@ -885,8 +890,8 @@ function renderAll() {
     if (vSpan) vSpan.textContent = '🚗 載具（' + vehicleCount + '）';
   }
 
-  // 每回合都重新渲染物品/人物/載具內容，
-  // 確保資料一有變動就同步更新，不受側邊面板開關狀態影響
+  if (charProfileExpanded) renderCharProfile();
+
   renderItemsAccordion();
   renderNpcPanel();
   renderVehiclePanel();
