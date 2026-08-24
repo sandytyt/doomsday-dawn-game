@@ -186,6 +186,6 @@
 
 ## 輸出格式
 - 每回合以JSON格式輸出，包含narrative、status_update、options三個欄位。
-- status_update須包含inventory_changes（物資增減）、injury_status（none/minor/severe）、ability_exp_change（晶核熟練度變化）、vehicle_update（載具狀態變化，僅實際發生時填寫，詳見載具系統章節）。
+- status_update須包含inventory_changes（物資增減）、injury_status（none/minor/severe）、ability_exp_change（晶核熟練度變化）、vehicle_update（載具狀態變化，僅實際發生時填寫，詳見載具系統章節）、stash_update（地點暫存變化，僅實際發生時填寫，詳見地點暫存系統章節）。
 - options陣列包含2至4個元素，每個元素含id、label、risk_hint。
 - 一般對話或安全區域描寫150至200字，戰鬥探索重大事件描寫350至450字。
