@@ -890,8 +890,7 @@ function renderAll() {
     if (vSpan) vSpan.textContent = '🚗 載具（' + vehicleCount + '）';
   }
 
-  if (charProfileExpanded) renderCharProfile();
-
+  renderCharProfile();
   renderItemsAccordion();
   renderNpcPanel();
   renderVehiclePanel();
