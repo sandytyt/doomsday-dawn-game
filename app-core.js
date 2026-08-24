@@ -362,7 +362,7 @@ function handleMenuImportClick() {
 
 function handleOptionsCollapseClick() {
   optionsMiniMode = !optionsMiniMode;
-  applyOptionsDisplayMode();
+  ();
 }
 
 function handleFreeInputToggleClick() {
@@ -904,7 +904,7 @@ function renderOptions(options) {
     dom.optionsContainer.appendChild(btn);
   }
   dom.optionsCollapseToggle.classList.toggle('hidden', list.length === 0);
-  applyOptionsDisplayMode();
+  ();
 }
 
 function makeOptionClickHandler(opt) {
@@ -921,7 +921,7 @@ function applyOptionsDisplayMode() {
   dom.optionsContainer.classList.toggle('hidden', optionsMiniMode);
   dom.freeInputToggle.classList.toggle('hidden', optionsMiniMode);
   dom.freeInputRow.classList.add('hidden');
-  dom.optionsCollapseToggle.classList.toggle('hidden', optionsMiniMode);
+  dom.optionsCollapseToggle.classList.toggle('expanded', !optionsMiniMode);
   dom.actionCollapsedBar.classList.toggle('hidden', !optionsMiniMode);
 }
 
