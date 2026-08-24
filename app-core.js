@@ -405,6 +405,7 @@ function toggleInfoPanel(show) {
   if (!dom.infoPanel) return;
   dom.infoPanel.classList.toggle('hidden', !show);
   if (show) {
+    renderCharProfile();
     renderItemsAccordion();
     renderNpcPanel();
     renderVehiclePanel();
