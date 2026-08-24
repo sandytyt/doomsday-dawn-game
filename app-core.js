@@ -159,6 +159,14 @@ function cacheDom() {
   dom.saveTabNotion = document.getElementById('save-tab-notion');
   dom.hungerFill = document.getElementById('hunger-bar-fill');
   dom.hungerValue = document.getElementById('hunger-value');
+  dom.charProfileToggle = document.getElementById('char-profile-toggle');
+  dom.charProfileBody = document.getElementById('char-profile-body');
+  dom.profileName = document.getElementById('profile-name');
+  dom.profileGender = document.getElementById('profile-gender');
+  dom.profileLocation = document.getElementById('profile-location');
+  dom.profileOccupation = document.getElementById('profile-occupation');
+  dom.profileSafezoneList = document.getElementById('profile-safezone-list');
+  dom.profileFactionList = document.getElementById('profile-faction-list');
 }
 
 var SYSTEM_LINES = [];
@@ -329,6 +337,7 @@ function bindEvents() {
   if (dom.infoPanelClose) dom.infoPanelClose.addEventListener('click', function () { toggleInfoPanel(false); });
   if (dom.itemsSectionToggle) dom.itemsSectionToggle.addEventListener('click', function () { toggleCollapse(dom.itemsSectionToggle, dom.itemsSectionBody); });
   if (dom.npcSectionToggle) dom.npcSectionToggle.addEventListener('click', function () { toggleCollapse(dom.npcSectionToggle, dom.npcSectionBody); renderNpcPanel(); });
+  if (dom.charProfileToggle) dom.charProfileToggle.addEventListener('click', function () { toggleCollapse(dom.charProfileToggle, dom.charProfileBody); renderCharProfile(); });
   if (dom.vehicleSectionToggle) dom.vehicleSectionToggle.addEventListener('click', function () { toggleCollapse(dom.vehicleSectionToggle, dom.vehicleSectionBody); });
 }
 
