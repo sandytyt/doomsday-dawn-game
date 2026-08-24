@@ -436,13 +436,14 @@ function handleStartGame() {
 
   showGameScreen();
   requestNextTurn('__START__');
-  function handleStartTestMode() {
-    gameState.isTestMode = true;
-    gameState.testScriptIndex = 0;
-    gameState.apiKey = '';
-    showGameScreen();
-    playNextTestScript('__START__');
-  }
+}
+
+function handleStartTestMode() {
+  gameState.isTestMode = true;
+  gameState.testScriptIndex = 0;
+  gameState.apiKey = '';
+  showGameScreen();
+  playNextTestScript('__START__');
 }
 
 function playNextTestScript(playerAction) {
