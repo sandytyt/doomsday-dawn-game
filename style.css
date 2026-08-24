@@ -418,6 +418,10 @@ button {
   color: var(--text-secondary);
 }
 
+.panel-full-item-wide {
+  grid-column: 1 / -1;
+}
+
 .panel-label {
   color: var(--text-dim);
 }
@@ -493,6 +497,15 @@ button {
   -webkit-overflow-scrolling: touch;
 }
 
+#narrative-log::-webkit-scrollbar {
+  width: 4px;
+}
+
+#narrative-log::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 2px;
+}
+
 .narrative-entry {
   margin-bottom: 20px;
   animation: fade-in 0.4s ease;
@@ -503,19 +516,53 @@ button {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* 玩家行動記錄樣式：底色與邊框顏色改為依 risk-low/medium/high 動態決定 */
 .narrative-entry.player-action {
   text-align: right;
-  color: var(--text-dim);
+  color: var(--text-secondary);
   font-size: 13px;
   font-style: italic;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  display: inline-block;
+  float: right;
+  clear: both;
+  max-width: 88%;
+}
+
+.narrative-entry.player-action::before {
+  content: "你的選擇";
+  display: block;
+  font-size: 10px;
+  font-style: normal;
+  color: var(--text-dim);
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+
+.narrative-entry.player-action.risk-low {
+  background: rgba(74, 107, 74, 0.08);
+  border-right: 2px solid var(--accent-green);
+}
+
+.narrative-entry.player-action.risk-medium {
+  background: rgba(184, 134, 11, 0.08);
+  border-right: 2px solid var(--accent-amber);
+}
+
+.narrative-entry.player-action.risk-high {
+  background: rgba(139, 30, 30, 0.08);
+  border-right: 2px solid var(--accent-red-bright);
 }
 
 .narrative-entry.gm-text {
+  clear: both;
   color: var(--text-primary);
   font-size: 15px;
   line-height: 1.8;
   white-space: pre-wrap;
+  padding-top: 4px;
 }
 
 .typing-indicator {
@@ -548,14 +595,49 @@ button {
   padding-bottom: max(12px, env(safe-area-inset-bottom));
 }
 
+/* 收合列：中性 chevron 樣式，取代舊的純文字下拉外觀 */
 .action-collapsed-bar {
   width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   padding: 10px;
   background: transparent;
   border: none;
   color: var(--text-dim);
   font-size: 12px;
   cursor: pointer;
+}
+
+.action-collapsed-bar .collapse-chevron {
+  font-size: 10px;
+  transition: transform 0.25s ease;
+}
+
+#options-collapse-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 12px;
+  cursor: pointer;
+  margin-bottom: 4px;
+}
+
+#options-collapse-toggle .collapse-chevron {
+  font-size: 10px;
+  transition: transform 0.25s ease;
+  display: inline-block;
+}
+
+#options-collapse-toggle.expanded .collapse-chevron {
+  transform: rotate(180deg);
 }
 
 .options-container {
@@ -565,12 +647,14 @@ button {
   margin-bottom: 10px;
 }
 
+/* 選項卡：左側色條依風險等級變色 */
 .option-btn {
   width: 100%;
   text-align: left;
   padding: 13px 16px;
   background: var(--bg-elevated);
   border: 1px solid var(--border-color);
+  border-left: 3px solid var(--border-color);
   border-radius: 10px;
   color: var(--text-primary);
   font-size: 14px;
@@ -581,6 +665,18 @@ button {
 .option-btn:active {
   background: #333;
   border-color: var(--accent-red);
+}
+
+.option-btn.risk-low {
+  border-left-color: var(--accent-green);
+}
+
+.option-btn.risk-medium {
+  border-left-color: var(--accent-amber);
+}
+
+.option-btn.risk-high {
+  border-left-color: var(--accent-red-bright);
 }
 
 .option-btn .option-id {
@@ -602,10 +698,42 @@ button {
 }
 
 .option-btn .option-risk {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 5px;
   font-size: 11px;
   color: var(--text-dim);
-  margin-top: 4px;
+  margin-top: 6px;
+}
+
+.option-btn .option-risk::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--text-dim);
+}
+
+.option-btn.risk-low .option-risk {
+  color: #8fbc8f;
+}
+.option-btn.risk-low .option-risk::before {
+  background: var(--accent-green);
+}
+
+.option-btn.risk-medium .option-risk {
+  color: #d4a017;
+}
+.option-btn.risk-medium .option-risk::before {
+  background: var(--accent-amber);
+}
+
+.option-btn.risk-high .option-risk {
+  color: #e57373;
+}
+.option-btn.risk-high .option-risk::before {
+  background: var(--accent-red-bright);
 }
 
 .btn-free-toggle {
@@ -939,15 +1067,6 @@ button {
   to { transform: rotate(360deg); }
 }
 
-#narrative-log::-webkit-scrollbar {
-  width: 4px;
-}
-
-#narrative-log::-webkit-scrollbar-thumb {
-  background: var(--border-color);
-  border-radius: 2px;
-}
-
 .npc-panel {
   flex-shrink: 0;
   background: var(--bg-elevated);
@@ -1062,10 +1181,6 @@ button {
   border-radius: 2px;
 }
 
-.panel-full-item-wide {
-  grid-column: 1 / -1;
-}
-
 .vehicle-list {
   display: flex;
   flex-direction: column;
@@ -1174,190 +1289,7 @@ button {
   display: none;
 }
 
-/* 側邊面板本身內容過多時可捲動（呼應問題6的可滾動需求，
-   side-menu-content 原本應已有 overflow-y: auto，
-   若沒有請一併確認新增 */
-.side-menu-content {
-  overflow-y: auto;
-}
-
-/* ========== 優化1：角色固定資訊 vs 動態環境資訊分組 ========== */
-.panel-full-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.panel-section-label {
-  grid-column: 1 / -1;
-  font-size: 10px;
-  color: var(--text-dim);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-top: 8px;
-  padding-bottom: 4px;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.panel-section-label:first-child {
-  margin-top: 0;
-}
-
-/* ========== 優化2：行動選項收合互動 ========== */
-.action-collapsed-bar {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 10px;
-  background: transparent;
-  border: none;
-  color: var(--text-dim);
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.action-collapsed-bar .collapse-chevron {
-  font-size: 10px;
-  transition: transform 0.25s ease;
-}
-
-#options-collapse-toggle {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 8px;
-  background: transparent;
-  border: none;
-  color: var(--text-dim);
-  font-size: 12px;
-  cursor: pointer;
-  margin-bottom: 4px;
-}
-
-#options-collapse-toggle .collapse-chevron {
-  font-size: 10px;
-  transition: transform 0.25s ease;
-  display: inline-block;
-}
-
-#options-collapse-toggle.expanded .collapse-chevron {
-  transform: rotate(180deg);
-}
-
-/* 移除舊的下拉選單樣式殘留，改用純文字說明按鈕 */
-.collapse-toggle-btn.options-style {
-  justify-content: center;
-  background: transparent;
-  border: none;
-  color: var(--text-dim);
-}
-
-/* ========== 優化3：敘事文字與玩家行動記錄視覺分隔 ========== */
-.narrative-entry.player-action {
-  text-align: right;
-  color: var(--text-secondary);
-  font-size: 13px;
-  font-style: italic;
-  margin-bottom: 14px;
-  padding: 8px 12px;
-  background: rgba(139, 30, 30, 0.08);
-  border-right: 2px solid var(--accent-red);
-  border-radius: 4px;
-  display: inline-block;
-  float: right;
-  clear: both;
-  max-width: 88%;
-}
-
-.narrative-entry.player-action::before {
-  content: "你的選擇";
-  display: block;
-  font-size: 10px;
-  font-style: normal;
-  color: var(--text-dim);
-  letter-spacing: 1px;
-  margin-bottom: 4px;
-}
-
-.narrative-entry.gm-text {
-  clear: both;
-  color: var(--text-primary);
-  font-size: 15px;
-  line-height: 1.8;
-  white-space: pre-wrap;
-  padding-top: 4px;
-}
-
-/* ========== 優化4：選項風險分級視覺化 ========== */
-.option-btn {
-  width: 100%;
-  text-align: left;
-  padding: 13px 16px;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-color);
-  border-left: 3px solid var(--border-color);
-  border-radius: 10px;
-  color: var(--text-primary);
-  font-size: 14px;
-  line-height: 1.5;
-  cursor: pointer;
-}
-
-.option-btn.risk-low {
-  border-left-color: var(--accent-green);
-}
-
-.option-btn.risk-medium {
-  border-left-color: var(--accent-amber);
-}
-
-.option-btn.risk-high {
-  border-left-color: var(--accent-red-bright);
-}
-
-.option-btn .option-risk {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 11px;
-  color: var(--text-dim);
-  margin-top: 6px;
-}
-
-.option-btn .option-risk::before {
-  content: "";
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  background: var(--text-dim);
-}
-
-.option-btn.risk-low .option-risk {
-  color: #8fbc8f;
-}
-.option-btn.risk-low .option-risk::before {
-  background: var(--accent-green);
-}
-
-.option-btn.risk-medium .option-risk {
-  color: #d4a017;
-}
-.option-btn.risk-medium .option-risk::before {
-  background: var(--accent-amber);
-}
-
-.option-btn.risk-high .option-risk {
-  color: #e57373;
-}
-.option-btn.risk-high .option-risk::before {
-  background: var(--accent-red-bright);
-}
-
+/* 角色檔案面板：分區標題與基本資料格線 */
 .char-profile-section-title {
   font-size: 11px;
   color: var(--text-dim);
@@ -1468,35 +1400,6 @@ button {
 .profile-injury-detail {
   font-size: 12.5px;
   color: var(--text-secondary);
-}
-
-.narrative-entry.player-action {
-  text-align: right;
-  color: var(--text-secondary);
-  font-size: 13px;
-  font-style: italic;
-  margin-bottom: 14px;
-  padding: 8px 12px;
-  border-radius: 4px;
-  display: inline-block;
-  float: right;
-  clear: both;
-  max-width: 88%;
-}
-
-.narrative-entry.player-action.risk-low {
-  background: rgba(74, 107, 74, 0.08);
-  border-right: 2px solid var(--accent-green);
-}
-
-.narrative-entry.player-action.risk-medium {
-  background: rgba(184, 134, 11, 0.08);
-  border-right: 2px solid var(--accent-amber);
-}
-
-.narrative-entry.player-action.risk-high {
-  background: rgba(139, 30, 30, 0.08);
-  border-right: 2px solid var(--accent-red-bright);
 }
 
 .profile-awakening-card {
