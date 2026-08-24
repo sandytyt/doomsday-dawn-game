@@ -904,7 +904,7 @@ function renderOptions(options) {
     dom.optionsContainer.appendChild(btn);
   }
   dom.optionsCollapseToggle.classList.toggle('hidden', list.length === 0);
-  ();
+  applyOptionsDisplayMode();
 }
 
 function makeOptionClickHandler(opt) {
