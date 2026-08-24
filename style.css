@@ -1469,3 +1469,49 @@ button {
   font-size: 12.5px;
   color: var(--text-secondary);
 }
+
+.narrative-entry.player-action {
+  text-align: right;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-style: italic;
+  margin-bottom: 14px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  display: inline-block;
+  float: right;
+  clear: both;
+  max-width: 88%;
+}
+
+.narrative-entry.player-action.risk-low {
+  background: rgba(74, 107, 74, 0.08);
+  border-right: 2px solid var(--accent-green);
+}
+
+.narrative-entry.player-action.risk-medium {
+  background: rgba(184, 134, 11, 0.08);
+  border-right: 2px solid var(--accent-amber);
+}
+
+.narrative-entry.player-action.risk-high {
+  background: rgba(139, 30, 30, 0.08);
+  border-right: 2px solid var(--accent-red-bright);
+}
+
+.profile-awakening-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.profile-awakening-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
