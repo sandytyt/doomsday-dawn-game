@@ -91,7 +91,6 @@ function cacheDom() {
   dom.injuryTag = document.getElementById('injury-tag');
   dom.menuToggleBtn = document.getElementById('menu-toggle-btn');
   dom.statusPanelFull = document.getElementById('status-panel-full');
-  dom.statGender = document.getElementById('stat-gender');
   dom.statHumanity = document.getElementById('stat-humanity');
   dom.statFaction = document.getElementById('stat-faction');
   dom.statAwakening = document.getElementById('stat-awakening');
@@ -824,7 +823,6 @@ function renderAll() {
     dom.injuryTag.classList.add('hidden');
   }
 
-  if (dom.statGender) dom.statGender.textContent = gameState.charSetup.gender || '未指定';
   dom.statHumanity.textContent = gameState.humanity;
   dom.statAwakening.textContent = gameState.awakeningLevel > 0
     ? ('Lv.' + gameState.awakeningLevel + ' ' + (gameState.awakeningAbility || '') + '（' + gameState.abilityExp + '/' + getAbilityExpNeeded(gameState.awakeningLevel) + '）')
