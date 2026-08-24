@@ -937,13 +937,25 @@ button {
 }
 
 .toggle-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
   margin: 8px 14px 0;
 }
+
 .toggle-row .collapse-toggle-btn {
-  flex: 1;
-  margin-bottom: 0;
+  width: 100%;
+  margin: 0;
+  padding: 11px 10px;
+  font-size: 12.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* hidden 的按鈕直接從版面移除，讓其餘按鈕自動遞補位置 */
+.toggle-row .collapse-toggle-btn.hidden {
+  display: none;
 }
 
 .npc-panel {
@@ -1119,13 +1131,6 @@ button {
   line-height: 1.5;
 }
 
-<div id="vehicle-panel" class="vehicle-panel hidden">
-  <div id="vehicle-list" class="vehicle-list"></div>
-</div>
-<div id="stash-panel" class="stash-panel hidden">
-  <div id="stash-list" class="stash-list"></div>
-</div>
-
 <div class="toggle-row">
   <button id="inventory-toggle-btn" class="collapse-toggle-btn inventory-toggle" type="button">
     <span>🎒 背包（0）</span><span class="collapse-arrow"></span>
@@ -1140,3 +1145,12 @@ button {
     <span>📦 暫存點（0）</span><span class="collapse-arrow"></span>
   </button>
 </div>
+
+<div id="vehicle-panel" class="vehicle-panel hidden">
+  <div id="vehicle-list" class="vehicle-list"></div>
+</div>
+<div id="stash-panel" class="stash-panel hidden">
+  <div id="stash-list" class="stash-list"></div>
+</div>
+
+
