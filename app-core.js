@@ -362,7 +362,7 @@ function handleMenuImportClick() {
 
 function handleOptionsCollapseClick() {
   optionsMiniMode = !optionsMiniMode;
-  ();
+  applyOptionsDisplayMode();
 }
 
 function handleFreeInputToggleClick() {
