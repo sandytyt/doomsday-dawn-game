@@ -50,11 +50,15 @@ var gameState = {
   lastPlayerAction: '',
   rulesText: '',
   loreText: '',
-  charSetup: { name: '', gender: '', location: '', occupation: '' },
+  charSetup: { name: '', gender: '', location: '', occupation: '', backgroundType: null, generalistPicks: [] },
   vehicles: [],
   activeVehicleId: null,
   stashes: [],
   recentDangerLevels: [],
+  npcStates: {}, // 預留給 NPC 獨立生存數值
+  exploredLocations: [], // 記錄已探索地點
+  currentMapPresetId: null, // 記錄當前地圖池ID
+  skillProficiency: {} // 八分類熟練度（取代舊的空殼）
 };
 
 var isWaitingForAI = false;
