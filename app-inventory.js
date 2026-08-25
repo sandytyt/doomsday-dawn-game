@@ -295,7 +295,7 @@ function renderItemsAccordion() {
 
     var loadTagHtml = '';
     if (loc.isBackpack) {
-      var loadLevel = getInventoryLoadLevel();
+      var loadLevel = getInventoryLoadLevel(gameState.inventory);
       loadTagHtml = '<span class="inventory-load-tag load-' + loadLevel + '">' + loadLevel + '</span>';
     }
 
