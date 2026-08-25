@@ -58,3 +58,25 @@ function getBackgroundBonuses(backgroundTypeKey, customPicks) {
   }
   return bonuses;
 }
+
+var PROFICIENCY_LABELS = {
+  combat: '格鬥', shooting: '射擊', agility: '敏捷', scouting: '偵察',
+  medical: '醫療', negotiation: '談判', searching: '搜索', mechanics: '機械'
+};
+
+function getProficiencyLevel(exp) {
+  for (var i = PROFICIENCY_LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
+    if (exp >= PROFICIENCY_LEVEL_THRESHOLDS[i]) return i + 1; // 0 是 1級，150 是 3級
+  }
+  return 1;
+}
+
+// 供 AI 回報時呼叫，增加熟練度 (每次成功判定 +15 EXP)
+function applyProficiencyGrowth(entityProficiency, triggeredCategories) {
+  if (!entityProficiency || !Array.isArray(triggeredCategories)) return;
+  triggeredCategories.forEach(function(cat) {
+    if (entityProficiency[cat] !== undefined) {
+      entityProficiency[cat] = Math.min(entityProficiency[cat] + 15, PROFICIENCY_LEVEL_THRESHOLDS[PROFICIENCY_LEVEL_THRESHOLDS.length - 1]);
+    }
+  });
+}
