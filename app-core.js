@@ -152,9 +152,8 @@ function cacheDom() {
   dom.eventModalText = document.getElementById('event-modal-text');
   dom.eventModalClose = document.getElementById('event-modal-close');
   dom.loadingOverlay = document.getElementById('loading-overlay');
-  dom.rulesModal = document.getElementById('rules-modal');
-  dom.rulesModalContent = document.getElementById('rules-modal-content');
-  dom.rulesModalClose = document.getElementById('rules-modal-close');
+  dom.manualModal = document.getElementById('manual-modal');
+  dom.manualCloseBtn = document.getElementById('manual-close-btn');
   dom.deathScreen = document.getElementById('death-screen');
   dom.namedSaveModal = document.getElementById('named-save-modal');
   dom.namedSaveList = document.getElementById('named-save-list');
@@ -300,7 +299,6 @@ function bindEvents() {
   if (dom.testModeBtn) dom.testModeBtn.addEventListener('click', handleStartTestMode);
   dom.importSaveBtn.addEventListener('click', function () { dom.importSaveFile.click(); });
   dom.importSaveFile.addEventListener('change', handleImportFile);
-  if (dom.rulesLinkBtn) dom.rulesLinkBtn.addEventListener('click', function () { toggleRulesModal(true); });
   dom.charSetupToggle.addEventListener('click', function () { toggleCollapse(dom.charSetupToggle, dom.charSetupFields); });
   dom.statusExpandBtn.addEventListener('click', handleStatusExpandClick);
   dom.menuToggleBtn.addEventListener('click', handleMenuToggleClick);
@@ -315,8 +313,9 @@ function bindEvents() {
   dom.saveTabNotion.addEventListener('click', function () { switchSaveTab('notion'); });
   dom.menuRestartBtn.addEventListener('click', handleRestart);
   dom.menuApikeyBtn.addEventListener('click', handleChangeApiKey);
-  if (dom.menuRulesBtn) dom.menuRulesBtn.addEventListener('click', function () { toggleSideMenu(false); setTimeout(function () { toggleRulesModal(true); }, 200); });
-  if (dom.rulesModalClose) dom.rulesModalClose.addEventListener('click', function () { toggleRulesModal(false); });
+  if (dom.rulesLinkBtn) dom.rulesLinkBtn.addEventListener('click', function () { toggleManualModal(true); });
+  if (dom.menuRulesBtn) dom.menuRulesBtn.addEventListener('click', function () { toggleSideMenu(false); setTimeout(function () { toggleManualModal(true); }, 200); });
+  if (dom.manualCloseBtn) dom.manualCloseBtn.addEventListener('click', function () { toggleManualModal(false); });
   dom.notionSetupToggle.addEventListener('click', function () { toggleCollapse(dom.notionSetupToggle, dom.notionSetupFields); });
   dom.notionSaveBtn.addEventListener('click', handleSaveNotionConfig);
   dom.notionSyncNowBtn.addEventListener('click', handleNotionSyncNow);
@@ -354,10 +353,29 @@ function handleProviderChange() {
   dom.apiKeyInput.value = savedKey || '';
 }
 
-function toggleRulesModal(show) {
-  if (!dom.rulesModal) return;
-  dom.rulesModal.classList.toggle('hidden', !show);
+function toggleManualModal(show) {
+  if (!dom.manualModal) return;
+  dom.manualModal.classList.toggle('hidden', !show);
 }
+
+// 綁定手冊的分頁按鈕切換
+document.addEventListener('DOMContentLoaded', function() {
+  var tabBtns = document.querySelectorAll('.manual-tab-btn');
+  tabBtns.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      // 移除所有按鈕的 active
+      tabBtns.forEach(function(b) { b.classList.remove('active'); });
+      // 隱藏所有分頁
+      document.querySelectorAll('.manual-pane').forEach(function(pane) { pane.classList.add('hidden'); });
+
+      // 顯示被點擊的內容
+      this.classList.add('active');
+      var targetId = this.getAttribute('data-target');
+      var targetPane = document.getElementById(targetId);
+      if (targetPane) targetPane.classList.remove('hidden');
+    });
+  });
+});
 
 function handleStatusExpandClick() {
   statusExpanded = !statusExpanded;
