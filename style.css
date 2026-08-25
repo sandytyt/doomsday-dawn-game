@@ -1399,11 +1399,56 @@ button {
   color: var(--text-secondary);
 }
 
-/* 遊戲手冊專屬樣式 */
+/* =========================================
+   📖 遊戲手冊專屬樣式
+   ========================================= */
+/* 背景與彈窗定位 */
+#manual-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.85);
+  z-index: 3000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* 隱藏狀態 */
+#manual-modal.hidden {
+  display: none !important;
+}
+
+/* 主體佈局 (電腦版預設) */
+.manual-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* 左側選單 (電腦版預設) */
 .manual-tabs {
   display: flex;
   flex-direction: column;
+  width: 200px;
+  background: #161616;
+  border-right: 1px solid #333;
+  overflow-y: auto;
 }
+
+/* 右側內容區 */
+.manual-content-container {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  color: #ccc;
+  line-height: 1.6;
+  font-size: 0.95em;
+}
+
+/* 按鈕共用樣式 */
 .manual-tab-btn {
   background: transparent;
   color: #888;
@@ -1415,10 +1460,12 @@ button {
   border-bottom: 1px solid #222;
   transition: all 0.2s;
 }
+
 .manual-tab-btn:hover {
   background: rgba(255, 255, 255, 0.05);
   color: #ccc;
 }
+
 .manual-tab-btn.active {
   background: #2a2a2a;
   color: #4a90e2;
@@ -1426,41 +1473,35 @@ button {
   font-weight: bold;
 }
 
+/* 📱 手機版排版切換 (螢幕寬度 600px 以下) */
 @media (max-width: 600px) {
   .manual-body {
     flex-direction: column;
   }
   .manual-tabs {
-    flex-direction: row;
-    width: 100%;
+    flex-direction: row;      /* 變成橫向排列 */
+    flex-wrap: nowrap;        /* 絕對禁止換行 */
+    width: 100%;              /* 佔滿全寬 */
     border-right: none;
     border-bottom: 1px solid #333;
-    overflow-x: auto; /* 允許橫向滑動 */
-    -webkit-overflow-scrolling: touch; /* 讓 iOS 設備滑動更順暢 */
+    overflow-x: auto;         /* 開啟橫向滑動 */
+    -webkit-overflow-scrolling: touch; /* 讓 iOS 滑動順暢 */
+    scrollbar-width: none;    /* Firefox 隱藏捲軸 */
+  }
+  .manual-tabs::-webkit-scrollbar {
+    display: none;            /* Chrome/Safari 隱藏捲軸，視覺更乾淨 */
   }
   .manual-tab-btn {
-    white-space: nowrap;
-    flex-shrink: 0; /* 關鍵：防止按鈕被系統強制壓縮 */
+    flex: 0 0 auto;           /* 絕對禁止按鈕被壓縮 */
+    min-width: max-content;   /* 強制寬度根據文字伸展 */
+    white-space: nowrap;      /* 文字不換行 */
     border-bottom: none;
     border-left: none;
-    padding: 12px 15px;
+    padding: 12px 16px;
+    text-align: center;
   }
   .manual-tab-btn.active {
     border-left: none;
     border-bottom: 3px solid #4a90e2;
   }
-}
-
-/* 遊戲手冊專屬背景與彈窗定位 */
-#manual-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(0, 0, 0, 0.85); /* 半透明黑底 */
-  z-index: 3000;
-  display: flex;
-  justify-content: center;
-  align-items: center;
 }
