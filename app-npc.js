@@ -223,7 +223,19 @@ function renderNpcPanel() {
         }).join('') + '</div>';
     }
 
-    body.innerHTML = statsHtml + backgroundHtml + milestonesHtml;
+    // 【階段4補充】提前實作 NPC 狀態顯示，方便測試
+    var npcState = (gameState.npcStates && gameState.npcStates[name]) ? gameState.npcStates[name] : null;
+    var survivalStatsHtml = '';
+    if (npcState) {
+      var injuryText = npcState.injuryStatus === 'severe' ? '重傷' : (npcState.injuryStatus === 'minor' ? '輕傷' : '健康');
+      survivalStatsHtml = '<div class="npc-stats-row" style="margin-top: 5px; color: #a0c0ff;">' +
+        '<span class="npc-stat-item">體力 ' + npcState.stamina + '/100</span>' +
+        '<span class="npc-stat-item">飽食 ' + Math.floor(npcState.hunger) + '/100</span>' +
+        '<span class="npc-stat-item">狀態：' + injuryText + '</span>' +
+        '</div>';
+    }
+
+    body.innerHTML = statsHtml + survivalStatsHtml + backgroundHtml + milestonesHtml;
 
     // 階段3動態渲染 NPC 獨立背包的邏輯 (保留你剛才在階段3新增的程式碼)
     var invDiv = document.createElement('div');
