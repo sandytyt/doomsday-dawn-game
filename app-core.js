@@ -263,7 +263,7 @@ function simpleMarkdownToHtml(text) {
 }
 
 function loadRulesAndLore() {
-  fetch('game_rules.txt').then(function (res) {
+  fetch('ai_system_rules.txt').then(function (res) {
     return res.text();
   }).then(function (text) {
     gameState.rulesText = text;
