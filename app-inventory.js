@@ -219,6 +219,13 @@ function renderVehiclePanel() {
   if (!dom.vehicleList) return;
   dom.vehicleList.innerHTML = '';
   var activeVehicles = gameState.vehicles.filter(function (v) { return v.status !== 'lost'; });
+  
+  // 【修復】把標題數字更新移進來，確保只要重繪清單就會同步更新標題
+  if (dom.vehicleSectionToggle) {
+    var vSpan = dom.vehicleSectionToggle.querySelector('span');
+    if (vSpan) vSpan.textContent = '🚗 載具（' + activeVehicles.length + '）';
+  }
+
   if (activeVehicles.length === 0) {
     var emptyEl = document.createElement('div');
     emptyEl.className = 'vehicle-empty';
@@ -226,6 +233,7 @@ function renderVehiclePanel() {
     dom.vehicleList.appendChild(emptyEl);
     return;
   }
+  
   activeVehicles.forEach(function (v) {
     var card = document.createElement('div');
     card.className = 'vehicle-card' + (v.id === gameState.activeVehicleId ? ' vehicle-active' : '');
