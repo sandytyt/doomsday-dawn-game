@@ -135,28 +135,6 @@ function applyVehicleUpdate(vu) {
       vehicle.status = 'lost';
       if (gameState.activeVehicleId === vehicle.id) gameState.activeVehicleId = null;
     }
-  } else if (action === 'cargo_change' && Array.isArray(vu.cargo_changes)) {
-    for (var i = 0; i < vu.cargo_changes.length; i++) {
-      var change = vu.cargo_changes[i];
-      var existing = null;
-      for (var j = 0; j < vehicle.cargo.length; j++) {
-        if (vehicle.cargo[j].name === change.name) { existing = vehicle.cargo[j]; break; }
-      }
-      if (change.action === 'remove') {
-        if (existing) {
-          existing.quantity -= (change.quantity || 1);
-          if (existing.quantity <= 0) {
-            vehicle.cargo = vehicle.cargo.filter(function (it) { return it.name !== change.name; });
-          }
-        }
-      } else {
-        if (existing) {
-          existing.quantity += (change.quantity || 1);
-        } else {
-          vehicle.cargo.push({ name: change.name, quantity: change.quantity || 1 });
-        }
-      }
-    }
   } else if (action === 'lose') {
     vehicle.status = 'lost';
     if (gameState.activeVehicleId === vehicle.id) gameState.activeVehicleId = null;
@@ -251,9 +229,7 @@ function renderVehiclePanel() {
   activeVehicles.forEach(function (v) {
     var card = document.createElement('div');
     card.className = 'vehicle-card' + (v.id === gameState.activeVehicleId ? ' vehicle-active' : '');
-    var cargoText = v.cargo.length
-      ? v.cargo.map(function (it) { return it.name + ' x' + it.quantity; }).join('、')
-      : '空';
+    
     card.innerHTML =
       '<div class="vehicle-card-header">' +
         '<span class="vehicle-name">' + escapeHtml(v.name) + (v.id === gameState.activeVehicleId ? '（使用中）' : '') + '</span>' +
@@ -261,8 +237,34 @@ function renderVehiclePanel() {
       '<div class="vehicle-stat-row">' +
         '<span>耐久 ' + v.durability + '/' + v.maxDurability + '</span>' +
         '<span>油量 ' + v.fuel + '/' + v.maxFuel + '</span>' +
-      '</div>' +
-      '<div class="vehicle-cargo-row">貨艙（' + v.cargo.length + '/' + v.cargoCapacity + '）：' + escapeHtml(cargoText) + '</div>';
+      '</div>';
+
+    var cargoRow = document.createElement('div');
+    cargoRow.className = 'vehicle-cargo-row';
+    cargoRow.textContent = '貨艙（' + v.cargo.length + '/' + v.cargoCapacity + '）：';
+    
+    if (v.cargo.length === 0) {
+      cargoRow.textContent += '空';
+    } else {
+      v.cargo.forEach(function (it, index) {
+        var tag = document.createElement('span');
+        tag.textContent = it.name + ' x' + it.quantity;
+        
+        // 【階段3新增】轉移模式視覺與點擊事件
+        if (typeof transferState !== 'undefined' && transferState.isTransferMode) {
+          tag.style.cursor = 'pointer';
+          tag.style.border = '1px dashed #4a90e2';
+          tag.style.padding = '1px 4px';
+          tag.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (typeof openTransferModal === 'function') openTransferModal('vehicle', v.id, it.name, it.quantity);
+          });
+        }
+        cargoRow.appendChild(tag);
+        if (index < v.cargo.length - 1) cargoRow.appendChild(document.createTextNode('、'));
+      });
+    }
+    card.appendChild(cargoRow);
     dom.vehicleList.appendChild(card);
   });
 }
