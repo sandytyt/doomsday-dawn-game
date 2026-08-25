@@ -398,6 +398,22 @@
     </div>
   </div>
 
+  <!-- 【階段4新增】使用物品彈窗 -->
+  <div id="use-modal" class="event-modal hidden">
+    <div class="event-modal-content" style="text-align: left;">
+      <h2 style="margin-top: 0;">使用物品</h2>
+      <p id="use-item-name" style="font-weight: bold; margin-bottom: 15px; color: #e0e0e0;"></p>
+      <div class="setup-field">
+        <label>使用對象：</label>
+        <select id="use-target-select"></select>
+      </div>
+      <div style="display: flex; gap: 10px; margin-top: 20px;">
+        <button id="use-confirm-btn" class="btn-primary" type="button" style="flex: 1;">確認使用</button>
+        <button id="use-cancel-btn" class="btn-secondary" type="button" style="flex: 1;">取消</button>
+      </div>
+    </div>
+  </div>
+
   <div id="loading-overlay" class="loading-overlay hidden">
     <div class="loading-spinner"></div>
   </div>
