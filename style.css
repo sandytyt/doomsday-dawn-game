@@ -1468,3 +1468,22 @@ button {
     border-bottom: 3px solid #4a90e2;
   }
 }
+
+/* 遊戲手冊專屬背景與彈窗定位 */
+#manual-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.85); /* 半透明黑底 */
+  z-index: 3000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* 隱藏狀態 */
+#manual-modal.hidden {
+  display: none !important;
+}
