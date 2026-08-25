@@ -530,15 +530,6 @@ function handleStartGame() {
   requestNextTurn('__START__');
 }
 
-  // 【階段2新增】開局隨機選定一個地圖池，清空已探索地點
-  var mapIds = Object.keys(MAP_PRESETS);
-  gameState.currentMapPresetId = pickRandom(mapIds);
-  gameState.exploredLocations = [];
-  
-  showGameScreen();
-  requestNextTurn('__START__');
-}
- 
 function handleStartTestMode() {
   // 測試模式同樣呼叫共用開局邏輯
   if (!applyCharacterSetup()) return;
