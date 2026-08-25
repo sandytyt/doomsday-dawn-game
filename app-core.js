@@ -182,6 +182,9 @@ function cacheDom() {
   dom.profileAwakeningExp = document.getElementById('profile-awakening-exp');dom.profileAwakeningLevel = document.getElementById('profile-awakening-level');
   dom.profileAwakeningAbility = document.getElementById('profile-awakening-ability');
   dom.profileAwakeningExp = document.getElementById('profile-awakening-exp');
+  // 【階段5新增】快取背景與一般專長的 DOM
+  dom.bgSelect = document.getElementById('char-background-type-select');
+  dom.generalistDiv = document.getElementById('generalist-picks-container');
 }
 
 var SYSTEM_LINES = [];
