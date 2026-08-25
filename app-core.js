@@ -199,8 +199,7 @@ SYSTEM_LINES.push('若使用者輸入出現「請檢查背景演化」，須額�
 SYSTEM_LINES.push('載具、地點暫存、傷勢部位、風險等級等欄位的具體填寫規則，已完整定義於下方遊戲規則文檔對應章節，直接依規則執行即可，此處不再重複列出細節。');
 SYSTEM_LINES.push('玩家的長期發展路線由四條志向線構成，可同時推進：庇護建設者shelterBuilder（安全區規模設施人口）、治療探索者cureSeeker（病毒研究解藥進展）、暗影獵人shadowHunter（武力威嚇跨陣營恐懼名聲）、勢力締造者factionLeader（陣營決策影響力）。敘事明確符合推進條件時於aspiration_update回報對應鍵名物件，含progress_delta（負20至20）與milestone_text（僅關鍵轉折填寫），不可為填欄位勉強編造進度。');
 SYSTEM_LINES.push('每個具名NPC有性別gender與trust/closeness/romantic_tension三個獨立關係軸（各0-100）。關係處於六階段之一：acquainted初識、incipient初萌、developing漸深、critical_trial風險考驗（須安排高風險抉擇,不可被玩家連續示好跳過）、defining_choice關鍵抉擇（不可逆節點）、resolved_bond穩定結合或resolved_apart疏離懸置。階段推進受天數限制，僅當提示詞的長期世界記憶標明「可推進下一階段」才可填寫stage_transition，標明「尚未滿5天不可推進」則絕對不可填寫。日常閒聊互動僅造成正負1至3點的極小幅變動，關係推進需透過具體劇情事件。NPC狀態為dead或missing時關係凍結，不可再回報數值變動，僅可透過background_note補充背景。background_note僅在受傷治療、戰鬥生死危機、關係階段推進、重大秘密揭露、NPC死亡失散覺醒、其他有實質轉折意義的事件才填寫，日常閒聊即使有小幅數值變動也不填寫此欄位。relationship_update欄位回報npc_name、gender（未記錄時填寫）、trust_delta、closeness_delta、romantic_tension_delta、stage_transition（僅符合天數條件時）、note、background_note，無變化則整體留空。');
-SYSTEM_LINES.push('只回傳合法JSON物件，不包含JSON以外文字或Markdown符號。JSON結構：narrative敘事文字；status_update包含time_advance_minutes、stamina_change、current_location、danger_level（safe/warning/critical）、weather、humanity_change、resonance_change、ability_exp_change、faction_trust_update、inventory_changes（陣列,每項name/quantity/action僅可add或remove）、injury_status（none/minor/severe）、injury_detail、vehicle_update、stash_update、companion_changes（陣列,name/action僅可join或leave或die）、special_event（none/awakening/multi_awakening/death/rescued/level_up或其他代號）、special_event_text；world_memory_update、background_evolution、aspiration_update、relationship_update依上述規則；options陣列含2到4個元素，每個元素含id（僅可A/B/C/D依序遞增)、label、risk_hint（15字內中文,不得用英文)、risk_level（僅可low/medium/high,須與risk_hint程度一致)。');
-SYSTEM_LINES.push('一般對話或安全區域描寫150至200字，戰鬥探索重大事件描寫350至450字。');
+SYSTEM_LINES.push('只回傳合法JSON物件，不包含JSON以外文字或Markdown符號。JSON結構：narrative敘事文字；status_update包含time_advance_minutes、stamina_change、current_location、danger_level（safe/warning/critical）、weather、humanity_change、resonance_change、ability_exp_change、faction_trust_update、inventory_changes（陣列,每項name/quantity/action僅可add或remove）、injury_status（none/minor/severe）、injury_detail、vehicle_update、stash_update、companion_changes（陣列,name/action僅可join或leave或die）、proficiency_triggered（陣列,本次判定用到的體格key如combat/shooting/agility/scouting/medical/negotiation/searching/mechanics）、special_event（none/awakening/multi_awakening/death/rescued/level_up或其他代號）、special_event_text；world_memory_update、background_evolution、aspiration_update、relationship_update依上述規則；options陣列含2到4個元素，每個元素含id（僅可A/B/C/D依序遞增)、label、risk_hint（15字內中文,不得用英文)、risk_level（僅可low/medium/high,須與risk_hint程度一致)。');
 SYSTEM_LINES.push('hunger_change欄位僅在角色明確透過非進食方式改變飢餓狀態時填寫（例如長時間劳動、特殊事件），一般進食導致的飽食度回復已由前端根據inventory_changes自動計算，不需要你重複計算填寫，若無特殊情況此欄位留空或填0即可。');
 
 var SYSTEM_INSTRUCTION = SYSTEM_LINES.join(' ');
@@ -866,6 +865,11 @@ function applyStatusUpdate(update) {
   }
   if (update.companion_changes && update.companion_changes.length) {
     applyCompanionChanges(update.companion_changes);
+  }
+  // 【階段5新增】處理 AI 回報的熟練度增加
+  if (update.proficiency_triggered && Array.isArray(update.proficiency_triggered)) {
+    applyProficiencyGrowth(gameState.skillProficiency, update.proficiency_triggered);
+    // (如果未來需要，也可以讓 AI 回報 NPC 的觸發，目前先以主角為主)
   }
   if (update.vehicle_update && update.vehicle_update.action) {
     applyVehicleUpdate(update.vehicle_update);
