@@ -38,82 +38,86 @@
         <p class="setup-hint">金鑰依供應商分別儲存於本機瀏覽器，不會上傳到任何伺服器。</p>
       </div>
 
-
-      <button id="char-setup-toggle" class="collapse-btn" type="button">
+      <!-- 角色設定切換按鈕 -->
+      <button id="char-setup-toggle" class="collapse-btn" type="button" style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #fff; cursor: pointer; margin-bottom: 10px; font-size: 1em;">
         <span>👤 角色初始設定（選填）</span>
         <span class="collapse-arrow">▾</span>
       </button>
-      <div id="char-setup-fields" class="collapse-body hidden">
-        <div class="setup-field">
-          <label for="char-gender-input">性別</label>
-          <select id="char-gender-input">
+      
+      <!-- 角色設定展開區塊 -->
+      <div id="char-setup-fields" class="collapse-body hidden" style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 6px; padding: 15px; margin-bottom: 20px;">
+        
+        <div class="setup-field" style="margin-bottom: 15px;">
+          <label for="char-gender-input" style="display: block; margin-bottom: 5px; color: #ccc;">性別</label>
+          <select id="char-gender-input" style="width: 100%; padding: 10px; border-radius: 4px; background: #1a1a1a; color: white; border: 1px solid #333;">
             <option value="">不指定</option>
             <option value="男性">男性</option>
             <option value="女性">女性</option>
             <option value="其他">其他</option>
           </select>
         </div>
-        <div class="setup-field">
-          <label for="char-location-input">末日爆發時所在位置</label>
-          <input type="text" id="char-location-input" placeholder="例如：大學宿舍、醫院、郊區獨立屋" maxlength="30">
+        
+        <div class="setup-field" style="margin-bottom: 15px;">
+          <label for="char-location-input" style="display: block; margin-bottom: 5px; color: #ccc;">末日爆發時所在位置</label>
+          <input type="text" id="char-location-input" placeholder="例如：大學宿舍、醫院、郊區獨立屋" maxlength="30" style="width: 100%; padding: 10px; border-radius: 4px; background: #1a1a1a; color: white; border: 1px solid #333;">
         </div>
-        <div class="setup-field">
-          <label for="char-occupation-input">末世前職業</label>
-          <input type="text" id="char-occupation-input" placeholder="例如：軍警、醫護、學生、工程師" maxlength="30">
+        
+        <div class="setup-field" style="margin-bottom: 15px;">
+          <label for="char-occupation-input" style="display: block; margin-bottom: 5px; color: #ccc;">末世前職業</label>
+          <input type="text" id="char-occupation-input" placeholder="例如：軍警、醫護、學生、工程師" maxlength="30" style="width: 100%; padding: 10px; border-radius: 4px; background: #1a1a1a; color: white; border: 1px solid #333;">
         </div>
-        <div class="setup-field">
-          <label for="char-name-input">角色姓名（選填）</label>
-          <input type="text" id="char-name-input" placeholder="留空則由AI自動生成" maxlength="20">
+        
+        <div class="setup-field" style="margin-bottom: 15px;">
+          <label for="char-name-input" style="display: block; margin-bottom: 5px; color: #ccc;">角色姓名（選填）</label>
+          <input type="text" id="char-name-input" placeholder="留空則由AI自動生成" maxlength="20" style="width: 100%; padding: 10px; border-radius: 4px; background: #1a1a1a; color: white; border: 1px solid #333;">
         </div>
-      </div>
-
-      <div class="setup-field">
-          <label for="char-background-type-select">背景類型（影響初始能力）</label>
-          <select id="char-background-type-select">
+        
+        <!-- 背景類型選擇 -->
+        <div class="setup-field" style="margin-bottom: 15px;">
+          <label for="char-background-type-select" style="display: block; margin-bottom: 5px; color: #ccc;">背景類型（影響初始能力）</label>
+          <select id="char-background-type-select" style="width: 100%; padding: 10px; border-radius: 4px; background: #1a1a1a; color: white; border: 1px solid #333;">
             <option value="combat_survivor">搏擊倖存者（格鬥+2，射擊+1）</option>
             <option value="healer_heart">醫者仁心（醫療+2，談判+1）</option>
             <option value="tinkerer">拆解匠（機械+2，搜索+1）</option>
             <option value="social_hand">交際手腕（談判+2，搜索+1）</option>
             <option value="wilderness_ranger">荒野遊俠（偵察+2，敏捷+1）</option>
-            <option value="generalist">一般背景（自選1-3項分類，共+3點）</option>
+            <option value="generalist">一般背景（自選分配，共 3 點）</option>
           </select>
         </div>
-
-        <div id="generalist-picks-container" class="setup-field hidden" style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);">
-          <label style="font-size: 0.9em; margin-bottom: 10px; display: block; color: #ccc;">自由分配專長（剩餘 <span id="generalist-points-left" style="color:#4a90e2; font-weight:bold;">3</span> 點）：</label>
+        
+        <!-- 自由分配專長 (預設隱藏) -->
+        <div id="generalist-picks-container" class="setup-field hidden" style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);">
+          <label style="font-size: 0.9em; margin-bottom: 12px; display: block; color: #ccc;">自由分配專長（剩餘 <span id="generalist-points-left" style="color:#4a90e2; font-weight:bold;">3</span> 點）：</label>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.9em;">
-            <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px;">
-              <span>格鬥</span><input type="number" class="gen-point-input" data-stat="combat" min="0" max="3" value="0" style="width: 36px; padding: 2px 4px; text-align: center; background: #222; color: #fff; border: 1px solid #444; border-radius: 3px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 6px 10px; border-radius: 4px;">
+              <span>格鬥</span><input type="number" class="gen-point-input" data-stat="combat" min="0" max="3" value="0" style="width: 40px; padding: 4px; text-align: center; background: #222; color: #fff; border: 1px solid #444; border-radius: 3px;">
             </div>
-            <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px;">
-              <span>射擊</span><input type="number" class="gen-point-input" data-stat="shooting" min="0" max="3" value="0" style="width: 36px; padding: 2px 4px; text-align: center; background: #222; color: #fff; border: 1px solid #444; border-radius: 3px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 6px 10px; border-radius: 4px;">
+              <span>射擊</span><input type="number" class="gen-point-input" data-stat="shooting" min="0" max="3" value="0" style="width: 40px; padding: 4px; text-align: center; background: #222; color: #fff; border: 1px solid #444; border-radius: 3px;">
             </div>
-            <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px;">
-              <span>敏捷</span><input type="number" class="gen-point-input" data-stat="agility" min="0" max="3" value="0" style="width: 36px; padding: 2px 4px; text-align: center; background: #222; color: #fff; border: 1px solid #444; border-radius: 3px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 6px 10px; border-radius: 4px;">
+              <span>敏捷</span><input type="number" class="gen-point-input" data-stat="agility" min="0" max="3" value="0" style="width: 40px; padding: 4px; text-align: center; background: #222; color: #fff; border: 1px solid #444; border-radius: 3px;">
             </div>
-            <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px;">
-              <span>偵察</span><input type="number" class="gen-point-input" data-stat="scouting" min="0" max="3" value="0" style="width: 36px; padding: 2px 4px; text-align: center; background: #222; color: #fff; border: 1px solid #444; border-radius: 3px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 6px 10px; border-radius: 4px;">
+              <span>偵察</span><input type="number" class="gen-point-input" data-stat="scouting" min="0" max="3" value="0" style="width: 40px; padding: 4px; text-align: center; background: #222; color: #fff; border: 1px solid #444; border-radius: 3px;">
             </div>
-            <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px;">
-              <span>醫療</span><input type="number" class="gen-point-input" data-stat="medical" min="0" max="3" value="0" style="width: 36px; padding: 2px 4px; text-align: center; background: #222; color: #fff; border: 1px solid #444; border-radius: 3px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 6px 10px; border-radius: 4px;">
+              <span>醫療</span><input type="number" class="gen-point-input" data-stat="medical" min="0" max="3" value="0" style="width: 40px; padding: 4px; text-align: center; background: #222; color: #fff; border: 1px solid #444; border-radius: 3px;">
             </div>
-            <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px;">
-              <span>談判</span><input type="number" class="gen-point-input" data-stat="negotiation" min="0" max="3" value="0" style="width: 36px; padding: 2px 4px; text-align: center; background: #222; color: #fff; border: 1px solid #444; border-radius: 3px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 6px 10px; border-radius: 4px;">
+              <span>談判</span><input type="number" class="gen-point-input" data-stat="negotiation" min="0" max="3" value="0" style="width: 40px; padding: 4px; text-align: center; background: #222; color: #fff; border: 1px solid #444; border-radius: 3px;">
             </div>
-            <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px;">
-              <span>搜索</span><input type="number" class="gen-point-input" data-stat="searching" min="0" max="3" value="0" style="width: 36px; padding: 2px 4px; text-align: center; background: #222; color: #fff; border: 1px solid #444; border-radius: 3px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 6px 10px; border-radius: 4px;">
+              <span>搜索</span><input type="number" class="gen-point-input" data-stat="searching" min="0" max="3" value="0" style="width: 40px; padding: 4px; text-align: center; background: #222; color: #fff; border: 1px solid #444; border-radius: 3px;">
             </div>
-            <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px;">
-              <span>機械</span><input type="number" class="gen-point-input" data-stat="mechanics" min="0" max="3" value="0" style="width: 36px; padding: 2px 4px; text-align: center; background: #222; color: #fff; border: 1px solid #444; border-radius: 3px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 6px 10px; border-radius: 4px;">
+              <span>機械</span><input type="number" class="gen-point-input" data-stat="mechanics" min="0" max="3" value="0" style="width: 40px; padding: 4px; text-align: center; background: #222; color: #fff; border: 1px solid #444; border-radius: 3px;">
             </div>
           </div>
         </div>
-        
-      <button id="start-game-btn" class="btn-primary" type="button">進入末日</button>
-
+      </div>
 
       <div class="setup-divider">或</div>
-
 
       <button id="import-save-btn" class="btn-secondary" type="button">匯入存檔繼續遊玩</button>
       <input type="file" id="import-save-file" accept=".json" hidden>
