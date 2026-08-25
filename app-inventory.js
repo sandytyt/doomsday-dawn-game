@@ -323,8 +323,8 @@ function renderItemsAccordion() {
         var tag = document.createElement('span');
         tag.className = 'inventory-item';
         tag.textContent = it.name + ' x' + it.quantity;
-        
-        // 【階段3新增】轉移模式視覺與點擊事件
+
+        // 【階段3與4整合】轉移模式與使用模式的分流
         if (typeof transferState !== 'undefined' && transferState.isTransferMode) {
           tag.style.cursor = 'pointer';
           tag.style.border = '1px dashed #4a90e2';
@@ -334,7 +334,18 @@ function renderItemsAccordion() {
               openTransferModal(loc.isBackpack ? 'backpack' : 'stash', loc.key, it.name, it.quantity);
             }
           });
+        } else if (loc.isBackpack) {
+          // 【階段4新增】非轉移模式下，且物品在隨身背包，點擊彈出使用選單
+          tag.style.cursor = 'pointer';
+          // 微微改變背景色提示可點擊
+          tag.addEventListener('mouseover', function() { tag.style.background = 'rgba(255,255,255,0.1)'; });
+          tag.addEventListener('mouseout', function() { tag.style.background = 'transparent'; });
+          tag.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (typeof openUseModal === 'function') openUseModal(it.name, it.quantity);
+          });
         }
+        
         body.appendChild(tag);
       });
     }
@@ -349,4 +360,113 @@ function renderItemsAccordion() {
     card.appendChild(body);
     dom.itemsAccordion.appendChild(card);
   });
+}
+
+// ==========================================
+// 【階段4新增】物品使用與分配邏輯 (shareType)
+// ==========================================
+
+var useItemState = {
+  itemName: '',
+  maxQty: 0
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+  var cancelBtn = document.getElementById('use-cancel-btn');
+  if (cancelBtn) cancelBtn.addEventListener('click', function() {
+    document.getElementById('use-modal').classList.add('hidden');
+  });
+
+  var confirmBtn = document.getElementById('use-confirm-btn');
+  if (confirmBtn) confirmBtn.addEventListener('click', executeUseItem);
+});
+
+function openUseModal(itemName, qty) {
+  useItemState.itemName = itemName;
+  useItemState.maxQty = qty;
+  
+  var modal = document.getElementById('use-modal');
+  document.getElementById('use-item-name').textContent = '物品：' + itemName + ' (持有 ' + qty + ')';
+  
+  var select = document.getElementById('use-target-select');
+  select.innerHTML = '';
+  
+  // 建立對象清單
+  select.appendChild(new Option('自己 (' + (gameState.charSetup.name || '主角') + ')', 'player'));
+  
+  gameState.companions.forEach(function(npc) {
+    select.appendChild(new Option('隊員：' + npc, 'npc_' + npc));
+  });
+  
+  if (gameState.companions.length > 0) {
+    select.appendChild(new Option('全體分配 (所有人)', 'all'));
+  }
+  
+  modal.classList.remove('hidden');
+}
+
+function executeUseItem() {
+  var target = document.getElementById('use-target-select').value;
+  var itemName = useItemState.itemName;
+  
+  var isFood = isLikelyFood(itemName) && !isWaterOnly(itemName);
+  var isMed = itemName.indexOf('醫療包') !== -1 || itemName.indexOf('繃帶') !== -1 || itemName.indexOf('藥') !== -1;
+  
+  if (!isFood && !isMed) {
+    alert('此物品目前無法直接使用（可能是材料或無法食用的物品）。');
+    return;
+  }
+  
+  var targets = [];
+  if (target === 'player') targets.push('player');
+  else if (target.startsWith('npc_')) targets.push(target.substring(4));
+  else if (target === 'all') {
+    targets.push('player');
+    targets = targets.concat(gameState.companions);
+  }
+  
+  // 讀取 shareType，預設為個人份
+  var shareType = (typeof FOOD_SHARE_TYPES !== 'undefined' && FOOD_SHARE_TYPES[itemName]) ? FOOD_SHARE_TYPES[itemName] : 'individual';
+  var recovery = getFoodRecoveryAmount(itemName);
+  var qtyToConsume = 0;
+  
+  if (target === 'all' && shareType === 'shared') {
+    // 共享型：無論多少人，都只消耗 1 份
+    qtyToConsume = 1;
+  } else {
+    // 個人型：幾個人就消耗幾份
+    qtyToConsume = targets.length;
+  }
+  
+  if (useItemState.maxQty < qtyToConsume) {
+    alert('數量不足以分配！你需要 ' + qtyToConsume + ' 份，但背包只有 ' + useItemState.maxQty + ' 份。');
+    return;
+  }
+  
+  // 1. 扣除物品
+  applyInventoryChangesTo(gameState.inventory, [{ name: itemName, quantity: qtyToConsume, action: 'remove' }]);
+  
+  // 2. 應用效果給所有目標
+  targets.forEach(function(t) {
+    if (isFood) {
+      if (t === 'player') gameState.hunger = Math.min(100, gameState.hunger + recovery);
+      else if (gameState.npcStates && gameState.npcStates[t]) {
+        gameState.npcStates[t].hunger = Math.min(100, gameState.npcStates[t].hunger + recovery);
+      }
+    }
+    if (isMed) {
+      if (t === 'player') {
+         gameState.injuryStatus = (gameState.injuryStatus === 'severe') ? 'minor' : 'none';
+      } else if (gameState.npcStates && gameState.npcStates[t]) {
+         gameState.npcStates[t].injuryStatus = (gameState.npcStates[t].injuryStatus === 'severe') ? 'minor' : 'none';
+      }
+    }
+  });
+  
+  // 3. 收尾與日誌提示
+  document.getElementById('use-modal').classList.add('hidden');
+  renderAll(); // 刷新 UI
+  
+  var targetLabel = target === 'all' ? '全體人員' : (target === 'player' ? '自己' : target.substring(4));
+  appendGMText('[系統] 你將 ' + itemName + ' 分配給了 ' + targetLabel + ' (消耗 ' + qtyToConsume + ' 份)。');
 }
