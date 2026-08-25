@@ -433,8 +433,16 @@ function executeUseItem() {
     targets = targets.concat(gameState.companions);
   }
   
-  // 讀取 shareType，預設為個人份
-  var shareType = (typeof FOOD_SHARE_TYPES !== 'undefined' && FOOD_SHARE_TYPES[itemName]) ? FOOD_SHARE_TYPES[itemName] : 'individual';
+  // 【修正】改用 indexOf 模糊比對來取得 shareType
+  var shareType = 'individual';
+  if (typeof FOOD_SHARE_TYPES !== 'undefined') {
+    for (var key in FOOD_SHARE_TYPES) {
+      if (itemName.indexOf(key) !== -1) {
+        shareType = FOOD_SHARE_TYPES[key];
+        break;
+      }
+    }
+  }
   var recovery = getFoodRecoveryAmount(itemName);
   var qtyToConsume = 0;
   
