@@ -1441,10 +1441,10 @@ button {
 /* 右側內容區 */
 .manual-content-container {
   flex: 1;
-  padding: 20px;
+  padding: 24px 22px 40px 24px; /* 上、右、下、左留白。底部多留一點避免文字被截斷 */
   overflow-y: auto;
   color: #ccc;
-  line-height: 1.6;
+  line-height: 1.7; /* 行距稍微拉開，更好閱讀 */
   font-size: 0.95em;
 }
 
@@ -1505,3 +1505,16 @@ button {
     border-bottom: 3px solid #4a90e2;
   }
 }
+
+/* 手機版內容區 padding 微調 */
+  .manual-content-container {
+    padding: 16px 15px 30px 16px; /* 手機版左右留白 16px 剛剛好 */
+  }
+
+  /* 讓上方第一個和最後一個分頁按鈕，滑到邊緣時有點空間，不會死貼著螢幕 */
+  .manual-tab-btn:first-child {
+    margin-left: 8px;
+  }
+  .manual-tab-btn:last-child {
+    margin-right: 8px;
+  }
