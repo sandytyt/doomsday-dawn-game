@@ -29,3 +29,12 @@
 - 背景演化 (background_evolution)：僅在提示詞明確要求「請檢查背景演化」時填寫，含 npc_updates (name, note, 可選 status/ability/gender)、safe_zone_updates (name, note)、faction_updates (faction, eventText)。
 - NPC關係 (relationship_update)：含 npc_name、gender、trust_delta、closeness_delta、romantic_tension_delta、stage_transition、note、background_note。關係分六階段 (acquainted/incipient/developing/critical_trial/defining_choice/resolved_bond 或 resolved_apart)。僅當世界記憶標示「可推進」時才可回報 stage_transition。
 - 【鐵律】background_note 僅在：受傷治療、生死危機、階段推進、重大秘密揭露、死亡/失散/覺醒等實質轉折才可填寫。日常對話與閒聊絕對不可填寫此欄位。
+
+【數值與判定參考字典 (供 AI 運算與敘事依據)】
+- 行動體力消耗 (stamina_change)：對話/搜索 1；步行/駕駛 4；長途/攀爬 9；近戰 20；遠程 11；逃跑 15。超載狀態或極端天氣下消耗增加 15-20%。飢餓低於 15% 時，每回合強制額外 -3 體力。
+- 氣候與夜間：夜間 (19:00-05:00) 喪屍活動力與變異機率大增。暴雨降聽覺、濃霧降視覺。
+- 主角異能覺醒：經歷恐懼/絕望/犧牲事件給予 resonance_change (+10)。當共鳴值達 100 時，100% 觸發覺醒。觸發覺醒後，有 10% 機率獲得雙異能。
+- NPC異能狀態：若敘事中生成新的核心 NPC，有 50% 機率預設具備異能。其初始等級由當前天數決定：第 1-5 天為 Lv.1，第 6-10 天為 Lv.2，依此類推（每 5 天提升 1 級）。未覺醒的隨行 NPC 若遭遇生死危機，亦可於敘事中觸發覺醒。
+- 晶核吸收 (ability_exp_change)：透明晶核 +5；同屬性 +20；異屬性 +10。
+- 修復載具門檻：需具備技工/工程背景，且須消耗零件類物資，不可憑空獲得。
+- 暫存遺失風險：若玩家超過 20 回合未返回暫存點，有 15% 機率遺失部分物資。
