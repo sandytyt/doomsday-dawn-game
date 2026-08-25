@@ -187,6 +187,7 @@ function init() {
   cacheDom();
   populateProviderSelect();
   bindEvents();
+  setupManualTabs();
   loadRulesAndLore();
   loadNotionConfig();
   setupTestModeEntry();
@@ -334,24 +335,6 @@ function bindEvents() {
   if (dom.charProfileToggle) dom.charProfileToggle.addEventListener('click', function () { toggleCollapse(dom.charProfileToggle, dom.charProfileBody); renderCharProfile(); });
   if (dom.vehicleSectionToggle) dom.vehicleSectionToggle.addEventListener('click', function () { toggleCollapse(dom.vehicleSectionToggle, dom.vehicleSectionBody); });
 
-  var tabBtns = document.querySelectorAll('.manual-tab-btn');
-  if (tabBtns.length > 0) {
-    tabBtns.forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        // 移除所有按鈕的 active 狀態
-        tabBtns.forEach(function(b) { b.classList.remove('active'); });
-        // 隱藏所有分頁內容
-        document.querySelectorAll('.manual-pane').forEach(function(pane) { pane.classList.add('hidden'); });
-        
-        // 顯示被點擊的內容
-        this.classList.add('active');
-        var targetId = this.getAttribute('data-target');
-        var targetPane = document.getElementById(targetId);
-        if (targetPane) targetPane.classList.remove('hidden');
-      });
-    });
-  }
- 
   // 【階段5新增】
   if (dom.bgSelect) {
     dom.bgSelect.addEventListener('change', handleBackgroundTypeChange);
@@ -371,8 +354,45 @@ function handleProviderChange() {
   dom.apiKeyInput.value = savedKey || '';
 }
 
+// 【新增】獨立的遊戲手冊分頁綁定函式
+function setupManualTabs() {
+  var tabBtns = document.querySelectorAll('.manual-tab-btn');
+  if (tabBtns.length === 0) return;
+  
+  tabBtns.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      // 移除所有按鈕的 active 狀態
+      tabBtns.forEach(function(b) { b.classList.remove('active'); });
+      // 隱藏所有分頁內容
+      document.querySelectorAll('.manual-pane').forEach(function(pane) { pane.classList.add('hidden'); });
+      
+      // 顯示被點擊的內容
+      this.classList.add('active');
+      var targetId = this.getAttribute('data-target');
+      var targetPane = document.getElementById(targetId);
+      if (targetPane) targetPane.classList.remove('hidden');
+    });
+  });
+}
+
 function toggleManualModal(show) {
-  if (!dom.manualModal) return;
+  // 如果系統一開始沒抓到，我們動態再抓一次 (自動修復機制)
+  if (!dom.manualModal) {
+    dom.manualModal = document.getElementById('manual-modal');
+    dom.manualCloseBtn = document.getElementById('manual-close-btn');
+    
+    // 如果這次抓到了，順便補綁定關閉按鈕
+    if (dom.manualCloseBtn) {
+      dom.manualCloseBtn.addEventListener('click', function () { toggleManualModal(false); });
+    }
+  }
+
+  // 如果真的還是沒有，代表 HTML 裡漏貼了
+  if (!dom.manualModal) {
+    alert("❌ 找不到遊戲手冊的介面！請確認 index.html 裡面是否有貼上 id='manual-modal' 的區塊。");
+    return;
+  }
+
   dom.manualModal.classList.toggle('hidden', !show);
 }
 
