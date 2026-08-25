@@ -152,8 +152,6 @@ function cacheDom() {
   dom.eventModalText = document.getElementById('event-modal-text');
   dom.eventModalClose = document.getElementById('event-modal-close');
   dom.loadingOverlay = document.getElementById('loading-overlay');
-  dom.manualModal = document.getElementById('manual-modal');
-  dom.manualCloseBtn = document.getElementById('manual-close-btn');
   dom.deathScreen = document.getElementById('death-screen');
   dom.namedSaveModal = document.getElementById('named-save-modal');
   dom.namedSaveList = document.getElementById('named-save-list');
@@ -177,17 +175,18 @@ function cacheDom() {
   dom.profileAwakeningLevel = document.getElementById('profile-awakening-level');
   dom.profileAwakeningAbility = document.getElementById('profile-awakening-ability');
   dom.profileAwakeningExp = document.getElementById('profile-awakening-exp');
-  
-  // 【階段5新增】
   dom.bgSelect = document.getElementById('char-background-type-select');
   dom.generalistDiv = document.getElementById('generalist-picks-container');
+    // 【遊戲手冊快取】
+  dom.manualModal = document.getElementById('manual-modal');
+  dom.manualCloseBtn = document.getElementById('manual-close-btn');
 }
 
 function init() {
   cacheDom();
   populateProviderSelect();
   bindEvents();
-  setupManualTabs();
+  setupManualTabs(); // 【獨立呼叫：綁定遊戲手冊分頁】
   loadRulesAndLore();
   loadNotionConfig();
   setupTestModeEntry();
@@ -314,9 +313,12 @@ function bindEvents() {
   dom.saveTabNotion.addEventListener('click', function () { switchSaveTab('notion'); });
   dom.menuRestartBtn.addEventListener('click', handleRestart);
   dom.menuApikeyBtn.addEventListener('click', handleChangeApiKey);
+  
+  // 【綁定開啟手冊】
   if (dom.rulesLinkBtn) dom.rulesLinkBtn.addEventListener('click', function () { toggleManualModal(true); });
   if (dom.menuRulesBtn) dom.menuRulesBtn.addEventListener('click', function () { toggleSideMenu(false); setTimeout(function () { toggleManualModal(true); }, 200); });
   if (dom.manualCloseBtn) dom.manualCloseBtn.addEventListener('click', function () { toggleManualModal(false); });
+  
   dom.notionSetupToggle.addEventListener('click', function () { toggleCollapse(dom.notionSetupToggle, dom.notionSetupFields); });
   dom.notionSaveBtn.addEventListener('click', handleSaveNotionConfig);
   dom.notionSyncNowBtn.addEventListener('click', handleNotionSyncNow);
@@ -336,9 +338,7 @@ function bindEvents() {
   if (dom.vehicleSectionToggle) dom.vehicleSectionToggle.addEventListener('click', function () { toggleCollapse(dom.vehicleSectionToggle, dom.vehicleSectionBody); });
 
   // 【階段5新增】
-  if (dom.bgSelect) {
-    dom.bgSelect.addEventListener('change', handleBackgroundTypeChange);
-  }
+  if (dom.bgSelect) dom.bgSelect.addEventListener('change', handleBackgroundTypeChange);
   if (dom.generalistDiv) {
     var pointInputs = dom.generalistDiv.querySelectorAll('.gen-point-input');
     for (var j = 0; j < pointInputs.length; j++) {
@@ -375,25 +375,40 @@ function setupManualTabs() {
   });
 }
 
+// 【新增】防呆設計的切換手冊邏輯
 function toggleManualModal(show) {
-  // 如果系統一開始沒抓到，我們動態再抓一次 (自動修復機制)
+  // 動態抓取確保不報錯
   if (!dom.manualModal) {
     dom.manualModal = document.getElementById('manual-modal');
     dom.manualCloseBtn = document.getElementById('manual-close-btn');
-    
-    // 如果這次抓到了，順便補綁定關閉按鈕
-    if (dom.manualCloseBtn) {
-      dom.manualCloseBtn.addEventListener('click', function () { toggleManualModal(false); });
-    }
+    if (dom.manualCloseBtn) dom.manualCloseBtn.addEventListener('click', function () { toggleManualModal(false); });
   }
 
-  // 如果真的還是沒有，代表 HTML 裡漏貼了
+  // 真的抓不到就報錯警告
   if (!dom.manualModal) {
-    alert("❌ 找不到遊戲手冊的介面！請確認 index.html 裡面是否有貼上 id='manual-modal' 的區塊。");
+    console.error("找不到手冊 UI！請確認 index.html 中是否有 id='manual-modal'");
     return;
   }
-
+  
   dom.manualModal.classList.toggle('hidden', !show);
+}
+
+// 【新增】獨立封裝的遊戲手冊分頁切換邏輯
+function setupManualTabs() {
+  var tabBtns = document.querySelectorAll('.manual-tab-btn');
+  if (tabBtns.length === 0) return;
+  
+  tabBtns.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      tabBtns.forEach(function(b) { b.classList.remove('active'); });
+      document.querySelectorAll('.manual-pane').forEach(function(pane) { pane.classList.add('hidden'); });
+      
+      this.classList.add('active');
+      var targetId = this.getAttribute('data-target');
+      var targetPane = document.getElementById(targetId);
+      if (targetPane) targetPane.classList.remove('hidden');
+    });
+  });
 }
 
 function handleStatusExpandClick() {
