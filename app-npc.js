@@ -11,6 +11,7 @@ function renderCharProfile() {
   renderProfileAwakening();
   renderProfileSafezones();
   renderProfileFactions();
+  renderProfileExploredLocations();
 }
 
 function renderProfileInjury() {
@@ -29,6 +30,36 @@ function renderProfileInjury() {
   if (dom.profileInjuryDetail) {
     dom.profileInjuryDetail.textContent = gameState.injuryDetail || '傷勢細節未知';
   }
+}
+
+// 【階段2新增】已探索地點卡片，點擊觸發返回
+function renderProfileExploredLocations() {
+  var container = document.getElementById('profile-explored-list');
+  if (!container) return;
+  container.innerHTML = '';
+  
+  if (!gameState.exploredLocations || gameState.exploredLocations.length === 0) {
+    var emptyEl = document.createElement('div');
+    emptyEl.className = 'profile-subentity-empty';
+    emptyEl.textContent = '尚未探索任何具體地點';
+    container.appendChild(emptyEl);
+    return;
+  }
+  
+  gameState.exploredLocations.forEach(function(loc) {
+    var btn = document.createElement('button');
+    btn.className = 'btn-secondary';
+    btn.style.margin = '4px';
+    btn.style.padding = '4px 8px';
+    btn.style.fontSize = '0.9em';
+    btn.textContent = '返回：' + loc;
+    btn.type = 'button';
+    btn.addEventListener('click', function() {
+      toggleInfoPanel(false); // 關閉側邊面板
+      requestNextTurn('我決定返回「' + loc + '」'); // 送出返回行動
+    });
+    container.appendChild(btn);
+  });
 }
 
 function renderProfileAwakening() {
