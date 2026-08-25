@@ -664,6 +664,30 @@ function buildContextPayload(playerAction) {
   if (pacingHint) {
     userText += ' ' + pacingHint;
   }
+  
+  // 【階段6新增】偵測死亡條件，動態插入強制提示
+  var deathHint = '';
+  if (typeof checkEntityDeathCondition === 'function') {
+    // 檢查主角
+    if (checkEntityDeathCondition(gameState.stamina, gameState.injuryStatus)) {
+      deathHint += '【系統強制指令】主角的體力已歸零且處於重度受傷狀態，本回合必須觸發死亡判定，請依規則安排主角死亡或被救援的劇情，並於 special_event 回報 death 或 rescued。';
+    }
+    // 檢查 NPC
+    if (gameState.companions && gameState.npcStates) {
+      gameState.companions.forEach(function(npcName) {
+        var npc = gameState.npcStates[npcName];
+        if (npc && checkEntityDeathCondition(npc.stamina, npc.injuryStatus)) {
+          deathHint += '【系統強制指令】隨行隊員「' + npcName + '」的體力已歸零且處於重度受傷狀態，本回合必須安排該NPC死亡或絕命掩護的劇情，並於 companion_changes 回報 die。';
+        }
+      });
+    }
+  }
+
+  // 將死亡提示附加到玩家輸入的最後面，確保 AI 強烈關注
+  if (deathHint !== '') {
+    userText += '\n\n' + deathHint;
+  }
+  
   return {
     userText: userText,
     statusSnapshot: statusSnapshot,
