@@ -333,7 +333,25 @@ function bindEvents() {
   if (dom.npcSectionToggle) dom.npcSectionToggle.addEventListener('click', function () { toggleCollapse(dom.npcSectionToggle, dom.npcSectionBody); renderNpcPanel(); });
   if (dom.charProfileToggle) dom.charProfileToggle.addEventListener('click', function () { toggleCollapse(dom.charProfileToggle, dom.charProfileBody); renderCharProfile(); });
   if (dom.vehicleSectionToggle) dom.vehicleSectionToggle.addEventListener('click', function () { toggleCollapse(dom.vehicleSectionToggle, dom.vehicleSectionBody); });
-  
+
+  var tabBtns = document.querySelectorAll('.manual-tab-btn');
+  if (tabBtns.length > 0) {
+    tabBtns.forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        // 移除所有按鈕的 active 狀態
+        tabBtns.forEach(function(b) { b.classList.remove('active'); });
+        // 隱藏所有分頁內容
+        document.querySelectorAll('.manual-pane').forEach(function(pane) { pane.classList.add('hidden'); });
+        
+        // 顯示被點擊的內容
+        this.classList.add('active');
+        var targetId = this.getAttribute('data-target');
+        var targetPane = document.getElementById(targetId);
+        if (targetPane) targetPane.classList.remove('hidden');
+      });
+    });
+  }
+ 
   // 【階段5新增】
   if (dom.bgSelect) {
     dom.bgSelect.addEventListener('change', handleBackgroundTypeChange);
@@ -357,25 +375,6 @@ function toggleManualModal(show) {
   if (!dom.manualModal) return;
   dom.manualModal.classList.toggle('hidden', !show);
 }
-
-// 綁定手冊的分頁按鈕切換
-document.addEventListener('DOMContentLoaded', function() {
-  var tabBtns = document.querySelectorAll('.manual-tab-btn');
-  tabBtns.forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      // 移除所有按鈕的 active
-      tabBtns.forEach(function(b) { b.classList.remove('active'); });
-      // 隱藏所有分頁
-      document.querySelectorAll('.manual-pane').forEach(function(pane) { pane.classList.add('hidden'); });
-
-      // 顯示被點擊的內容
-      this.classList.add('active');
-      var targetId = this.getAttribute('data-target');
-      var targetPane = document.getElementById(targetId);
-      if (targetPane) targetPane.classList.remove('hidden');
-    });
-  });
-});
 
 function handleStatusExpandClick() {
   statusExpanded = !statusExpanded;
