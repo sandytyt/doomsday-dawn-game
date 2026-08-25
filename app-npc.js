@@ -7,11 +7,35 @@ function renderCharProfile() {
   if (dom.profileLocation) dom.profileLocation.textContent = c.location || '未知';
   if (dom.profileOccupation) dom.profileOccupation.textContent = c.occupation || '未知';
 
+  renderProfileProficiency();
   renderProfileInjury();
   renderProfileAwakening();
   renderProfileSafezones();
   renderProfileFactions();
   renderProfileExploredLocations();
+}
+
+function renderProfileProficiency() {
+  if (!dom.charProfileBody) return;
+  // 檢查是否已存在，避免重複建立
+  var existing = document.getElementById('profile-proficiency-section');
+  if (existing) existing.remove();
+
+  var container = document.createElement('div');
+  container.id = 'profile-proficiency-section';
+  var html = '<div class="char-profile-section-title">體格熟練度</div><div class="profile-awakening-card" style="display:grid; grid-template-columns: 1fr 1fr; gap: 8px;">';
+  
+  if (gameState.skillProficiency) {
+    for (var k in PROFICIENCY_LABELS) {
+      var exp = gameState.skillProficiency[k] || 0;
+      var lv = getProficiencyLevel(exp);
+      html += '<div style="font-size: 0.9em; color: ' + (lv > 1 ? '#4a90e2' : '#888') + ';">' + PROFICIENCY_LABELS[k] + ' Lv.' + lv + '</div>';
+    }
+  }
+  html += '</div>';
+  container.innerHTML = html;
+  
+  dom.charProfileBody.insertBefore(container, dom.profileSafezoneList.previousElementSibling);
 }
 
 function renderProfileInjury() {
@@ -235,7 +259,16 @@ function renderNpcPanel() {
         '</div>';
     }
 
-    body.innerHTML = statsHtml + survivalStatsHtml + backgroundHtml + milestonesHtml;
+    var profHtml = '<div class="npc-background-title" style="margin-top:10px;">體格熟練度</div><div style="display:grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 10px;">';
+    for (var pk in PROFICIENCY_LABELS) {
+      var pexp = (npcState && npcState.proficiency && npcState.proficiency[pk]) ? npcState.proficiency[pk] : 0;
+      var plv = typeof getProficiencyLevel === 'function' ? getProficiencyLevel(pexp) : 1;
+      profHtml += '<div style="font-size: 0.85em; color: ' + (plv > 1 ? '#a0c0ff' : '#666') + ';">' + PROFICIENCY_LABELS[pk] + ' Lv.' + plv + '</div>';
+    }
+    profHtml += '</div>';
+
+    // 更新組合邏輯，把 profHtml 塞進去
+    body.innerHTML = statsHtml + survivalStatsHtml + profHtml + backgroundHtml + milestonesHtml;
 
     // 階段3動態渲染 NPC 獨立背包的邏輯 (保留你剛才在階段3新增的程式碼)
     var invDiv = document.createElement('div');
