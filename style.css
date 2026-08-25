@@ -191,22 +191,6 @@ button {
   cursor: pointer;
 }
 
-.btn-test {
-  width: 100%;
-  padding: 12px;
-  margin-top: 8px;
-  background: transparent;
-  color: #7fb3b3;
-  border: 1px dashed var(--accent-teal);
-  border-radius: 8px;
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.btn-test:active {
-  background: rgba(47, 111, 111, 0.15);
-}
-
 .collapse-toggle-btn {
   width: 100%;
   display: flex;
@@ -1285,10 +1269,6 @@ button {
   gap: 6px;
 }
 
-.item-location-body.hidden {
-  display: none;
-}
-
 /* 角色檔案面板：分區標題與基本資料格線 */
 .char-profile-section-title {
   font-size: 11px;
@@ -1446,7 +1426,6 @@ button {
   font-weight: bold;
 }
 
-/* 手機版改為上方橫向滑動選單 */
 @media (max-width: 600px) {
   .manual-body {
     flex-direction: column;
@@ -1456,9 +1435,12 @@ button {
     width: 100%;
     border-right: none;
     border-bottom: 1px solid #333;
+    overflow-x: auto; /* 允許橫向滑動 */
+    -webkit-overflow-scrolling: touch; /* 讓 iOS 設備滑動更順暢 */
   }
   .manual-tab-btn {
     white-space: nowrap;
+    flex-shrink: 0; /* 關鍵：防止按鈕被系統強制壓縮 */
     border-bottom: none;
     border-left: none;
     padding: 12px 15px;
@@ -1481,9 +1463,4 @@ button {
   display: flex;
   justify-content: center;
   align-items: center;
-}
-
-/* 隱藏狀態 */
-#manual-modal.hidden {
-  display: none !important;
 }
