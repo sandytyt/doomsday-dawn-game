@@ -1418,3 +1418,53 @@ button {
   font-size: 12.5px;
   color: var(--text-secondary);
 }
+
+/* 遊戲手冊專屬樣式 */
+.manual-tabs {
+  display: flex;
+  flex-direction: column;
+}
+.manual-tab-btn {
+  background: transparent;
+  color: #888;
+  border: none;
+  padding: 15px 20px;
+  text-align: left;
+  font-size: 1em;
+  cursor: pointer;
+  border-bottom: 1px solid #222;
+  transition: all 0.2s;
+}
+.manual-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #ccc;
+}
+.manual-tab-btn.active {
+  background: #2a2a2a;
+  color: #4a90e2;
+  border-left: 4px solid #4a90e2;
+  font-weight: bold;
+}
+
+/* 手機版改為上方橫向滑動選單 */
+@media (max-width: 600px) {
+  .manual-body {
+    flex-direction: column;
+  }
+  .manual-tabs {
+    flex-direction: row;
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #333;
+  }
+  .manual-tab-btn {
+    white-space: nowrap;
+    border-bottom: none;
+    border-left: none;
+    padding: 12px 15px;
+  }
+  .manual-tab-btn.active {
+    border-left: none;
+    border-bottom: 3px solid #4a90e2;
+  }
+}
