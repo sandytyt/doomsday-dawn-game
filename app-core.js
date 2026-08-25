@@ -983,16 +983,14 @@ function advanceTime(minutes) {
   // 主角飢餓衰減
   gameState.hunger = clamp(gameState.hunger - hungerDecay, 0, 100);
 
-  // 【階段1新增】同步套用飢餓衰減到所有 NPC (為階段2做準備)
-  if (gameState.npcStates) {
-    for (var npcName in gameState.npcStates) {
-      if (Object.prototype.hasOwnProperty.call(gameState.npcStates, npcName)) {
-        var npc = gameState.npcStates[npcName];
-        if (npc && typeof npc.hunger === 'number') {
-          npc.hunger = clamp(npc.hunger - hungerDecay, 0, 100);
-        }
+  // 【修正】只有「當前隨行」的 NPC 才會隨時間自然消耗飢餓度，不在身邊的完全凍結
+  if (gameState.npcStates && gameState.companions && gameState.companions.length > 0) {
+    gameState.companions.forEach(function(npcName) {
+      var npc = gameState.npcStates[npcName];
+      if (npc && typeof npc.hunger === 'number') {
+        npc.hunger = clamp(npc.hunger - hungerDecay, 0, 100);
       }
-    }
+    });
   }
 }
 
