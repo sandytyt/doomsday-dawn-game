@@ -516,8 +516,9 @@ function pad2(n) {
   return n < 10 ? '0' + n : String(n);
 }
 
-function getInventoryLoadLevel() {
-  var count = gameState.inventory.length;
+// 【階段1修改】通用版負重判定
+function getInventoryLoadLevel(invArray) {
+  var count = (invArray || []).length;
   if (count <= 5) return '輕裝';
   if (count <= 10) return '標準';
   return '超載';
@@ -561,7 +562,7 @@ function buildContextPayload(playerAction) {
     '，共鳴值：' + gameState.resonanceValue + '，覺醒等級：' + gameState.awakeningLevel +
     '，能力熟練度：' + gameState.abilityExp + '/' + getAbilityExpNeeded(gameState.awakeningLevel) +
     '，危險等級：' + gameState.dangerLevel + '，傷勢：' + gameState.injuryStatus +
-    '，背包負重：' + getInventoryLoadLevel() + '，持有物品：' + (inventoryList || '無') +
+    '，背包負重：' + getInventoryLoadLevel(gameState.inventory) + '，持有物品：' + (inventoryList || '無') +
     '，隨行隊員：' + (companionList || '無') +
     '，回合數：' + gameState.turnCount;
 
