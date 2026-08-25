@@ -67,6 +67,31 @@
         </div>
       </div>
 
+      <div class="setup-field">
+          <label for="char-background-type-select">背景類型（影響初始能力）</label>
+          <select id="char-background-type-select">
+            <option value="combat_survivor">搏擊倖存者（格鬥+2，射擊+1）</option>
+            <option value="healer_heart">醫者仁心（醫療+2，談判+1）</option>
+            <option value="tinkerer">拆解匠（機械+2，搜索+1）</option>
+            <option value="social_hand">交際手腕（談判+2，搜索+1）</option>
+            <option value="wilderness_ranger">荒野遊俠（偵察+2，敏捷+1）</option>
+            <option value="generalist">一般背景（自選1-3項分類，共+3點）</option>
+          </select>
+        </div>
+        
+        <div id="generalist-picks-container" class="setup-field hidden" style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px;">
+          <label style="font-size: 0.9em; margin-bottom: 8px;">請勾選 1-3 項專長（第1項為主專長，其餘為次要）：</label>
+          <div class="generalist-checkbox-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.9em;">
+            <label><input type="checkbox" value="combat"> 格鬥</label>
+            <label><input type="checkbox" value="shooting"> 射擊</label>
+            <label><input type="checkbox" value="agility"> 敏捷</label>
+            <label><input type="checkbox" value="scouting"> 偵察</label>
+            <label><input type="checkbox" value="medical"> 醫療</label>
+            <label><input type="checkbox" value="negotiation"> 談判</label>
+            <label><input type="checkbox" value="searching"> 搜索</label>
+            <label><input type="checkbox" value="mechanics"> 機械</label>
+          </div>
+        </div>
 
       <button id="start-game-btn" class="btn-primary" type="button">進入末日</button>
 
@@ -358,6 +383,9 @@
 <script src="app-save.js"></script>
 <script src="app-npc.js"></script>
 <script src="app-inventory.js"></script>
+<script src="app-npc-state.js"></script>
+<script src="app-proficiency.js"></script>
+<script src="app-transfer.js"></script>
 <script src="app-core.js"></script>
 </body>
 </html>
