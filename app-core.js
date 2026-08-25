@@ -896,9 +896,34 @@ function applyStatusUpdate(update) {
       gameState.hunger = clamp(gameState.hunger + autoRecovery, 0, 100);
     }
   }
+
   if (update.companion_changes && update.companion_changes.length) {
     applyCompanionChanges(update.companion_changes);
   }
+  
+  // 【新增】接收 NPC 的獨立狀態變化並寫入 npcStates
+  if (update.npc_status_updates && Array.isArray(update.npc_status_updates)) {
+    update.npc_status_updates.forEach(function(npcUpdate) {
+      if (npcUpdate.name && gameState.npcStates && gameState.npcStates[npcUpdate.name]) {
+        var npc = gameState.npcStates[npcUpdate.name];
+        if (typeof npcUpdate.stamina_change === 'number') {
+          npc.stamina = clamp(npc.stamina + npcUpdate.stamina_change, 0, 100);
+        }
+        if (typeof npcUpdate.hunger_change === 'number') {
+          npc.hunger = clamp(npc.hunger + npcUpdate.hunger_change, 0, 100);
+        }
+        if (npcUpdate.injury_status) {
+          npc.injuryStatus = npcUpdate.injury_status;
+        }
+        if (npcUpdate.injury_status === 'none') {
+          npc.injuryDetail = '';
+        } else if (npcUpdate.injury_detail) {
+          npc.injuryDetail = npcUpdate.injury_detail;
+        }
+      }
+    });
+  }
+
   // 【階段5新增】處理 AI 回報的熟練度增加
   if (update.proficiency_triggered && Array.isArray(update.proficiency_triggered)) {
     applyProficiencyGrowth(gameState.skillProficiency, update.proficiency_triggered);
