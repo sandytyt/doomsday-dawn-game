@@ -78,21 +78,21 @@
             <option value="generalist">一般背景（自選1-3項分類，共+3點）</option>
           </select>
         </div>
-        
+
         <div id="generalist-picks-container" class="setup-field hidden" style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px;">
-          <label style="font-size: 0.9em; margin-bottom: 8px;">請勾選 1-3 項專長（第1項為主專長，其餘為次要）：</label>
-          <div class="generalist-checkbox-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.9em;">
-            <label><input type="checkbox" value="combat"> 格鬥</label>
-            <label><input type="checkbox" value="shooting"> 射擊</label>
-            <label><input type="checkbox" value="agility"> 敏捷</label>
-            <label><input type="checkbox" value="scouting"> 偵察</label>
-            <label><input type="checkbox" value="medical"> 醫療</label>
-            <label><input type="checkbox" value="negotiation"> 談判</label>
-            <label><input type="checkbox" value="searching"> 搜索</label>
-            <label><input type="checkbox" value="mechanics"> 機械</label>
+          <label style="font-size: 0.9em; margin-bottom: 8px;">自由分配 3 點專長（剩餘 <span id="generalist-points-left" style="color:#4a90e2; font-weight:bold;">3</span> 點）：</label>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.9em;">
+            <label><input type="number" class="gen-point-input" data-stat="combat" min="0" max="3" value="0" style="width: 40px; text-align: center; background: #333; color: #fff; border: 1px solid #555;"> 格鬥</label>
+            <label><input type="number" class="gen-point-input" data-stat="shooting" min="0" max="3" value="0" style="width: 40px; text-align: center; background: #333; color: #fff; border: 1px solid #555;"> 射擊</label>
+            <label><input type="number" class="gen-point-input" data-stat="agility" min="0" max="3" value="0" style="width: 40px; text-align: center; background: #333; color: #fff; border: 1px solid #555;"> 敏捷</label>
+            <label><input type="number" class="gen-point-input" data-stat="scouting" min="0" max="3" value="0" style="width: 40px; text-align: center; background: #333; color: #fff; border: 1px solid #555;"> 偵察</label>
+            <label><input type="number" class="gen-point-input" data-stat="medical" min="0" max="3" value="0" style="width: 40px; text-align: center; background: #333; color: #fff; border: 1px solid #555;"> 醫療</label>
+            <label><input type="number" class="gen-point-input" data-stat="negotiation" min="0" max="3" value="0" style="width: 40px; text-align: center; background: #333; color: #fff; border: 1px solid #555;"> 談判</label>
+            <label><input type="number" class="gen-point-input" data-stat="searching" min="0" max="3" value="0" style="width: 40px; text-align: center; background: #333; color: #fff; border: 1px solid #555;"> 搜索</label>
+            <label><input type="number" class="gen-point-input" data-stat="mechanics" min="0" max="3" value="0" style="width: 40px; text-align: center; background: #333; color: #fff; border: 1px solid #555;"> 機械</label>
           </div>
         </div>
-
+        
       <button id="start-game-btn" class="btn-primary" type="button">進入末日</button>
 
 
