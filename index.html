@@ -79,17 +79,33 @@
           </select>
         </div>
 
-        <div id="generalist-picks-container" class="setup-field hidden" style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px;">
-          <label style="font-size: 0.9em; margin-bottom: 8px;">自由分配 3 點專長（剩餘 <span id="generalist-points-left" style="color:#4a90e2; font-weight:bold;">3</span> 點）：</label>
+        <div id="generalist-picks-container" class="setup-field hidden" style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);">
+          <label style="font-size: 0.9em; margin-bottom: 10px; display: block; color: #ccc;">自由分配專長（剩餘 <span id="generalist-points-left" style="color:#4a90e2; font-weight:bold;">3</span> 點）：</label>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.9em;">
-            <label><input type="number" class="gen-point-input" data-stat="combat" min="0" max="3" value="0" style="width: 40px; text-align: center; background: #333; color: #fff; border: 1px solid #555;"> 格鬥</label>
-            <label><input type="number" class="gen-point-input" data-stat="shooting" min="0" max="3" value="0" style="width: 40px; text-align: center; background: #333; color: #fff; border: 1px solid #555;"> 射擊</label>
-            <label><input type="number" class="gen-point-input" data-stat="agility" min="0" max="3" value="0" style="width: 40px; text-align: center; background: #333; color: #fff; border: 1px solid #555;"> 敏捷</label>
-            <label><input type="number" class="gen-point-input" data-stat="scouting" min="0" max="3" value="0" style="width: 40px; text-align: center; background: #333; color: #fff; border: 1px solid #555;"> 偵察</label>
-            <label><input type="number" class="gen-point-input" data-stat="medical" min="0" max="3" value="0" style="width: 40px; text-align: center; background: #333; color: #fff; border: 1px solid #555;"> 醫療</label>
-            <label><input type="number" class="gen-point-input" data-stat="negotiation" min="0" max="3" value="0" style="width: 40px; text-align: center; background: #333; color: #fff; border: 1px solid #555;"> 談判</label>
-            <label><input type="number" class="gen-point-input" data-stat="searching" min="0" max="3" value="0" style="width: 40px; text-align: center; background: #333; color: #fff; border: 1px solid #555;"> 搜索</label>
-            <label><input type="number" class="gen-point-input" data-stat="mechanics" min="0" max="3" value="0" style="width: 40px; text-align: center; background: #333; color: #fff; border: 1px solid #555;"> 機械</label>
+            <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px;">
+              <span>格鬥</span><input type="number" class="gen-point-input" data-stat="combat" min="0" max="3" value="0" style="width: 36px; padding: 2px 4px; text-align: center; background: #222; color: #fff; border: 1px solid #444; border-radius: 3px;">
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px;">
+              <span>射擊</span><input type="number" class="gen-point-input" data-stat="shooting" min="0" max="3" value="0" style="width: 36px; padding: 2px 4px; text-align: center; background: #222; color: #fff; border: 1px solid #444; border-radius: 3px;">
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px;">
+              <span>敏捷</span><input type="number" class="gen-point-input" data-stat="agility" min="0" max="3" value="0" style="width: 36px; padding: 2px 4px; text-align: center; background: #222; color: #fff; border: 1px solid #444; border-radius: 3px;">
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px;">
+              <span>偵察</span><input type="number" class="gen-point-input" data-stat="scouting" min="0" max="3" value="0" style="width: 36px; padding: 2px 4px; text-align: center; background: #222; color: #fff; border: 1px solid #444; border-radius: 3px;">
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px;">
+              <span>醫療</span><input type="number" class="gen-point-input" data-stat="medical" min="0" max="3" value="0" style="width: 36px; padding: 2px 4px; text-align: center; background: #222; color: #fff; border: 1px solid #444; border-radius: 3px;">
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px;">
+              <span>談判</span><input type="number" class="gen-point-input" data-stat="negotiation" min="0" max="3" value="0" style="width: 36px; padding: 2px 4px; text-align: center; background: #222; color: #fff; border: 1px solid #444; border-radius: 3px;">
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px;">
+              <span>搜索</span><input type="number" class="gen-point-input" data-stat="searching" min="0" max="3" value="0" style="width: 36px; padding: 2px 4px; text-align: center; background: #222; color: #fff; border: 1px solid #444; border-radius: 3px;">
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px;">
+              <span>機械</span><input type="number" class="gen-point-input" data-stat="mechanics" min="0" max="3" value="0" style="width: 36px; padding: 2px 4px; text-align: center; background: #222; color: #fff; border: 1px solid #444; border-radius: 3px;">
+            </div>
           </div>
         </div>
         
