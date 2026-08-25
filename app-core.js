@@ -354,13 +354,11 @@ function bindEvents() {
   if (dom.npcSectionToggle) dom.npcSectionToggle.addEventListener('click', function () { toggleCollapse(dom.npcSectionToggle, dom.npcSectionBody); renderNpcPanel(); });
   if (dom.charProfileToggle) dom.charProfileToggle.addEventListener('click', function () { toggleCollapse(dom.charProfileToggle, dom.charProfileBody); renderCharProfile(); });
   if (dom.vehicleSectionToggle) dom.vehicleSectionToggle.addEventListener('click', function () { toggleCollapse(dom.vehicleSectionToggle, dom.vehicleSectionBody); });
-  // 【階段5新增】綁定背景類型與勾選事件
-  if (dom.bgSelect) dom.bgSelect.addEventListener('change', handleBackgroundTypeChange);
-  if (dom.generalistDiv) {
-    var pointInputs = dom.generalistDiv.querySelectorAll('.gen-point-input');
-    for (var j = 0; j < pointInputs.length; j++) {
-      pointInputs[j].addEventListener('input', handleGeneralistPointChange);
-    }
+  // 【階段5新增】處理背景下拉選單切換
+  if (dom.bgSelect) {dom.bgSelect.addEventListener('change', handleBackgroundTypeChange);  }
+    // 【階段5新增】處理自由配點數字輸入 (取代了原本的 checkbox 迴圈)
+  if (dom.generalistDiv) {var pointInputs = dom.generalistDiv.querySelectorAll('.gen-point-input');
+    for (var j = 0; j < pointInputs.length; j++) {pointInputs[j].addEventListener('input', handleGeneralistPointChange);}
   }
 
 function handleProviderChange() {
