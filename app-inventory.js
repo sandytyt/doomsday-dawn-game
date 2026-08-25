@@ -323,6 +323,18 @@ function renderItemsAccordion() {
         var tag = document.createElement('span');
         tag.className = 'inventory-item';
         tag.textContent = it.name + ' x' + it.quantity;
+        
+        // 【階段3新增】轉移模式視覺與點擊事件
+        if (typeof transferState !== 'undefined' && transferState.isTransferMode) {
+          tag.style.cursor = 'pointer';
+          tag.style.border = '1px dashed #4a90e2';
+          tag.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (typeof openTransferModal === 'function') {
+              openTransferModal(loc.isBackpack ? 'backpack' : 'stash', loc.key, it.name, it.quantity);
+            }
+          });
+        }
         body.appendChild(tag);
       });
     }
