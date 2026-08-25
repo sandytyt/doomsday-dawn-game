@@ -1518,3 +1518,14 @@ button {
   .manual-tab-btn:last-child {
     margin-right: 8px;
   }
+
+/* 修復手冊內的清單 (Bullet points) 貼邊問題 */
+.manual-content-container ul {
+  padding-left: 24px;  /* 把預設的左側縮排加回來 */
+  margin-top: 8px;     /* 與上方的文字留點呼吸空間 */
+  margin-bottom: 16px; /* 與下方的段落隔開 */
+}
+
+.manual-content-container li {
+  margin-bottom: 8px;  /* 讓每個項目之間也有一點行距，不會全部擠在一起 */
+}
