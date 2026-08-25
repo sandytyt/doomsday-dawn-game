@@ -300,6 +300,11 @@
         <span class="collapse-arrow">▾</span>
       </button>
       <div id="items-section-body" class="collapse-body hidden">
+        <div class="transfer-controls" style="padding: 10px 15px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 10px;">
+          <label style="cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.9em; color: #4a90e2;">
+            <input type="checkbox" id="transfer-mode-toggle"> 🔄 啟用物資轉移模式
+          </label>
+        </div>
         <div id="items-accordion" class="items-accordion"></div>
       </div>
   
@@ -373,6 +378,25 @@
     </div>
   </div>
 
+  <!-- 轉移物資彈窗 -->
+  <div id="transfer-modal" class="event-modal hidden">
+    <div class="event-modal-content" style="text-align: left;">
+      <h2 style="margin-top: 0;">物資轉移</h2>
+      <p id="transfer-item-name" style="font-weight: bold; margin-bottom: 15px; color: #e0e0e0;"></p>
+      <div class="setup-field">
+        <label>轉移至：</label>
+        <select id="transfer-target-select"></select>
+      </div>
+      <div class="setup-field">
+        <label>數量：</label>
+        <input type="number" id="transfer-qty-input" min="1" value="1" style="width: 100%; padding: 8px; border-radius: 4px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: white;">
+      </div>
+      <div style="display: flex; gap: 10px; margin-top: 20px;">
+        <button id="transfer-confirm-btn" class="btn-primary" type="button" style="flex: 1;">確認轉移</button>
+        <button id="transfer-cancel-btn" class="btn-secondary" type="button" style="flex: 1;">取消</button>
+      </div>
+    </div>
+  </div>
 
   <div id="loading-overlay" class="loading-overlay hidden">
     <div class="loading-spinner"></div>
