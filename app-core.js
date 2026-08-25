@@ -448,6 +448,11 @@ function handleStartGame() {
     occupation: dom.charOccupationInput.value.trim() || pickRandom(RANDOM_CHAR_POOL.occupations)
   };
 
+  // 【階段2新增】開局隨機選定一個地圖池，清空已探索地點
+  var mapIds = Object.keys(MAP_PRESETS);
+  gameState.currentMapPresetId = pickRandom(mapIds);
+  gameState.exploredLocations = [];
+  
   showGameScreen();
   requestNextTurn('__START__');
 }
@@ -722,6 +727,26 @@ function handleAIResponse(response) {
     pendingMilestoneModals.unshift({ icon: '❗', title: '重要事件', text: status_update.special_event_text || '發生了重要的事情' });
   }
 
+  // 【階段2新增】處理 NPC 覺醒狀態寫入
+  if (response.world_memory_update && response.world_memory_update.npc_major_event) {
+    var ne = response.world_memory_update.npc_major_event;
+    if (ne.ability && gameState.npcStates && gameState.npcStates[ne.name]) {
+       gameState.npcStates[ne.name].awakeningLevel = Math.max(gameState.npcStates[ne.name].awakeningLevel, 1);
+    }
+  }
+  if (response.background_evolution && Array.isArray(response.background_evolution.npc_updates)) {
+    response.background_evolution.npc_updates.forEach(function(nu) {
+      if (nu.ability && gameState.npcStates && gameState.npcStates[nu.name]) {
+        gameState.npcStates[nu.name].awakeningLevel = Math.max(gameState.npcStates[nu.name].awakeningLevel, 1);
+      }
+    });
+  }
+
+  // 【階段2新增】觸發 NPC 微行動 (例如：自動進食)
+  if (typeof processNpcMicroActions === 'function') {
+    processNpcMicroActions();
+  }
+  
   renderOptions(options);
   renderAll();
   saveStateToLocal();
@@ -750,7 +775,13 @@ function applyStatusUpdate(update) {
   if (typeof update.hunger_change === 'number') {
     gameState.hunger = clamp(gameState.hunger + update.hunger_change, 0, 100);
   }
-  if (update.current_location) gameState.location = update.current_location;
+  if (update.current_location) {
+    gameState.location = update.current_location;
+    // 【階段2新增】記錄已探索地點（排除「未知地點」且不重複記錄）
+    if (update.current_location !== '未知地點' && gameState.exploredLocations.indexOf(update.current_location) === -1) {
+      gameState.exploredLocations.push(update.current_location);
+    }
+  }
   if (update.danger_level) {gameState.dangerLevel = update.danger_level;trackDangerLevel(update.danger_level);
   }
   if (update.weather) gameState.weather = update.weather;
@@ -805,8 +836,19 @@ function applyCompanionChanges(changes) {
       if (gameState.companions.indexOf(change.name) === -1 && gameState.companions.length < 2) {
         gameState.companions.push(change.name);
       }
-    } else if (change.action === 'leave' || change.action === 'die') {
+      // 【階段2新增】初始化 NPC 與復隊校正
+      createNpcStateSkeleton(change.name);
+      correctNpcStateOnRejoin(change.name, gameState.turnCount);
+    } else if (change.action === 'leave') {
       gameState.companions = gameState.companions.filter(function (n) { return n !== change.name; });
+      // 【階段2新增】記錄離隊回合
+      if (gameState.npcStates && gameState.npcStates[change.name]) {
+        gameState.npcStates[change.name].lastLeftTurn = gameState.turnCount;
+      }
+    } else if (change.action === 'die') {
+      gameState.companions = gameState.companions.filter(function (n) { return n !== change.name; });
+      // 【階段2新增】死亡清除
+      clearNpcStateOnDeath(change.name);
     }
   }
 }
