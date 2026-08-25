@@ -52,11 +52,11 @@ function renderProfileExploredLocations() {
     btn.style.margin = '4px';
     btn.style.padding = '4px 8px';
     btn.style.fontSize = '0.9em';
-    btn.textContent = '返回：' + loc;
+    btn.textContent = '前往：' + loc;
     btn.type = 'button';
     btn.addEventListener('click', function() {
       toggleInfoPanel(false); // 關閉側邊面板
-      requestNextTurn('我決定返回「' + loc + '」'); // 送出返回行動
+      requestNextTurn('我決定前往「' + loc + '」'); // 送出前往行動
     });
     container.appendChild(btn);
   });
