@@ -8,13 +8,14 @@
 - 基礎環境：time_advance_minutes、current_location、weather、danger_level (僅可為 safe、warning、critical。critical 僅在劇情轉折時短暫出現)。
 - 角色數值：hunger_change、stamina_change (一般消耗已由系統處理，僅在特殊勞動、戰鬥或非進食事件時才填寫)、humanity_change、resonance_change、ability_exp_change。
 - 陣營信任 (faction_trust_update)：物件格式。注意：鐵幕守望者與荒原拾骸者立場對立，提升一方須同步降低另一方。
-- 物品與背包 (inventory_changes)：陣列，每項需含 name、quantity、action (僅可為 add 或 remove)。容器須轉換為合理份數（如一箱軍糧對應 6 份）。
+- 物品與背包 (inventory_changes)：陣列，每項需含 name、quantity、action (僅可為 add 或 remove)。
 - 載具 (vehicle_update)：僅能回報單一 action，優先回報最主要的變化。
 - 暫存點 (stash_update)：若留下物資不隨身攜帶，回報 store 並同步於 inventory_changes 進行 remove；若取回，回報 retrieve 並同步 add。暫存點名稱必須固定且一致。
 - 主角傷勢 (injury_status / injury_detail)：injury_status 僅可為 none、minor、severe。injury_detail (15字內) 僅在傷勢發生「變化」時填寫，無變化時必須留空字串；若 status 為 none，detail 必須留空或填「傷勢已痊癒」。
 - 體格判定 (proficiency_triggered)：陣列。若本次敘事用到特定技能，回報用到的 key (僅限 combat/shooting/agility/scouting/medical/negotiation/searching/mechanics)。
 - 隨行同伴 (companion_changes)：陣列。每項含 name 與 action (僅限 join、leave、die)。
-- NPC獨立狀態 (npc_status_updates)：陣列。專用於回報隨行隊員的數值變化。每項可含 name、stamina_change、hunger_change、injury_status (none/minor/severe)、injury_detail。
+- NPC獨立狀態 (npc_status_updates)：陣列。專用於回報特定 NPC 的數值變化。每項可含 name、stamina_change、hunger_change、injury_status (none/minor/severe)、injury_detail、inventory_changes (陣列, 含 name/quantity/action)、proficiency_triggered (陣列, 填寫觸發的體格 key)。
+- 【NPC重逢結算鐵律】：不在隨行名單的 NPC 系統狀態會完全凍結。當 AI 判定缺席的 NPC 重新歸隊 (join)，或透過 background_evolution 回報其在外遭遇時，AI 必須在同一回合透過 npc_status_updates 自動推算並回報該 NPC 離隊期間的總結算（包含合理下降的 stamina/hunger、在外取得消耗的 inventory、受到的 injury、以及鍛鍊到的 proficiency），不可使其狀態維持離隊前的原樣。
 
 【特殊事件與死亡機制 (special_event)】
 - 值僅限：none、awakening、multi_awakening、death、rescued、level_up。
