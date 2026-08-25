@@ -145,7 +145,23 @@ function renderProfileFactions() {
 function renderNpcPanel() {
   if (!dom.npcList) return;
   var worldMemory = WorldMemory.ensureShape(gameState.worldMemory);
-  var names = Object.keys(worldMemory.relationships);
+  
+  // 【修復】合併 relationships 與 npcStates 的名單，避免漏掉尚未有關係紀錄的隊員
+  var namesSet = {};
+  if (worldMemory.relationships) {
+    for (var k in worldMemory.relationships) { namesSet[k] = true; }
+  }
+  if (gameState.npcStates) {
+    for (var n in gameState.npcStates) { namesSet[n] = true; }
+  }
+  var names = Object.keys(namesSet);
+  
+  // 【修復】在這裡同步更新標題數字
+  if (dom.npcSectionToggle) {
+    var npcSpan = dom.npcSectionToggle.querySelector('span');
+    if (npcSpan) npcSpan.textContent = '📇 人物檔案（' + names.length + '）';
+  }
+
   dom.npcList.innerHTML = '';
 
   if (names.length === 0) {
@@ -157,15 +173,22 @@ function renderNpcPanel() {
   }
 
   names.forEach(function (name) {
-    var rel = worldMemory.relationships[name];
+    // 【修復】若該 NPC 只有 npcStates 沒有 relationships 紀錄，給予預設值防呆
+    var rel = worldMemory.relationships[name] || { 
+      stage: 'unknown', trust: 0, closeness: 0, romanticTension: 0, 
+      background: [], milestones: [], frozen: false, npcStatus: 'alive' 
+    };
+    
     var card = document.createElement('div');
     card.className = 'npc-card' + (rel.frozen ? ' npc-frozen' : '');
 
     var header = document.createElement('button');
     header.type = 'button';
     header.className = 'npc-card-header';
-    var stageLabel = WorldMemory.STAGE_LABELS[rel.stage] || rel.stage;
+    
+    var stageLabel = WorldMemory.STAGE_LABELS[rel.stage] || (rel.stage === 'unknown' ? '無關係紀錄' : rel.stage);
     var statusLabel = rel.frozen ? '（' + (WorldMemory.NPC_STATUS_LABELS[rel.npcStatus] || rel.npcStatus) + '）' : '';
+    
     header.innerHTML = '<span class="npc-name">' + escapeHtml(name) + statusLabel + '</span>' +
       '<span class="npc-stage-tag stage-' + rel.stage + '">' + escapeHtml(stageLabel) + '</span>' +
       '<span class="npc-card-arrow">▾</span>';
@@ -202,7 +225,7 @@ function renderNpcPanel() {
 
     body.innerHTML = statsHtml + backgroundHtml + milestonesHtml;
 
-    // 【階段3新增】動態渲染 NPC 獨立背包，並支援點擊轉移
+    // 階段3動態渲染 NPC 獨立背包的邏輯 (保留你剛才在階段3新增的程式碼)
     var invDiv = document.createElement('div');
     invDiv.className = 'npc-background'; 
     var invTitle = document.createElement('div');
