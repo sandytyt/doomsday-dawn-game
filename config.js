@@ -87,3 +87,44 @@ function isWaterOnly(name) {
   var isActuallyFood = foodExclusion.some(function (w) { return name.indexOf(w) !== -1; });
   return !isActuallyFood;
 }
+
+// 【階段0新增】食物分配類型分流
+var FOOD_SHARE_TYPES = {
+  '零食': 'individual',
+  '乾糧': 'individual',
+  '口糧': 'individual',
+  '罐頭': 'individual',
+  '乾肉': 'individual',
+  '餅乾': 'individual',
+  '軍糧': 'individual',
+  '烹煮': 'shared',
+  '野味': 'shared',
+  '熱食': 'shared',
+  '飽餐': 'shared',
+  '聚餐': 'shared',
+  '大餐': 'shared'
+};
+
+// 【階段0新增】地圖池對應關係（依據世界觀密檔設定）
+var MAP_PRESETS = {
+  wilhelm_city: {
+    name: '維爾赫姆市',
+    locations: ['廢棄回聲實驗室', '靜默層核心地帶', '淪陷的市區街道', '特化變異體巢穴', '崩塌的地鐵網']
+  },
+  greywall: {
+    name: '灰堡',
+    locations: ['軍事檢查哨', '鐵幕指揮中心', '地下兵工廠', '平民配給區', '宵禁隔離帶']
+  },
+  ashfield: {
+    name: '荒原鎮群',
+    locations: ['拾骸者市集', '廢棄車輛墳場', '外圍警戒哨塔', '臨時農地', '無政府聚落']
+  },
+  sanctum_of_silence: {
+    name: '靜默聖所',
+    locations: ['異常地質坑', '靜默祭壇', '信徒冥想區', '地下教壇', '迷幻孢子區']
+  },
+  hollowreach_relay: {
+    name: '深谷中繼站',
+    locations: ['廢棄通訊基地', '深層獵手前哨', '地下資料庫', '狙擊手陣地', '封鎖銷毀區']
+  }
+};
