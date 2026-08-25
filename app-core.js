@@ -461,6 +461,12 @@ function handleStartTestMode() {
   gameState.isTestMode = true;
   gameState.testScriptIndex = 0;
   gameState.apiKey = '';
+  
+  // 【階段2補漏】測試模式也需要抽取地圖池與初始化探索紀錄
+  var mapIds = Object.keys(MAP_PRESETS);
+  gameState.currentMapPresetId = pickRandom(mapIds);
+  gameState.exploredLocations = []; 
+  
   showGameScreen();
   playNextTestScript('__START__');
 }
