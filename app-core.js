@@ -820,11 +820,29 @@ function advanceTime(minutes) {
   gameState.time.minute = total % 60;
 
   var hungerDecay = minutes * 0.05;
+  // 主角飢餓衰減
   gameState.hunger = clamp(gameState.hunger - hungerDecay, 0, 100);
+
+  // 【階段1新增】同步套用飢餓衰減到所有 NPC (為階段2做準備)
+  if (gameState.npcStates) {
+    for (var npcName in gameState.npcStates) {
+      if (Object.prototype.hasOwnProperty.call(gameState.npcStates, npcName)) {
+        var npc = gameState.npcStates[npcName];
+        if (npc && typeof npc.hunger === 'number') {
+          npc.hunger = clamp(npc.hunger - hungerDecay, 0, 100);
+        }
+      }
+    }
+  }
 }
 
 function clamp(val, min, max) {
   return Math.max(min, Math.min(max, val));
+}
+
+// 【階段1新增】通用死亡判定邏輯（體力歸零且未處理重度受傷）
+function checkEntityDeathCondition(stamina, injuryStatus) {
+  return stamina <= 0 && injuryStatus === 'severe';
 }
 
 function renderAll() {
