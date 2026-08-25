@@ -901,11 +901,12 @@ function applyStatusUpdate(update) {
     applyCompanionChanges(update.companion_changes);
   }
   
-  // 【新增】接收 NPC 的獨立狀態變化並寫入 npcStates
+// 【新增/升級】接收 NPC 的獨立狀態變化（含背包與體格）
   if (update.npc_status_updates && Array.isArray(update.npc_status_updates)) {
     update.npc_status_updates.forEach(function(npcUpdate) {
       if (npcUpdate.name && gameState.npcStates && gameState.npcStates[npcUpdate.name]) {
         var npc = gameState.npcStates[npcUpdate.name];
+        
         if (typeof npcUpdate.stamina_change === 'number') {
           npc.stamina = clamp(npc.stamina + npcUpdate.stamina_change, 0, 100);
         }
@@ -919,6 +920,36 @@ function applyStatusUpdate(update) {
           npc.injuryDetail = '';
         } else if (npcUpdate.injury_detail) {
           npc.injuryDetail = npcUpdate.injury_detail;
+        }
+        
+        // 處理 NPC 獨立背包的增減
+        if (npcUpdate.inventory_changes && Array.isArray(npcUpdate.inventory_changes)) {
+          npc.inventory = npc.inventory || [];
+          npcUpdate.inventory_changes.forEach(function(invChg) {
+            var existing = null;
+            for (var i = 0; i < npc.inventory.length; i++) {
+              if (npc.inventory[i].name === invChg.name) { existing = npc.inventory[i]; break; }
+            }
+            if (invChg.action === 'add') {
+              if (existing) existing.quantity += invChg.quantity;
+              else npc.inventory.push({ name: invChg.name, quantity: invChg.quantity });
+            } else if (invChg.action === 'remove' && existing) {
+              existing.quantity -= invChg.quantity;
+              if (existing.quantity <= 0) {
+                npc.inventory = npc.inventory.filter(function(item) { return item.name !== invChg.name; });
+              }
+            }
+          });
+        }
+        
+        // 處理 NPC 的體格成長
+        if (npcUpdate.proficiency_triggered && Array.isArray(npcUpdate.proficiency_triggered)) {
+          npc.proficiency = npc.proficiency || { combat: 0, shooting: 0, agility: 0, scouting: 0, medical: 0, negotiation: 0, searching: 0, mechanics: 0 };
+          npcUpdate.proficiency_triggered.forEach(function(prof) {
+            if (typeof npc.proficiency[prof] !== 'undefined') {
+              npc.proficiency[prof] += 15; // 每次觸發固定給 15 點經驗，由前端統一控制
+            }
+          });
         }
       }
     });
