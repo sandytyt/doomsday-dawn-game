@@ -1,42 +1,54 @@
 'use strict';
 
-function applyInventoryChanges(changes) {
+// 【階段1修改】通用版背包物資增減與食物回復計算
+function applyInventoryChangesTo(targetInventory, changes) {
   var autoHungerRecovery = 0;
   for (var i = 0; i < changes.length; i++) {
     var change = changes[i];
     var existing = null;
-    for (var j = 0; j < gameState.inventory.length; j++) {
-      if (gameState.inventory[j].name === change.name) {
-        existing = gameState.inventory[j];
+    var existingIndex = -1;
+
+    for (var j = 0; j < targetInventory.length; j++) {
+      if (targetInventory[j].name === change.name) {
+        existing = targetInventory[j];
+        existingIndex = j;
         break;
       }
     }
+
     if (change.action === 'remove') {
       if (existing) {
         if (existing.quantity < change.quantity) {
-          console.warn('[物資警告] AI嘗試移除超過庫存的數量：' + change.name +
-            ' 現有' + existing.quantity + '，嘗試移除' + change.quantity);
+          console.warn('[物資警告] 嘗試移除超過庫存的數量：' + change.name);
         }
         var actualRemoved = Math.min(existing.quantity, change.quantity);
         existing.quantity = Math.max(0, existing.quantity - change.quantity);
+        
         if (existing.quantity <= 0) {
-          gameState.inventory = gameState.inventory.filter(function (it) { return it.name !== change.name; });
+          // 直接對傳入的陣列進行修改，確保參考一致
+          targetInventory.splice(existingIndex, 1);
         }
+        
         if (isLikelyFood(change.name) && !isWaterOnly(change.name)) {
           autoHungerRecovery += getFoodRecoveryAmount(change.name) * actualRemoved;
         }
       } else {
-        console.warn('[物資警告] AI嘗試移除背包中不存在的物品：' + change.name);
+        console.warn('[物資警告] 嘗試移除背包中不存在的物品：' + change.name);
       }
     } else {
       if (existing) {
         existing.quantity += change.quantity || 1;
       } else {
-        gameState.inventory.push({ name: change.name, quantity: change.quantity || 1 });
+        targetInventory.push({ name: change.name, quantity: change.quantity || 1 });
       }
     }
   }
   return autoHungerRecovery;
+}
+
+// 保留給主角原本的呼叫接口，轉接給通用函式
+function applyInventoryChanges(changes) {
+  return applyInventoryChangesTo(gameState.inventory, changes);
 }
 
 function getFoodRecoveryAmount(foodName) {
