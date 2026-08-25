@@ -202,6 +202,40 @@ function renderNpcPanel() {
 
     body.innerHTML = statsHtml + backgroundHtml + milestonesHtml;
 
+    // 【階段3新增】動態渲染 NPC 獨立背包，並支援點擊轉移
+    var invDiv = document.createElement('div');
+    invDiv.className = 'npc-background'; 
+    var invTitle = document.createElement('div');
+    invTitle.className = 'npc-background-title';
+    invTitle.textContent = '背包物品';
+    invDiv.appendChild(invTitle);
+
+    var npcState = (gameState.npcStates && gameState.npcStates[name]) ? gameState.npcStates[name] : null;
+    if (npcState && npcState.inventory && npcState.inventory.length > 0) {
+      npcState.inventory.forEach(function(it, index) {
+        var tag = document.createElement('span');
+        tag.textContent = it.name + ' x' + it.quantity;
+        
+        if (typeof transferState !== 'undefined' && transferState.isTransferMode) {
+          tag.style.cursor = 'pointer';
+          tag.style.border = '1px dashed #4a90e2';
+          tag.style.padding = '1px 4px';
+          tag.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (typeof openTransferModal === 'function') openTransferModal('npc', name, it.name, it.quantity);
+          });
+        }
+        invDiv.appendChild(tag);
+        if (index < npcState.inventory.length - 1) invDiv.appendChild(document.createTextNode('、'));
+      });
+    } else {
+      var emptyP = document.createElement('p');
+      emptyP.className = 'npc-background-empty';
+      emptyP.textContent = '空';
+      invDiv.appendChild(emptyP);
+    }
+    body.appendChild(invDiv);
+
     header.addEventListener('click', function () {
       body.classList.toggle('hidden');
       header.classList.toggle('expanded');
