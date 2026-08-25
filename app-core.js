@@ -356,9 +356,12 @@ function bindEvents() {
   if (dom.vehicleSectionToggle) dom.vehicleSectionToggle.addEventListener('click', function () { toggleCollapse(dom.vehicleSectionToggle, dom.vehicleSectionBody); });
   // 【階段5新增】綁定背景類型與勾選事件
   if (dom.bgSelect) dom.bgSelect.addEventListener('change', handleBackgroundTypeChange);
-  if (dom.generalistDiv) {var cbxs = dom.generalistDiv.querySelectorAll('input[type="checkbox"]');
-    for (var i = 0; i < cbxs.length; i++) {cbxs[i].addEventListener('change', handleGeneralistCheckboxChange);}}
-}
+  if (dom.generalistDiv) {
+    var pointInputs = dom.generalistDiv.querySelectorAll('.gen-point-input');
+    for (var j = 0; j < pointInputs.length; j++) {
+      pointInputs[j].addEventListener('input', handleGeneralistPointChange);
+    }
+  }
 
 function handleProviderChange() {
   var provider = dom.providerSelect.value;
@@ -440,22 +443,32 @@ function handleBackgroundTypeChange() {
   }
 }
 
-// 【階段5新增】處理一般背景的勾選數量限制
-function handleGeneralistCheckboxChange(e) {
-  var checked = dom.generalistDiv.querySelectorAll('input[type="checkbox"]:checked');
-  if (checked.length > 3) {
-    e.target.checked = false; // 取消剛才那次多餘的勾選
-    alert('最多只能選擇 3 項分類！');
+// 【階段5修改】處理一般背景的自由配點限制
+function handleGeneralistPointChange(e) {
+  var inputs = dom.generalistDiv.querySelectorAll('.gen-point-input');
+  var total = 0;
+  for (var i = 0; i < inputs.length; i++) {
+    total += parseInt(inputs[i].value, 10) || 0;
   }
+  
+  if (total > 3) {
+    // 若超過3點，把這次輸入的數字倒扣回去
+    e.target.value = parseInt(e.target.value, 10) - (total - 3);
+    total = 3;
+    alert('最多只能分配 3 點專長！');
+  }
+  
+  var leftSpan = document.getElementById('generalist-points-left');
+  if (leftSpan) leftSpan.textContent = (3 - total);
 }
 
 function handleStartGame() {
   var provider = dom.providerSelect.value;
   var key = dom.apiKeyInput.value.trim();
-  if (!key) {
-    alert('請輸入你的 API 金鑰');
-    return;
-  }
+  if (!key) { alert('請輸入你的 API 金鑰'); return; }
+  
+  if (!applyCharacterSetup()) return; // 若點數沒配滿，中止開局
+  
   gameState.apiKey = key;
   gameState.provider = provider;
   gameState.isTestMode = false;
@@ -506,7 +519,56 @@ function handleStartGame() {
   requestNextTurn('__START__');
 }
 
+// 【階段5新增】共用的角色初始設定邏輯（解決測試模式跳過設定的問題）
+function applyCharacterSetup() {
+  var finalGender = dom.charGenderInput.value || pickRandom(RANDOM_CHAR_POOL.genders);
+  var finalName = dom.charNameInput.value.trim() || pickRandomNameByGender(finalGender);
+
+  var bgType = dom.bgSelect ? dom.bgSelect.value : 'combat_survivor';
+  var picks = {};
+  
+  if (bgType === 'generalist') {
+    var inputs = dom.generalistDiv.querySelectorAll('.gen-point-input');
+    var total = 0;
+    for (var i = 0; i < inputs.length; i++) {
+      var val = parseInt(inputs[i].value, 10) || 0;
+      if (val > 0) {
+        picks[inputs[i].dataset.stat] = val; // 例如 picks['medical'] = 3
+        total += val;
+      }
+    }
+    if (total !== 3) {
+      alert('請將 3 點專長點數完全分配完畢！(目前只分配了 ' + total + ' 點)');
+      return false; // 中止開局
+    }
+  }
+
+  gameState.charSetup = {
+    name: finalName,
+    gender: finalGender,
+    location: dom.charLocationInput.value.trim() || pickRandom(RANDOM_CHAR_POOL.locations),
+    occupation: dom.charOccupationInput.value.trim() || pickRandom(RANDOM_CHAR_POOL.occupations),
+    backgroundType: bgType,
+    generalistPicks: picks
+  };
+
+  // 統一給予所有分類 0 作為基底，防止 undefined！
+  gameState.skillProficiency = { combat: 0, shooting: 0, agility: 0, scouting: 0, medical: 0, negotiation: 0, searching: 0, mechanics: 0 };
+  
+  if (typeof getBackgroundBonuses === 'function') {
+    var bonuses = getBackgroundBonuses(bgType, picks);
+    for (var k in bonuses) {
+      if (bonuses[k] === 1) gameState.skillProficiency[k] = 50;
+      else if (bonuses[k] === 2) gameState.skillProficiency[k] = 150;
+      else if (bonuses[k] === 3) gameState.skillProficiency[k] = 300;
+    }
+  }
+  return true; // 成功設定
+}
+  
 function handleStartTestMode() {
+  if (!applyCharacterSetup()) return; // 測試模式也必須把點數配滿才能進去
+
   gameState.isTestMode = true;
   gameState.testScriptIndex = 0;
   gameState.apiKey = '';
