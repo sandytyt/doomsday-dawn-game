@@ -247,17 +247,20 @@ function renderNpcPanel() {
         }).join('') + '</div>';
     }
 
-    // 【階段4補充】提前實作 NPC 狀態顯示，方便測試
+
+    // 【階段6修改】NPC 狀態顯示（加入覺醒等級）
     var npcState = (gameState.npcStates && gameState.npcStates[name]) ? gameState.npcStates[name] : null;
     var survivalStatsHtml = '';
     if (npcState) {
       var injuryText = npcState.injuryStatus === 'severe' ? '重傷' : (npcState.injuryStatus === 'minor' ? '輕傷' : '健康');
-      survivalStatsHtml = '<div class="npc-stats-row" style="margin-top: 5px; color: #a0c0ff;">' +
-        '<span class="npc-stat-item">體力 ' + npcState.stamina + '/100</span>' +
+      var awkText = (npcState.awakeningLevel && npcState.awakeningLevel > 0) ? 'Lv.' + npcState.awakeningLevel : '未覺醒';
+      
+      survivalStatsHtml = '<div class="npc-stats-row" style="margin-top: 5px; color: #a0c0ff; display: flex; flex-wrap: wrap; gap: 8px;">' +
+        '<span class="npc-stat-item">體力 ' + Math.floor(npcState.stamina) + '/100</span>' +
         '<span class="npc-stat-item">飽食 ' + Math.floor(npcState.hunger) + '/100</span>' +
         '<span class="npc-stat-item">狀態：' + injuryText + '</span>' +
+        '<span class="npc-stat-item" style="color: #f5a623;">異能：' + awkText + '</span>' +
         '</div>';
-    }
 
     var profHtml = '<div class="npc-background-title" style="margin-top:10px;">體格熟練度</div><div style="display:grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 10px;">';
     for (var pk in PROFICIENCY_LABELS) {
