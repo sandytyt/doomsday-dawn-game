@@ -128,10 +128,8 @@ function cacheDom() {
   dom.itemsAccordion = document.getElementById('items-accordion');
   dom.npcSectionToggle = document.getElementById('npc-section-toggle');
   dom.npcSectionBody = document.getElementById('npc-section-body');
-  dom.npcList = document.getElementById('npc-list');
   dom.vehicleSectionToggle = document.getElementById('vehicle-section-toggle');
   dom.vehicleSectionBody = document.getElementById('vehicle-section-body');
-  dom.vehicleList = document.getElementById('vehicle-list');
   dom.sideMenu = document.getElementById('side-menu');
   dom.sideMenuBackdrop = document.getElementById('side-menu-backdrop');
   dom.menuExportBtn = document.getElementById('menu-export-btn');
@@ -179,10 +177,9 @@ function cacheDom() {
   dom.profileAwakeningSection = document.getElementById('profile-awakening-section');
   dom.profileAwakeningLevel = document.getElementById('profile-awakening-level');
   dom.profileAwakeningAbility = document.getElementById('profile-awakening-ability');
-  dom.profileAwakeningExp = document.getElementById('profile-awakening-exp');dom.profileAwakeningLevel = document.getElementById('profile-awakening-level');
-  dom.profileAwakeningAbility = document.getElementById('profile-awakening-ability');
   dom.profileAwakeningExp = document.getElementById('profile-awakening-exp');
-  // 【階段5新增】快取背景與一般專長的 DOM
+  
+  // 【階段5新增】
   dom.bgSelect = document.getElementById('char-background-type-select');
   dom.generalistDiv = document.getElementById('generalist-picks-container');
 }
@@ -354,12 +351,18 @@ function bindEvents() {
   if (dom.npcSectionToggle) dom.npcSectionToggle.addEventListener('click', function () { toggleCollapse(dom.npcSectionToggle, dom.npcSectionBody); renderNpcPanel(); });
   if (dom.charProfileToggle) dom.charProfileToggle.addEventListener('click', function () { toggleCollapse(dom.charProfileToggle, dom.charProfileBody); renderCharProfile(); });
   if (dom.vehicleSectionToggle) dom.vehicleSectionToggle.addEventListener('click', function () { toggleCollapse(dom.vehicleSectionToggle, dom.vehicleSectionBody); });
-  // 【階段5新增】處理背景下拉選單切換
-  if (dom.bgSelect) {dom.bgSelect.addEventListener('change', handleBackgroundTypeChange);  }
-    // 【階段5新增】處理自由配點數字輸入 (取代了原本的 checkbox 迴圈)
-  if (dom.generalistDiv) {var pointInputs = dom.generalistDiv.querySelectorAll('.gen-point-input');
-    for (var j = 0; j < pointInputs.length; j++) {pointInputs[j].addEventListener('input', handleGeneralistPointChange);}
+  
+  // 【階段5新增】
+  if (dom.bgSelect) {
+    dom.bgSelect.addEventListener('change', handleBackgroundTypeChange);
   }
+  if (dom.generalistDiv) {
+    var pointInputs = dom.generalistDiv.querySelectorAll('.gen-point-input');
+    for (var j = 0; j < pointInputs.length; j++) {
+      pointInputs[j].addEventListener('input', handleGeneralistPointChange);
+    }
+  }
+}
 
 function handleProviderChange() {
   var provider = dom.providerSelect.value;
@@ -565,13 +568,14 @@ function applyCharacterSetup() {
 }
   
 function handleStartTestMode() {
-  if (!applyCharacterSetup()) return; // 測試模式也必須把點數配滿才能進去
+  // 測試模式同樣呼叫共用開局邏輯
+  if (!applyCharacterSetup()) return;
 
   gameState.isTestMode = true;
   gameState.testScriptIndex = 0;
   gameState.apiKey = '';
   
-  // 【階段2補漏】測試模式也需要抽取地圖池與初始化探索紀錄
+  // 初始化地圖與探索紀錄
   var mapIds = Object.keys(MAP_PRESETS);
   gameState.currentMapPresetId = pickRandom(mapIds);
   gameState.exploredLocations = []; 
