@@ -182,6 +182,9 @@ function cacheDom() {
   dom.profileAwakeningExp = document.getElementById('profile-awakening-exp');dom.profileAwakeningLevel = document.getElementById('profile-awakening-level');
   dom.profileAwakeningAbility = document.getElementById('profile-awakening-ability');
   dom.profileAwakeningExp = document.getElementById('profile-awakening-exp');
+  // 【階段5新增】快取背景與一般專長的 DOM
+  dom.bgSelect = document.getElementById('char-background-type-select');
+  dom.generalistDiv = document.getElementById('generalist-picks-container');
 }
 
 var SYSTEM_LINES = [];
@@ -352,6 +355,10 @@ function bindEvents() {
   if (dom.npcSectionToggle) dom.npcSectionToggle.addEventListener('click', function () { toggleCollapse(dom.npcSectionToggle, dom.npcSectionBody); renderNpcPanel(); });
   if (dom.charProfileToggle) dom.charProfileToggle.addEventListener('click', function () { toggleCollapse(dom.charProfileToggle, dom.charProfileBody); renderCharProfile(); });
   if (dom.vehicleSectionToggle) dom.vehicleSectionToggle.addEventListener('click', function () { toggleCollapse(dom.vehicleSectionToggle, dom.vehicleSectionBody); });
+  // 【階段5新增】綁定背景類型與勾選事件
+  if (dom.bgSelect) dom.bgSelect.addEventListener('change', handleBackgroundTypeChange);
+  if (dom.generalistDiv) {var cbxs = dom.generalistDiv.querySelectorAll('input[type="checkbox"]');
+    for (var i = 0; i < cbxs.length; i++) {cbxs[i].addEventListener('change', handleGeneralistCheckboxChange);}}
 }
 
 function handleProviderChange() {
@@ -425,6 +432,24 @@ function toggleInfoPanel(show) {
   }
 }
 
+// 【階段5新增】處理背景類型切換
+function handleBackgroundTypeChange() {
+  if (dom.bgSelect.value === 'generalist') {
+    dom.generalistDiv.classList.remove('hidden');
+  } else {
+    dom.generalistDiv.classList.add('hidden');
+  }
+}
+
+// 【階段5新增】處理一般背景的勾選數量限制
+function handleGeneralistCheckboxChange(e) {
+  var checked = dom.generalistDiv.querySelectorAll('input[type="checkbox"]:checked');
+  if (checked.length > 3) {
+    e.target.checked = false; // 取消剛才那次多餘的勾選
+    alert('最多只能選擇 3 項分類！');
+  }
+}
+
 function handleStartGame() {
   var provider = dom.providerSelect.value;
   var key = dom.apiKeyInput.value.trim();
@@ -441,12 +466,37 @@ function handleStartGame() {
   var finalGender = dom.charGenderInput.value || pickRandom(RANDOM_CHAR_POOL.genders);
   var finalName = dom.charNameInput.value.trim() || pickRandomNameByGender(finalGender);
 
+  // 【階段5新增】讀取背景類型與自選項 (改用 dom 物件)
+  var bgType = dom.bgSelect ? dom.bgSelect.value : 'combat_survivor';
+  var picks = [];
+  if (bgType === 'generalist') {
+    var checkedCbx = dom.generalistDiv.querySelectorAll('input[type="checkbox"]:checked');
+    for (var i = 0; i < checkedCbx.length; i++) picks.push(checkedCbx[i].value);
+    if (picks.length === 0) {
+      alert('請至少勾選 1 項一般背景專長！');
+      return;
+    }
+  }
+
   gameState.charSetup = {
     name: finalName,
     gender: finalGender,
     location: dom.charLocationInput.value.trim() || pickRandom(RANDOM_CHAR_POOL.locations),
-    occupation: dom.charOccupationInput.value.trim() || pickRandom(RANDOM_CHAR_POOL.occupations)
+    occupation: dom.charOccupationInput.value.trim() || pickRandom(RANDOM_CHAR_POOL.occupations),
+    backgroundType: bgType,
+    generalistPicks: picks
   };
+
+  // 【階段5新增】初始化熟練度並套用加成 (+1點=Lv2(50exp), +2點=Lv3(150exp), +3點=Lv4(300exp))
+  gameState.skillProficiency = { combat: 0, shooting: 0, agility: 0, scouting: 0, medical: 0, negotiation: 0, searching: 0, mechanics: 0 };
+  if (typeof getBackgroundBonuses === 'function') {
+    var bonuses = getBackgroundBonuses(bgType, picks);
+    for (var k in bonuses) {
+      if (bonuses[k] === 1) gameState.skillProficiency[k] = 50;
+      else if (bonuses[k] === 2) gameState.skillProficiency[k] = 150;
+      else if (bonuses[k] === 3) gameState.skillProficiency[k] = 300;
+    }
+  }
 
   // 【階段2新增】開局隨機選定一個地圖池，清空已探索地點
   var mapIds = Object.keys(MAP_PRESETS);
