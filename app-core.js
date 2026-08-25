@@ -453,74 +453,16 @@ function handleGeneralistPointChange(e) {
   }
   
   if (total > 3) {
-    // 若超過3點，把這次輸入的數字倒扣回去
     e.target.value = parseInt(e.target.value, 10) - (total - 3);
     total = 3;
-    alert('最多只能分配 3 點專長！');
+    alert('點數上限為 3 點'); // 提示用語精簡
   }
   
   var leftSpan = document.getElementById('generalist-points-left');
   if (leftSpan) leftSpan.textContent = (3 - total);
 }
 
-function handleStartGame() {
-  var provider = dom.providerSelect.value;
-  var key = dom.apiKeyInput.value.trim();
-  if (!key) { alert('請輸入你的 API 金鑰'); return; }
-  
-  if (!applyCharacterSetup()) return; // 若點數沒配滿，中止開局
-  
-  gameState.apiKey = key;
-  gameState.provider = provider;
-  gameState.isTestMode = false;
-  localStorage.setItem(PROVIDER_KEY, provider);
-  localStorage.setItem(APIKEY_KEY_PREFIX + provider, key);
-
-  var finalGender = dom.charGenderInput.value || pickRandom(RANDOM_CHAR_POOL.genders);
-  var finalName = dom.charNameInput.value.trim() || pickRandomNameByGender(finalGender);
-
-  // 【階段5新增】讀取背景類型與自選項 (改用 dom 物件)
-  var bgType = dom.bgSelect ? dom.bgSelect.value : 'combat_survivor';
-  var picks = [];
-  if (bgType === 'generalist') {
-    var checkedCbx = dom.generalistDiv.querySelectorAll('input[type="checkbox"]:checked');
-    for (var i = 0; i < checkedCbx.length; i++) picks.push(checkedCbx[i].value);
-    if (picks.length === 0) {
-      alert('請至少勾選 1 項一般背景專長！');
-      return;
-    }
-  }
-
-  gameState.charSetup = {
-    name: finalName,
-    gender: finalGender,
-    location: dom.charLocationInput.value.trim() || pickRandom(RANDOM_CHAR_POOL.locations),
-    occupation: dom.charOccupationInput.value.trim() || pickRandom(RANDOM_CHAR_POOL.occupations),
-    backgroundType: bgType,
-    generalistPicks: picks
-  };
-
-  // 【階段5新增】初始化熟練度並套用加成 (+1點=Lv2(50exp), +2點=Lv3(150exp), +3點=Lv4(300exp))
-  gameState.skillProficiency = { combat: 0, shooting: 0, agility: 0, scouting: 0, medical: 0, negotiation: 0, searching: 0, mechanics: 0 };
-  if (typeof getBackgroundBonuses === 'function') {
-    var bonuses = getBackgroundBonuses(bgType, picks);
-    for (var k in bonuses) {
-      if (bonuses[k] === 1) gameState.skillProficiency[k] = 50;
-      else if (bonuses[k] === 2) gameState.skillProficiency[k] = 150;
-      else if (bonuses[k] === 3) gameState.skillProficiency[k] = 300;
-    }
-  }
-
-  // 【階段2新增】開局隨機選定一個地圖池，清空已探索地點
-  var mapIds = Object.keys(MAP_PRESETS);
-  gameState.currentMapPresetId = pickRandom(mapIds);
-  gameState.exploredLocations = [];
-  
-  showGameScreen();
-  requestNextTurn('__START__');
-}
-
-// 【階段5新增】共用的角色初始設定邏輯（解決測試模式跳過設定的問題）
+// 【階段5新增】共用的角色初始設定邏輯
 function applyCharacterSetup() {
   var finalGender = dom.charGenderInput.value || pickRandom(RANDOM_CHAR_POOL.genders);
   var finalName = dom.charNameInput.value.trim() || pickRandomNameByGender(finalGender);
@@ -530,18 +472,13 @@ function applyCharacterSetup() {
   
   if (bgType === 'generalist') {
     var inputs = dom.generalistDiv.querySelectorAll('.gen-point-input');
-    var total = 0;
     for (var i = 0; i < inputs.length; i++) {
       var val = parseInt(inputs[i].value, 10) || 0;
       if (val > 0) {
-        picks[inputs[i].dataset.stat] = val; // 例如 picks['medical'] = 3
-        total += val;
+        picks[inputs[i].dataset.stat] = val;
       }
     }
-    if (total !== 3) {
-      alert('請將 3 點專長點數完全分配完畢！(目前只分配了 ' + total + ' 點)');
-      return false; // 中止開局
-    }
+    // 已移除強制分配 3 點的限制，玩家可以不點或只點 1 點
   }
 
   gameState.charSetup = {
@@ -553,7 +490,6 @@ function applyCharacterSetup() {
     generalistPicks: picks
   };
 
-  // 統一給予所有分類 0 作為基底，防止 undefined！
   gameState.skillProficiency = { combat: 0, shooting: 0, agility: 0, scouting: 0, medical: 0, negotiation: 0, searching: 0, mechanics: 0 };
   
   if (typeof getBackgroundBonuses === 'function') {
@@ -564,9 +500,45 @@ function applyCharacterSetup() {
       else if (bonuses[k] === 3) gameState.skillProficiency[k] = 300;
     }
   }
-  return true; // 成功設定
+  return true; 
 }
+
+function handleStartGame() {
+  var provider = dom.providerSelect.value;
+  var key = dom.apiKeyInput.value.trim();
   
+  if (!key) {
+    alert('請輸入你的 API 金鑰');
+    return;
+  }
+  
+  // 統一交給共用函式處理角色數值 (包含讀取配點、設定 charSetup 與 skillProficiency)
+  if (!applyCharacterSetup()) return;
+  
+  gameState.apiKey = key;
+  gameState.provider = provider;
+  gameState.isTestMode = false;
+  localStorage.setItem(PROVIDER_KEY, provider);
+  localStorage.setItem(APIKEY_KEY_PREFIX + provider, key);
+
+  // 初始化地圖與探索紀錄
+  var mapIds = Object.keys(MAP_PRESETS);
+  gameState.currentMapPresetId = pickRandom(mapIds);
+  gameState.exploredLocations = []; 
+
+  showGameScreen();
+  requestNextTurn('__START__');
+}
+
+  // 【階段2新增】開局隨機選定一個地圖池，清空已探索地點
+  var mapIds = Object.keys(MAP_PRESETS);
+  gameState.currentMapPresetId = pickRandom(mapIds);
+  gameState.exploredLocations = [];
+  
+  showGameScreen();
+  requestNextTurn('__START__');
+}
+ 
 function handleStartTestMode() {
   // 測試模式同樣呼叫共用開局邏輯
   if (!applyCharacterSetup()) return;
