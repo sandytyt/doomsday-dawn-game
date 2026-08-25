@@ -261,7 +261,7 @@ function renderNpcPanel() {
         '<span class="npc-stat-item">狀態：' + injuryText + '</span>' +
         '<span class="npc-stat-item" style="color: #f5a623;">異能：' + awkText + '</span>' +
         '</div>';
-
+    }
     var profHtml = '<div class="npc-background-title" style="margin-top:10px;">體格熟練度</div><div style="display:grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 10px;">';
     for (var pk in PROFICIENCY_LABELS) {
       var pexp = (npcState && npcState.proficiency && npcState.proficiency[pk]) ? npcState.proficiency[pk] : 0;
