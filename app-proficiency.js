@@ -44,19 +44,8 @@ function getBackgroundBonuses(backgroundTypeKey, customPicks) {
   if (!preset) return {};
   if (!preset.isCustomizable) return preset.bonuses;
 
-  var picks = customPicks || [];
-  var bonuses = {};
-  if (picks.length === 1) {
-    bonuses[picks[0]] = 3;
-  } else if (picks.length === 2) {
-    bonuses[picks[0]] = 2; // 第一個視為主要
-    bonuses[picks[1]] = 1; // 第二個視為次要
-  } else if (picks.length === 3) {
-    picks.forEach(function (key) {
-      bonuses[key] = 1;
-    });
-  }
-  return bonuses;
+  // 對於一般背景，customPicks 已經會是 { medical: 3 } 或 { combat: 1, mechanics: 2 } 的精確物件了
+  return customPicks || {};
 }
 
 var PROFICIENCY_LABELS = {
