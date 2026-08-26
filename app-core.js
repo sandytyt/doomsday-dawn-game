@@ -1396,50 +1396,84 @@ function requestTravelTo(targetLocation) {
 document.addEventListener('DOMContentLoaded', init);
 
 // ==========================================
-// 視覺動態引擎 (背景與立繪切換)
+// 動態視覺引擎 (背景與立繪切換)
 // ==========================================
 function updateDynamicVisuals() {
-  var appEl = document.getElementById('app');
-  var avatarEl = document.getElementById('player-avatar-box');
-  if (!appEl || !avatarEl) return;
-
-  // --- 1. 背景圖片判斷 ---
-  var loc = gameState.location || "未知";
-  var bgImage = "images/bg/default.png";
-
-  if (loc.indexOf("仁愛醫院") !== -1) bgImage = "images/bg/hospital.png";
-  else if (loc.indexOf("警戒隔離區") !== -1 || loc.indexOf("軍方") !== -1) bgImage = "images/bg/military_zone.png";
-  else if (loc.indexOf("貧民窟") !== -1) bgImage = "images/bg/slum.png";
-  else if (loc.indexOf("地鐵") !== -1) bgImage = "images/bg/subway.png";
-  else if (loc.indexOf("摩天樓") !== -1 || loc.indexOf("辦公大樓") !== -1) bgImage = "images/bg/skyscraper.png";
-  else if (loc.indexOf("灰堡") !== -1 || loc.indexOf("軍械庫") !== -1) bgImage = "images/bg/ash_fort.png";
-  else if (loc.indexOf("靜默聖所") !== -1 || loc.indexOf("教堂") !== -1) bgImage = "images/bg/sanctuary.png";
-  else if (loc.indexOf("方舟") !== -1) bgImage = "images/bg/ark.png";
-  else if (loc.indexOf("市") !== -1 || loc.indexOf("街") !== -1) bgImage = "images/bg/city_ruins.png";
-
-  appEl.style.backgroundImage = "url('" + bgImage + "')";
-
-  // --- 2. 主角立繪判斷 ---
-  var gender = gameState.charSetup.gender || "男性";
-  var occ = gameState.charSetup.occupation || "";
-  var avatarImage = "images/chars/default.png";
-
-  if (gender === "男性") {
-    if (occ.indexOf("軍") !== -1 || occ.indexOf("警") !== -1) avatarImage = "images/chars/male_soldier.png";
-    else if (occ.indexOf("醫") !== -1) avatarImage = "images/chars/male_doctor.png";
-    else avatarImage = "images/chars/male_survivor.png";
-  } else if (gender === "女性") {
-    if (occ.indexOf("軍") !== -1 || occ.indexOf("警") !== -1) avatarImage = "images/chars/female_soldier.png";
-    else if (occ.indexOf("醫") !== -1) avatarImage = "images/chars/female_doctor.png";
-    else avatarImage = "images/chars/female_survivor.png";
+  var appContainer = document.getElementById('app');
+  var currentLoc = gameState.location;
+  var currentZone = "未知";
+  
+  // 1. 反推目前所在地屬於哪個大區域
+  for (var poolId in MAP_PRESETS) {
+    var pool = MAP_PRESETS[poolId];
+    if (pool.name === currentLoc || pool.locations.some(function(l) { return l.name === currentLoc; })) {
+      currentZone = poolId;
+      break;
+    }
+  }
+  if (currentZone === "未知" && gameState.currentMapPresetId) {
+     currentZone = gameState.currentMapPresetId;
   }
 
-  avatarEl.style.backgroundImage = "url('" + avatarImage + "')";
+  // 2. 圖片檔名對應字典 (大區域背景)
+  var zoneBgMap = {
+    "維爾赫姆市": "wilhelm_city.jpg",
+    "灰堡": "greywall.jpg",
+    "荒原鎮群": "ashfield.jpg",
+    "靜默聖所": "sanctum.jpg",
+    "深谷中繼站": "hollowreach.jpg",
+    "方舟海上堡壘": "ark_fortress.jpg"
+  };
 
-  // --- 3. 異能覺醒發光特效 ---
-  if (gameState.awakeningLevel && gameState.awakeningLevel > 0) {
-    avatarEl.classList.add('awakened');
-  } else {
-    avatarEl.classList.remove('awakened');
+  // 3. 圖片檔名對應字典 (具體小地點 - 可隨時擴充)
+  var specificLocationBgMap = {
+    // 開局常見地點
+    "荒廢鐵路": "railway.jpg",
+    "荒廢公路": "highway.jpg",
+    "市郊工業區": "industrial.jpg",
+    "舊城區公寓": "apartment.jpg",
+    "沿海漁村": "fishing_village.jpg",
+    "大學宿舍": "dormitory.jpg",
+    "郊區農場": "farm.jpg",
+    "市中心辦公大樓": "office.jpg",
+    "山區小鎮": "mountain_town.jpg",
+    "港口貨運站": "port.jpg",
+    "廢棄地鐵隧道": "subway.jpg",
+    "大型購物中心廢墟": "mall.jpg",
+    "警局軍械庫": "armory.jpg",
+    "體育館避難所": "stadium.jpg",
+    "自來水處理廠": "water_plant.jpg",
+    "荒野廣播電台": "radio_tower.jpg",
+    
+    // 大勢力標誌性地標 (舉例幾個，你未來可以補完)
+    "廢棄仁愛醫院": "hospital.jpg",
+    "地下彈藥庫": "ammo_bunker.jpg",
+    "拾荒者黑市": "black_market.jpg",
+    "懺悔地牢": "dungeon.jpg",
+    "通訊雷達塔": "radar_dish.jpg",
+    "核心拍賣所": "auction_hall.jpg"
+  };
+  
+  // 決定最終背景：先找「具體地點」，找不到找「大區背景」，再沒有就「預設背景」
+  var finalBgFileName = specificLocationBgMap[currentLoc] || zoneBgMap[currentZone] || "default.jpg";
+  
+  if (appContainer) {
+    appContainer.style.backgroundImage = "url('images/bg/" + finalBgFileName + "')";
+  }
+
+  // 4. 處理主角頭像切換與覺醒發光特效
+  var avatarBox = document.getElementById('player-avatar-box');
+  if (avatarBox && gameState.charSetup) {
+    var gender = (gameState.charSetup.gender === '女性') ? 'female' : 'male';
+    var bgType = gameState.charSetup.backgroundType || 'combat_survivor';
+    
+    var avatarFileName = gender + '_' + bgType + '.jpg';
+    avatarBox.style.backgroundImage = "url('images/chars/" + avatarFileName + "')";
+    
+    if (gameState.awakeningLevel > 0) {
+       avatarBox.classList.add('awakened');
+    } else {
+       avatarBox.classList.remove('awakened');
+    }
   }
 }
