@@ -67,11 +67,6 @@
           <input type="text" id="char-occupation-input" placeholder="例如：軍警、醫護、學生、工程師" maxlength="30" style="width: 100%; padding: 10px; border-radius: 4px; background: #1a1a1a; color: white; border: 1px solid #333;">
         </div>
         
-        <div class="setup-field" style="margin-bottom: 15px;">
-          <label for="char-name-input" style="display: block; margin-bottom: 5px; color: #ccc;">角色姓名（選填）</label>
-          <input type="text" id="char-name-input" placeholder="留空則由AI自動生成" maxlength="20" style="width: 100%; padding: 10px; border-radius: 4px; background: #1a1a1a; color: white; border: 1px solid #333;">
-        </div>
-        
         <!-- 背景類型選擇 -->
         <div class="setup-field" style="margin-bottom: 15px;">
           <label for="char-background-type-select" style="display: block; margin-bottom: 5px; color: #ccc;">背景類型（影響初始能力）</label>
@@ -420,14 +415,16 @@
             <p>遇到帶不走的物資？你可以選擇將它們藏在隱蔽的死胡同或廢棄建築中。只要你記得地點，日後隨時可以回來取走。但要注意，若超過數週（約 20 回合）未返回，物資可能被他人拾走或遭喪屍破壞。</p>
           </div>
 
-          <!-- 分頁：戰鬥與體格 -->
+            <!-- 分頁：戰鬥與體格 -->
           <div id="manual-combat" class="manual-pane hidden">
             <h3 style="color: #4a90e2; margin-top: 0;">傷勢與治療</h3>
-            <p>受傷分為「輕傷」與「重傷」。輕傷會影響你的行動成功率；若不幸遭到重傷且未即時使用醫療用品處理，你將持續流失體力，若體力歸零將面臨死亡威脅。</p>
-            <h3 style="color: #4a90e2;">體格熟練度</h3>
-            <p>遊戲中共有 8 項核心體格（格鬥、射擊、敏捷、偵察、醫療、談判、搜索、機械）。只要在敘事中頻繁進行對應行動，熟練度就會自然提升。等級越高，行動成功率越高。</p>
-            <h3 style="color: #4a90e2;">異能覺醒與晶核</h3>
-            <p>在極度恐懼、絕望或犧牲的生死關頭，你可能會累積「共鳴值」。當共鳴值達到臨界點（100），你將 100% 覺醒專屬異能。擊殺變異喪屍取得的「晶核」可幫助你強化異能等級。</p>
+            <p>受傷分為「輕傷」與「重傷」。若不幸重傷且未即時處理，你將持續流失體力，歸零即面臨死亡。</p>
+            <h3 style="color: #4a90e2;">體格熟練度與等級壓制</h3>
+            <p>共有 8 項核心體格。等級不僅會降低體力消耗，Lv.3 以上更會解鎖專屬的「生存特權」（如無工具修車、極限跑酷）。</p>
+            <p style="color: #e57373; font-weight: bold;">【極度警告】：請衡量自身能力！若未達相應等級卻試圖執行高難度動作，你將面臨極高的失敗率，並可能導致重傷或死亡。</p>
+            <h3 style="color: #f5a623;">凡人與覺醒者的界線</h3>
+            <p>在生死關頭累積滿 100 點共鳴值，你將 100% 覺醒專屬異能（共七大屬性，最高 Lv.5）。異能不僅用於戰鬥，更能輔助末日生存（如水屬性凝結食水）。</p>
+            <p>吸收同屬性變異體的「晶核」是升級的唯一捷徑。在未覺醒前，切勿妄想憑空施展超自然力量，那只會讓你成為喪屍的笑柄。</p>
           </div>
 
           <!-- 分頁：同行者與陣營 -->
