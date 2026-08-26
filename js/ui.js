@@ -196,11 +196,13 @@ function renderAll() {
     if (vSpan) vSpan.textContent = '🚗 載具（' + vehicleCount + '）';
   }
 
-  // 呼叫外部模組渲染 (確保其他 js 已載入)
+  // 呼叫外部模組渲染
   if (typeof renderCharProfile === 'function') renderCharProfile();
   if (typeof renderItemsAccordion === 'function') renderItemsAccordion();
   if (typeof renderNpcPanel === 'function') renderNpcPanel();
   if (typeof renderVehiclePanel === 'function') renderVehiclePanel();
+    // 每次畫面更新時，自動檢查並替換背景與頭像！
+  updateDynamicVisuals(); 
 }
 
 // 對話與選項渲染
@@ -326,4 +328,60 @@ function showNextPendingModal() {
   if (pendingMilestoneModals.length === 0) return;
   var next = pendingMilestoneModals.shift();
   showEventModal(next.icon, next.title, next.text);
+}
+
+// ==========================================
+// 動態視覺引擎 (背景與立繪切換)
+// ==========================================
+function updateDynamicVisuals() {
+  // 1. 處理背景圖片切換
+  var appContainer = document.getElementById('app');
+  var currentZone = "未知";
+  
+  // 反推目前所在地屬於哪個大區域
+  for (var poolId in MAP_PRESETS) {
+    var pool = MAP_PRESETS[poolId];
+    if (pool.name === gameState.location || pool.locations.some(function(l) { return l.name === gameState.location; })) {
+      currentZone = poolId;
+      break;
+    }
+  }
+  // 若找不到具體地點，採用當前地圖池 ID
+  if (currentZone === "未知" && gameState.currentMapPresetId) {
+     currentZone = gameState.currentMapPresetId;
+  }
+
+  // 檔名對應字典
+  var bgMap = {
+    "維爾赫姆市": "wilhelm_city.jpg",
+    "灰堡": "greywall.jpg",
+    "荒原鎮群": "ashfield.jpg",
+    "靜默聖所": "sanctum.jpg",
+    "深谷中繼站": "hollowreach.jpg"
+  };
+  
+  var bgFileName = bgMap[currentZone] || "default.jpg";
+  if (appContainer) {
+    appContainer.style.backgroundImage = "url('images/bg/" + bgFileName + "')";
+  }
+
+  // 2. 處理主角頭像切換
+  var avatarBox = document.getElementById('player-avatar-box');
+  if (avatarBox && gameState.charSetup) {
+    // 判斷性別 (預設 male)
+    var gender = (gameState.charSetup.gender === '女性') ? 'female' : 'male';
+    // 判斷職業背景 (預設 combat_survivor)
+    var bgType = gameState.charSetup.backgroundType || 'combat_survivor';
+    
+    // 組合頭像檔名，例如: female_healer_heart.jpg
+    var avatarFileName = gender + '_' + bgType + '.jpg';
+    avatarBox.style.backgroundImage = "url('images/chars/" + avatarFileName + "')";
+    
+    // 3. 處理覺醒特效
+    if (gameState.awakeningLevel > 0) {
+       avatarBox.classList.add('awakened');
+    } else {
+       avatarBox.classList.remove('awakened');
+    }
+  }
 }
