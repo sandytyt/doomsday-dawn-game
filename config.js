@@ -101,7 +101,39 @@ function getFoodStats(itemName) {
 }
 
 // ----------------------------------------
-// 4. 世界地圖與座標系
+// 4. 晶核吸收效率系統
+// ----------------------------------------
+var CORE_EXP_CONFIG = {
+  transparent: 10,     // 透明晶核
+  different_attr: 15,  // 異屬性晶核
+  same_attr: 20        // 同屬性晶核
+};
+
+function getCoreExpGained(coreName) {
+  // 1. 如果是透明晶核，直接回傳基礎值 10
+  if (coreName.indexOf('透明') !== -1) {
+    return CORE_EXP_CONFIG.transparent;
+  }
+
+  // 2. 判斷是否為同屬性
+  // ⚠️ 這裡的 `gameState.charSetup.element` 請替換成你遊戲中實際紀錄「主角屬性」的變數名稱
+  // （例如：如果你紀錄在 gameState.playerAttribute，就改為 gameState.playerAttribute）
+  var playerElement = '';
+  if (gameState.charSetup && gameState.charSetup.element) {
+    playerElement = gameState.charSetup.element; 
+  }
+
+  // 如果主角有屬性，而且這個晶核的名稱剛好包含主角的屬性字眼（例如：主角是"火"，吃到"火系晶核"）
+  if (playerElement && coreName.indexOf(playerElement) !== -1) {
+    return CORE_EXP_CONFIG.same_attr; // 吸收 20
+  }
+
+  // 3. 既不是透明，也不是同屬性，那就是異屬性晶核
+  return CORE_EXP_CONFIG.different_attr; // 吸收 15
+}
+
+// ----------------------------------------
+// 5. 世界地圖與座標系
 // ----------------------------------------
 var WORLD_MACRO_MAP = "世界版圖以「維爾赫姆市」為中心。向北50公里為軍事要塞「灰堡」；向東70公里為科技樞紐「深谷中繼站」；向南40公里為宗教領地「靜默聖所」；向西60公里為荒漠「荒原鎮群」。";
 
