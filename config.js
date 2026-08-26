@@ -1,9 +1,12 @@
 /* ============================================
-   末日黎明：喪屍浩劫 — 個人化設定檔
+   末日黎明：喪屍浩劫 — 系統核心設定檔 (config.js)
+   職責：儲存所有靜態常數、地圖字典與環境參數
    ============================================ */
 
+// ----------------------------------------
+// 1. 系統與 API 供應商設定
+// ----------------------------------------
 var CONFIG = {
-
   PROVIDERS: {
     gemini: {
       label: 'Google Gemini',
@@ -33,26 +36,25 @@ var CONFIG = {
   ACTIVE_PROVIDER: 'gemini',
   MODEL_NAME: 'gemini-3.5-flash-lite',
 
+  // 體力與生存閾值
   INITIAL_STAMINA: 100,
   STAMINA_LOW_THRESHOLD: 45,
   STAMINA_CRITICAL_THRESHOLD: 20,
 
   MAX_RECENT_TURNS: 5,
 
+  // 測試與雲端設定
   TEST_MODE_ENABLED: true,
   TEST_SCRIPT: (typeof TEST_SCRIPT !== 'undefined') ? TEST_SCRIPT : [],
-
   NOTION_ENABLED: false,
   NOTION_PROXY_URL: '',
   NOTION_DATABASE_ID: ''
-
 };
 
+// ----------------------------------------
+// 2. 開局隨機角色池 (已移除姓名，配合第二人稱)
+// ----------------------------------------
 var RANDOM_CHAR_POOL = {
-  namesByGender: {
-    '男': ['楊嘉懿', '湯成弘', '何樂軒', '趙立群', '徐凱文', '陳彥廷', '黃鴻卓', '吳承恩', '霍星宇', '周君之'],
-    '女': ['陳心宜', '黃思齊', '吳凝安', '楊晨曦', '周芷若', '林詩涵', '張夏旋', '劉雨薇', '徐以晴', '謝文心']
-  },
   genders: ['男', '女'],
   locations: ['市郊工業區', '舊城區公寓', '沿海漁村', '大學宿舍', '郊區農場', '市中心辦公大樓', '山區小鎮', '港口貨運站', '醫院'],
   occupations: ['護理系學生', '便利店店員', '貨車司機', '國中教師', '維修技師', '自由撰稿人', '退伍軍人', '餐廳廚師', '醫生', '上班族']
@@ -62,77 +64,9 @@ function pickRandom(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-function pickRandomNameByGender(gender) {
-  var pool = RANDOM_CHAR_POOL.namesByGender[gender];
-  if (!pool || pool.length === 0) {
-    var merged = RANDOM_CHAR_POOL.namesByGender['男'].concat(RANDOM_CHAR_POOL.namesByGender['女']);
-    return pickRandom(merged);
-  }
-  return pickRandom(pool);
-}
-
-var FOOD_HUNGER_RECOVERY = {
-  '零食': 12, '乾糧': 12, '口糧': 25, '罐頭': 25, '乾肉': 25,
-  '餅乾': 12, '軍糧': 25, '烹煮': 42, '野味': 42, '熱食': 42,
-  '飽餐': 60, '聚餐': 60, '大餐': 60
-};
-var DEFAULT_FOOD_RECOVERY = 20;
-
-var WATER_ONLY_KEYWORDS = ['水', '飲用水', '礦泉水', '生理食鹽水'];
-
-function isWaterOnly(name) {
-  var hasWaterWord = WATER_ONLY_KEYWORDS.some(function (w) { return name.indexOf(w) !== -1; });
-  if (!hasWaterWord) return false;
-  var foodExclusion = ['湯', '粥', '茶飲', '果汁'];
-  var isActuallyFood = foodExclusion.some(function (w) { return name.indexOf(w) !== -1; });
-  return !isActuallyFood;
-}
-
-// 【階段0新增】食物分配類型分流
-var FOOD_SHARE_TYPES = {
-  '零食': 'individual',
-  '乾糧': 'individual',
-  '口糧': 'individual',
-  '罐頭': 'individual',
-  '乾肉': 'individual',
-  '餅乾': 'individual',
-  '軍糧': 'individual',
-  '烹煮': 'shared',
-  '野味': 'shared',
-  '熱食': 'shared',
-  '飽餐': 'shared',
-  '聚餐': 'shared',
-  '大餐': 'shared'
-};
-
-// 【階段0新增】地圖池對應關係（依據世界觀密檔設定）
-var MAP_PRESETS = {
-  wilhelm_city: {
-    name: '維爾赫姆市',
-    locations: ['廢棄回聲實驗室', '靜默層核心地帶', '淪陷的市區街道', '特化變異體巢穴', '崩塌的地鐵網']
-  },
-  greywall: {
-    name: '灰堡',
-    locations: ['軍事檢查哨', '鐵幕指揮中心', '地下兵工廠', '平民配給區', '宵禁隔離帶']
-  },
-  ashfield: {
-    name: '荒原鎮群',
-    locations: ['拾骸者市集', '廢棄車輛墳場', '外圍警戒哨塔', '臨時農地', '無政府聚落']
-  },
-  sanctum_of_silence: {
-    name: '靜默聖所',
-    locations: ['異常地質坑', '靜默祭壇', '信徒冥想區', '地下教壇', '迷幻孢子區']
-  },
-  hollowreach_relay: {
-    name: '深谷中繼站',
-    locations: ['廢棄通訊基地', '深層獵手前哨', '地下資料庫', '狙擊手陣地', '封鎖銷毀區']
-  }
-};
-
-// 【新增】世界宏觀座標與距離設定 (供 AI 參考)
-var WORLD_MACRO_MAP = "世界版圖以「維爾赫姆市」為中心。向北50公里為軍事要塞「灰堡」；向東70公里為科技樞紐「深谷中繼站」；向南40公里為宗教領地「靜默聖所」；向西60公里為荒漠「荒原鎮群」。";
-
-// 【新增】智慧食物字典與推算系統
+// ----------------------------------------
+// 3. 智慧食物推算系統
+// ----------------------------------------
 var FOOD_DICTIONARY = {
   "能量棒": { recovery: 20, stamina: 5, shareType: "individual" },
   "食用生理鹽水": { recovery: 5, stamina: 15, shareType: "individual" },
@@ -143,16 +77,34 @@ var FOOD_DICTIONARY = {
 
 function getFoodStats(itemName) {
   if (FOOD_DICTIONARY[itemName]) return FOOD_DICTIONARY[itemName];
+  
   var stats = { recovery: 15, stamina: 0, shareType: "individual" };
+  
+  // 依據字詞自動推算食物屬性
   if (/(箱|鍋|大|家庭|全家|桶|批|堆|袋)/.test(itemName)) stats.shareType = "shared";
-  if (/(罐頭|肉|便當|口糧|燉|烤)/.test(itemName)) stats.recovery = 30;
-  else if (/(水|飲料|果汁|鹽水|湯|茶|酒)/.test(itemName)) { stats.recovery = 5; stats.stamina = 10; }
-  else if (/(糖|餅乾|巧克力|零食|薯條)/.test(itemName)) stats.recovery = 10;
-  if (stats.shareType === "shared") { stats.recovery *= 3; stats.stamina *= 3; }
+  
+  if (/(罐頭|肉|便當|口糧|燉|烤|乾糧|飽餐)/.test(itemName)) {
+    stats.recovery = 30;
+  } else if (/(水|飲料|果汁|鹽水|湯|茶|酒)/.test(itemName)) { 
+    stats.recovery = 5; 
+    stats.stamina = 10; 
+  } else if (/(糖|餅乾|巧克力|零食|薯條)/.test(itemName)) {
+    stats.recovery = 10;
+  }
+  
+  // 若為共享食物，數值自動放大
+  if (stats.shareType === "shared") { 
+    stats.recovery *= 3; 
+    stats.stamina *= 3; 
+  }
   return stats;
 }
 
-// 【替換】全面升級為 XY 坐標系的地圖池
+// ----------------------------------------
+// 4. 世界地圖與座標系
+// ----------------------------------------
+var WORLD_MACRO_MAP = "世界版圖以「維爾赫姆市」為中心。向北50公里為軍事要塞「灰堡」；向東70公里為科技樞紐「深谷中繼站」；向南40公里為宗教領地「靜默聖所」；向西60公里為荒漠「荒原鎮群」。";
+
 var MAP_PRESETS = {
   "維爾赫姆市": {
     name: "維爾赫姆市 (Wilhelm City)", type: "都市廢墟", x: 0, y: 0,
