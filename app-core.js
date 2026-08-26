@@ -1396,11 +1396,11 @@ function requestTravelTo(targetLocation) {
 document.addEventListener('DOMContentLoaded', init);
 
 // ==========================================
-// 動態視覺引擎 (背景與立繪切換)
+// 視覺動態引擎 (背景與立繪切換)
 // ==========================================
 function updateDynamicVisuals() {
   var appContainer = document.getElementById('app');
-  var currentLoc = gameState.location;
+  var currentLoc = gameState.location || "未知";
   var currentZone = "未知";
   
   // 1. 反推目前所在地屬於哪個大區域
@@ -1445,10 +1445,10 @@ function updateDynamicVisuals() {
     "自來水處理廠": "water_plant.jpg",
     "荒野廣播電台": "radio_tower.jpg",
     
-    // 大勢力標誌性地標 (舉例幾個，你未來可以補完)
+    // 大勢力標誌性地標
     "廢棄仁愛醫院": "hospital.jpg",
     "地下彈藥庫": "ammo_bunker.jpg",
-    "拾荒者黑市": "black_market.jpg",
+    "拾荒者 গণতান্ত্রিক": "black_market.jpg", // 注意：如果你前面用的是 拾荒者黑市，確保這對應一致
     "懺悔地牢": "dungeon.jpg",
     "通訊雷達塔": "radar_dish.jpg",
     "核心拍賣所": "auction_hall.jpg"
@@ -1461,24 +1461,24 @@ function updateDynamicVisuals() {
     appContainer.style.backgroundImage = "url('images/bg/" + finalBgFileName + "')";
   }
 
-  // --- 4. 主角立繪判斷 (採用乾淨的動態拼接法) ---
-  if (gameState.charSetup) {
+  // 4. 處理主角頭像切換與覺醒發光特效
+  var avatarBox = document.getElementById('player-avatar-box');
+  if (avatarBox && gameState.charSetup) {
     var gender = (gameState.charSetup.gender === '女性') ? 'female' : 'male';
     var bgType = gameState.charSetup.backgroundType;
     
-    // 防呆機制：如果沒有背景，或者是選了「一般背景」，就退回基礎的 survivor
+    // 【修改重點】：防呆機制，一般背景或無背景時，套用 survivor
     if (!bgType || bgType === 'generalist') {
       bgType = 'survivor';
     }
     
     var avatarFileName = gender + '_' + bgType + '.jpg';
-    avatarEl.style.backgroundImage = "url('images/chars/" + avatarFileName + "')";
-  }
-
-  // --- 5. 異能覺醒發光特效 ---
-  if (gameState.awakeningLevel && gameState.awakeningLevel > 0) {
-    avatarEl.classList.add('awakened');
-  } else {
-    avatarEl.classList.remove('awakened');
+    avatarBox.style.backgroundImage = "url('images/chars/" + avatarFileName + "')";
+    
+    if (gameState.awakeningLevel && gameState.awakeningLevel > 0) {
+       avatarBox.classList.add('awakened');
+    } else {
+       avatarBox.classList.remove('awakened');
+    }
   }
 }
