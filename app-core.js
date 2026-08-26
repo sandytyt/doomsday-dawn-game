@@ -85,7 +85,6 @@ function cacheDom() {
   dom.rulesLinkBtn = document.getElementById('rules-link-btn');
   dom.charSetupToggle = document.getElementById('char-setup-toggle');
   dom.charSetupFields = document.getElementById('char-setup-fields');
-  dom.charNameInput = document.getElementById('char-name-input');
   dom.charGenderInput = document.getElementById('char-gender-input');
   dom.charLocationInput = document.getElementById('char-location-input');
   dom.charOccupationInput = document.getElementById('char-occupation-input');
@@ -500,7 +499,7 @@ function handleGeneralistPointChange(e) {
 // 【階段5新增】共用的角色初始設定邏輯
 function applyCharacterSetup() {
   var finalGender = dom.charGenderInput.value || pickRandom(RANDOM_CHAR_POOL.genders);
-  var finalName = dom.charNameInput.value.trim() || pickRandomNameByGender(finalGender);
+  var finalName = "你"; // 強制使用第二人稱
 
   var bgType = dom.bgSelect ? dom.bgSelect.value : 'combat_survivor';
   var picks = {};
@@ -1303,5 +1302,70 @@ function handleFreeInputSend() {
 function toggleSideMenu(show) {
   dom.sideMenu.classList.toggle('hidden', !show);
 }
+
+function getLocationCoords(locName) {
+  for (var poolId in MAP_PRESETS) {
+    var pool = MAP_PRESETS[poolId];
+    if (pool.name === locName) return { x: pool.x, y: pool.y };
+    for (var i = 0; i < pool.locations.length; i++) {
+      if (pool.locations[i].name === locName) return { x: pool.locations[i].x, y: pool.locations[i].y };
+    }
+  }
+  if (gameState.currentMapPresetId && MAP_PRESETS[gameState.currentMapPresetId]) {
+    return { x: MAP_PRESETS[gameState.currentMapPresetId].x, y: MAP_PRESETS[gameState.currentMapPresetId].y };
+  }
+  return { x: 0, y: 0 }; // 找不到就當作原點
+}
+
+function requestTravelTo(targetLocation) {
+  if (isWaitingForAI || gameState.isDead) return;
+  if (gameState.location === targetLocation) {
+    alert("📍 你已經在【" + targetLocation + "】了。"); return;
+  }
+  
+  var currentCoords = getLocationCoords(gameState.location);
+  var targetCoords = getLocationCoords(targetLocation);
+  var dx = currentCoords.x - targetCoords.x;
+  var dy = currentCoords.y - targetCoords.y;
+  var dist = Math.max(1, Math.round(Math.sqrt(dx * dx + dy * dy))); // 至少 1km
+  
+  var activeVehicle = gameState.vehicles.find(function(v) { return v.status === 'active'; });
+  var promptText = "";
+  
+  if (activeVehicle) {
+    var fuelNeeded = (dist / 10) * 5;
+    if (activeVehicle.fuel < fuelNeeded && activeVehicle.fuel <= 0) {
+      alert("📍 距離：" + dist + "公里。載具油量耗盡，無法開車前往。"); return;
+    }
+    activeVehicle.fuel = Math.max(0, activeVehicle.fuel - fuelNeeded);
+    activeVehicle.durability = Math.max(0, activeVehicle.durability - ((dist / 10) * 2));
+    advanceTime(dist * 1.5); // 開車時間
+    promptText = "我驅車抵達了【" + targetLocation + "】（總車程 " + dist + " 公里）。";
+  } else {
+    var staminaNeeded = dist * 3;
+    if (staminaNeeded > gameState.stamina) {
+      alert("📍 距離過遠（" + dist + "公里），需要 " + staminaNeeded + " 體力。徒步前往等同自殺。請先準備載具、紮營或規劃中繼點。"); return;
+    }
+    // JS 直接扣除主角與NPC體力
+    gameState.stamina = Math.max(0, gameState.stamina - staminaNeeded);
+    if (gameState.companions && gameState.npcStates) {
+      gameState.companions.forEach(function(npc) {
+        if(gameState.npcStates[npc]) gameState.npcStates[npc].stamina = Math.max(0, gameState.npcStates[npc].stamina - staminaNeeded);
+      });
+    }
+    advanceTime(dist * 12); // 徒步時間
+    promptText = "我徒步跋涉抵達了【" + targetLocation + "】（徒步 " + dist + " 公里）。我感到非常疲憊。";
+  }
+  
+  // 更新位置並關閉UI，通知AI生成新地點敘事
+  gameState.location = targetLocation;
+  if (gameState.exploredLocations.indexOf(targetLocation) === -1) gameState.exploredLocations.push(targetLocation);
+  
+  toggleInfoPanel(false);
+  if (dom.manualModal) dom.manualModal.classList.add('hidden');
+  renderAll();
+  requestNextTurn(promptText + " 請描述我抵達後眼前的景象與當前遭遇。");
+}
+
 
 document.addEventListener('DOMContentLoaded', init);
