@@ -129,20 +129,19 @@
 
   <div id="game-screen" class="screen hidden">
 
-
     <header id="status-bar">
       <!-- 第一行：頭像、地點、時間與選單按鈕 -->
       <div class="status-row" style="align-items: center;">
-        
+        <div class="status-row">
         <!-- 【新增】主角頭像框 -->
         <div id="player-avatar-box" class="avatar-box"></div>
         
-        <!-- 【排版優化】將時間與地點垂直排列，放在頭像右邊 -->
-        <div style="display: flex; flex-direction: column; flex: 1; min-width: 0; margin-left: 6px;">
-          <span id="status-location" class="status-item" style="font-size: 14px; font-weight: 700; color: #fff;">📍 未知地點</span>
-          <span id="status-time" class="status-item" style="font-size: 11px; color: var(--text-dim); margin-top: 2px;">⏱ 第1天 06:00</span>
+        <!-- 【微調】讓地點和時間排在頭像旁邊 -->
+        <div style="display: flex; flex-direction: column; flex: 1; min-width: 0; margin-left: 8px;">
+          <span id="status-location" class="status-item" style="font-size: 13px; font-weight: bold; color: var(--text-primary);">📍 未知地點</span>
+          <span id="status-time" class="status-item" style="font-size: 11px; color: var(--text-dim);">⏱ 第1天 06:00</span>
         </div>
-
+        
         <!-- 系統操作按鈕固定在最右側 -->
         <div style="display: flex; gap: 2px; flex-shrink: 0;">
           <button id="status-expand-btn" class="icon-btn" aria-label="展開狀態" type="button">▾</button>
