@@ -2,6 +2,84 @@
    末日黎明：喪屍浩劫 — 物品與載具管理 (inventory.js)
    職責：背包物資增減、食物回復計算、載具與暫存點狀態更新、物品使用邏輯與專屬面板渲染
    ============================================ */
+// --- 補回遺失的負重計算公式 ---
+function getInventoryLoadLevel(inventory) {
+  if (!inventory) return '標準';
+  var totalQty = 0;
+  for (var i = 0; i < inventory.length; i++) {
+    totalQty += inventory[i].quantity || 1;
+  }
+  if (totalQty <= 15) return '輕裝';
+  if (totalQty <= 30) return '標準';
+  return '超載';
+}
+
+var expandedItemLocations = {};
+
+function renderItemsAccordion() {
+  if (!dom.itemsAccordion) return;
+  dom.itemsAccordion.innerHTML = '';
+
+  var locations = [];
+  locations.push({ key: '__backpack__', label: '隨身背包', items: gameState.inventory, isBackpack: true });
+  gameState.stashes.forEach(function (s) { locations.push({ key: s.id, label: s.locationName, items: s.items, isBackpack: false }); });
+
+  locations.forEach(function (loc) {
+    var card = document.createElement('div');
+    card.className = 'item-location-card';
+    var loadTagHtml = '';
+    if (loc.isBackpack) {
+      // 【防呆修復】確保就算找不到公式，也不會讓整個系統崩潰
+      var loadLevel = (typeof getInventoryLoadLevel === 'function') ? getInventoryLoadLevel(gameState.inventory) : '標準';
+      loadTagHtml = '<span class="inventory-load-tag load-' + loadLevel + '">' + loadLevel + '</span>';
+    }
+
+    var header = document.createElement('button');
+    header.type = 'button';
+    header.className = 'item-location-header' + (expandedItemLocations[loc.key] ? ' expanded' : '');
+    // 【防呆修復】確保 escapeHtml 存在，否則直接印出字串
+    var safeLabel = (typeof escapeHtml === 'function') ? escapeHtml(loc.label) : loc.label;
+    header.innerHTML = '<span class="location-name">' + safeLabel + '</span>' + loadTagHtml + '<span class="location-count">' + loc.items.length + '項</span><span class="item-location-arrow">▾</span>';
+
+    var body = document.createElement('div');
+    body.className = 'item-location-body' + (expandedItemLocations[loc.key] ? '' : ' hidden');
+
+    if (loc.items.length === 0) {
+      var emptyTag = document.createElement('span');
+      emptyTag.className = 'inventory-empty'; emptyTag.textContent = '空';
+      body.appendChild(emptyTag);
+    } else {
+      loc.items.forEach(function (it) {
+        var tag = document.createElement('span');
+        tag.className = 'inventory-item'; tag.textContent = it.name + ' x' + it.quantity;
+
+        if (typeof transferState !== 'undefined' && transferState.isTransferMode) {
+          tag.style.cursor = 'pointer'; tag.style.border = '1px dashed #4a90e2';
+          tag.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (typeof openTransferModal === 'function') openTransferModal(loc.isBackpack ? 'backpack' : 'stash', loc.key, it.name, it.quantity);
+          });
+        } else if (loc.isBackpack) {
+          tag.style.cursor = 'pointer';
+          tag.addEventListener('mouseover', function() { tag.style.background = 'rgba(255,255,255,0.1)'; });
+          tag.addEventListener('mouseout', function() { tag.style.background = 'transparent'; });
+          tag.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (typeof openUseModal === 'function') openUseModal(it.name, it.quantity);
+          });
+        }
+        body.appendChild(tag);
+      });
+    }
+    header.addEventListener('click', function () {
+      expandedItemLocations[loc.key] = !expandedItemLocations[loc.key];
+      header.classList.toggle('expanded', expandedItemLocations[loc.key]);
+      body.classList.toggle('hidden', !expandedItemLocations[loc.key]);
+    });
+    card.appendChild(header); card.appendChild(body); dom.itemsAccordion.appendChild(card);
+  });
+}
+
 
 // --- 核心物資增減邏輯 ---
 function applyInventoryChangesTo(targetInventory, changes) {
