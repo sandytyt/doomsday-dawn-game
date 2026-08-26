@@ -334,50 +334,77 @@ function showNextPendingModal() {
 // 動態視覺引擎 (背景與立繪切換)
 // ==========================================
 function updateDynamicVisuals() {
-  // 1. 處理背景圖片切換
   var appContainer = document.getElementById('app');
+  var currentLoc = gameState.location;
   var currentZone = "未知";
   
-  // 反推目前所在地屬於哪個大區域
+  // 1. 反推目前所在地屬於哪個大區域
   for (var poolId in MAP_PRESETS) {
     var pool = MAP_PRESETS[poolId];
-    if (pool.name === gameState.location || pool.locations.some(function(l) { return l.name === gameState.location; })) {
+    if (pool.name === currentLoc || pool.locations.some(function(l) { return l.name === currentLoc; })) {
       currentZone = poolId;
       break;
     }
   }
-  // 若找不到具體地點，採用當前地圖池 ID
   if (currentZone === "未知" && gameState.currentMapPresetId) {
      currentZone = gameState.currentMapPresetId;
   }
 
-  // 檔名對應字典
-  var bgMap = {
+  // 2. 圖片檔名對應字典 (大區域背景)
+  var zoneBgMap = {
     "維爾赫姆市": "wilhelm_city.jpg",
     "灰堡": "greywall.jpg",
     "荒原鎮群": "ashfield.jpg",
     "靜默聖所": "sanctum.jpg",
-    "深谷中繼站": "hollowreach.jpg"
+    "深谷中繼站": "hollowreach.jpg",
+    "方舟海上堡壘": "ark_fortress.jpg"
+  };
+
+  // 3. 圖片檔名對應字典 (具體小地點 - 可隨時擴充)
+  var specificLocationBgMap = {
+    // 開局常見地點
+    "荒廢鐵路": "railway.jpg",
+    "荒廢公路": "highway.jpg",
+    "市郊工業區": "industrial.jpg",
+    "舊城區公寓": "apartment.jpg",
+    "沿海漁村": "fishing_village.jpg",
+    "大學宿舍": "dormitory.jpg",
+    "郊區農場": "farm.jpg",
+    "市中心辦公大樓": "office.jpg",
+    "山區小鎮": "mountain_town.jpg",
+    "港口貨運站": "port.jpg",
+    "廢棄地鐵隧道": "subway.jpg",
+    "大型購物中心廢墟": "mall.jpg",
+    "警局軍械庫": "armory.jpg",
+    "體育館避難所": "stadium.jpg",
+    "自來水處理廠": "water_plant.jpg",
+    "荒野廣播電台": "radio_tower.jpg",
+    
+    // 大勢力標誌性地標 (舉例幾個，你未來可以補完)
+    "廢棄仁愛醫院": "hospital.jpg",
+    "地下彈藥庫": "ammo_bunker.jpg",
+    "拾荒者黑市": "black_market.jpg",
+    "懺悔地牢": "dungeon.jpg",
+    "通訊雷達塔": "radar_dish.jpg",
+    "核心拍賣所": "auction_hall.jpg"
   };
   
-  var bgFileName = bgMap[currentZone] || "default.jpg";
+  // 決定最終背景：先找「具體地點」，找不到找「大區背景」，再沒有就「預設背景」
+  var finalBgFileName = specificLocationBgMap[currentLoc] || zoneBgMap[currentZone] || "default.jpg";
+  
   if (appContainer) {
-    appContainer.style.backgroundImage = "url('images/bg/" + bgFileName + "')";
+    appContainer.style.backgroundImage = "url('images/bg/" + finalBgFileName + "')";
   }
 
-  // 2. 處理主角頭像切換
+  // 4. 處理主角頭像切換與覺醒發光特效
   var avatarBox = document.getElementById('player-avatar-box');
   if (avatarBox && gameState.charSetup) {
-    // 判斷性別 (預設 male)
     var gender = (gameState.charSetup.gender === '女性') ? 'female' : 'male';
-    // 判斷職業背景 (預設 combat_survivor)
     var bgType = gameState.charSetup.backgroundType || 'combat_survivor';
     
-    // 組合頭像檔名，例如: female_healer_heart.jpg
     var avatarFileName = gender + '_' + bgType + '.jpg';
     avatarBox.style.backgroundImage = "url('images/chars/" + avatarFileName + "')";
     
-    // 3. 處理覺醒特效
     if (gameState.awakeningLevel > 0) {
        avatarBox.classList.add('awakened');
     } else {
