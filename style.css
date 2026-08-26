@@ -1529,3 +1529,38 @@ button {
 .manual-content-container li {
   margin-bottom: 8px;  /* 讓每個項目之間也有一點行距，不會全部擠在一起 */
 }
+
+/* =========================================
+   圖片視覺聯動擴充
+   ========================================= */
+
+/* 1. 讓背景可以動態切換，並加上漸變動畫 */
+#app {
+  transition: background-image 1s ease-in-out;
+  background-size: cover;
+  background-position: center;
+}
+
+/* 2. 為了怕背景圖片太亮導致文字看不清，給對話區加上深色漸層底 */
+#narrative-log {
+  background: linear-gradient(180deg, rgba(18,18,18,0.7) 0%, rgba(18,18,18,0.95) 100%);
+}
+
+/* 3. 頂部狀態列的頭像框樣式 */
+.avatar-box {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 2px solid var(--border-color);
+  background-size: cover;
+  background-position: center;
+  background-color: #333; /* 圖片載入前的預設底色 */
+  flex-shrink: 0;
+  transition: all 0.5s ease;
+}
+
+/* 4. 異能覺醒時的頭像發光特效 */
+.avatar-box.awakened {
+  border-color: var(--accent-teal);
+  box-shadow: 0 0 12px var(--accent-teal);
+}
