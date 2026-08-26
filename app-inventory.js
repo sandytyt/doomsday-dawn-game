@@ -506,12 +506,13 @@ function executeUseItem() {
   
   // 1. 扣除物品
   applyInventoryChangesTo(gameState.inventory, [{ name: itemName, quantity: qtyToConsume, action: 'remove' }]);
-  
   // 2. 應用效果
   if (isCore) {
-    // 晶核效果：增加熟練度 (這裡假設每顆 10 點)
+    // 透過智能推算系統計算這次吸收能獲得多少熟練度
+    var expGained = (typeof getCoreExpGained === 'function') ? getCoreExpGained(itemName) : 10;
+    
     if (typeof applyAbilityExpChange === 'function') {
-      applyAbilityExpChange(10); 
+      applyAbilityExpChange(expGained); 
     }
     // 時間流逝 10 分鐘
     if (typeof advanceTime === 'function') {
@@ -524,7 +525,7 @@ function executeUseItem() {
         gameState.time.hour += 1;
       }
     }
-    appendGMText('[系統] 你吸收了 ' + itemName + '，精神力有所提升，時間過去了 10 分鐘。');
+    appendGMText('[系統] 你吸收了 ' + itemName + '，獲得 ' + expGained + ' 點熟練度，時間過去了 10 分鐘。');
   } else {
     // 食物與藥品效果
     targets.forEach(function(t) {
