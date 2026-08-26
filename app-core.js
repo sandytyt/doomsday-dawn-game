@@ -261,6 +261,7 @@ function simpleMarkdownToHtml(text) {
 }
 
 function loadRulesAndLore() {
+  // 1. 讀取系統規則
   fetch('ai_system_rules.txt').then(function (res) {
     return res.text();
   }).then(function (text) {
@@ -270,12 +271,31 @@ function loadRulesAndLore() {
     gameState.rulesText = '';
   });
 
+  // 2. 讀取病毒與主線真相
   fetch('knowledge/virus_lore.txt').then(function (res) {
     return res.text();
   }).then(function (text) {
     gameState.loreText = text;
   }).catch(function () {
     gameState.loreText = '';
+  });
+
+  // 3. 【新增】讀取體格與異能技能樹
+  fetch('knowledge/skill_trees.txt').then(function (res) {
+    return res.text();
+  }).then(function (text) {
+    gameState.skillTreesText = text;
+  }).catch(function () {
+    gameState.skillTreesText = '';
+  });
+
+  // 4. 【新增】讀取五大勢力與地緣政治
+  fetch('knowledge/factions.txt').then(function (res) {
+    return res.text();
+  }).then(function (text) {
+    gameState.factionsText = text;
+  }).catch(function () {
+    gameState.factionsText = '';
   });
 }
 
