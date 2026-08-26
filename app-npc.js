@@ -71,18 +71,23 @@ function renderProfileExploredLocations() {
   }
   
   gameState.exploredLocations.forEach(function(loc) {
-    var btn = document.createElement('button');
-    btn.className = 'btn-secondary';
-    btn.style.margin = '4px';
-    btn.style.padding = '4px 8px';
-    btn.style.fontSize = '0.9em';
-    btn.textContent = '前往：' + loc;
-    btn.type = 'button';
-    btn.addEventListener('click', function() {
-      toggleInfoPanel(false); // 關閉側邊面板
-      requestNextTurn('我決定前往「' + loc + '」'); // 送出前往行動
+    // 建立可點擊的清單項目
+    var div = document.createElement('div');
+    div.className = 'char-profile-item';
+    div.style.cursor = 'pointer';
+    div.style.color = '#4a90e2';
+    div.style.textDecoration = 'underline';
+    div.style.marginBottom = '6px';
+    
+    // escapeHtml() 確保特殊字元不會弄壞版面
+    div.innerHTML = '<span>📍 ' + escapeHtml(loc) + '</span><span style="font-size:0.9em; color:#888; margin-left:8px;">(點擊前往)</span>';
+    
+    // 綁定我們剛寫好的 JS 自動導航與計算系統
+    div.addEventListener('click', function() {
+      requestTravelTo(loc); 
     });
-    container.appendChild(btn);
+    
+    container.appendChild(div);
   });
 }
 
