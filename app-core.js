@@ -1461,19 +1461,24 @@ function updateDynamicVisuals() {
     appContainer.style.backgroundImage = "url('images/bg/" + finalBgFileName + "')";
   }
 
-  // 4. 處理主角頭像切換與覺醒發光特效
-  var avatarBox = document.getElementById('player-avatar-box');
-  if (avatarBox && gameState.charSetup) {
+  // --- 4. 主角立繪判斷 (採用乾淨的動態拼接法) ---
+  if (gameState.charSetup) {
     var gender = (gameState.charSetup.gender === '女性') ? 'female' : 'male';
-    var bgType = gameState.charSetup.backgroundType || 'combat_survivor';
+    var bgType = gameState.charSetup.backgroundType;
+    
+    // 防呆機制：如果沒有背景，或者是選了「一般背景」，就退回基礎的 survivor
+    if (!bgType || bgType === 'generalist') {
+      bgType = 'survivor';
+    }
     
     var avatarFileName = gender + '_' + bgType + '.jpg';
-    avatarBox.style.backgroundImage = "url('images/chars/" + avatarFileName + "')";
-    
-    if (gameState.awakeningLevel > 0) {
-       avatarBox.classList.add('awakened');
-    } else {
-       avatarBox.classList.remove('awakened');
-    }
+    avatarEl.style.backgroundImage = "url('images/chars/" + avatarFileName + "')";
+  }
+
+  // --- 5. 異能覺醒發光特效 ---
+  if (gameState.awakeningLevel && gameState.awakeningLevel > 0) {
+    avatarEl.classList.add('awakened');
+  } else {
+    avatarEl.classList.remove('awakened');
   }
 }
