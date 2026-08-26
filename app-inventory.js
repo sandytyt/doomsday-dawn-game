@@ -59,7 +59,7 @@ function getFoodRecoveryAmount(foodName) {
 }
 
 function isLikelyFood(name) {
-  var foodHints = ['糧', '餅', '肉', '罐頭', '零食', '飯', '菜', '果', '水', '餐', '煮', '野味'];
+  var foodHints = ['糧', '餅', '肉', '罐頭', '零食', '飯', '菜', '果', '水', '餐', '煮', '野味', '麵', '包', '湯'];
   for (var i = 0; i < foodHints.length; i++) {
     if (name.indexOf(foodHints[i]) !== -1) return true;
   }
