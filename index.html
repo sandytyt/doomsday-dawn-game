@@ -132,8 +132,11 @@
 
     <header id="status-bar">
       <div class="status-row">
-        <span id="status-time" class="status-item">⏱ 第1天 06:00</span>
-        <span id="status-location" class="status-item">📍 未知地點</span>
+        <div id="player-avatar-box" class="avatar-box"></div>        
+        <div style="display: flex; flex-direction: column; flex: 1; min-width: 0; margin-left: 8px;">
+          <span id="status-location" class="status-item" style="font-size: 13px; font-weight: bold; color: var(--text-primary);">📍 未知地點</span>
+          <span id="status-time" class="status-item" style="font-size: 11px; color: var(--text-dim);">⏱ 第1天 06:00</span>
+        </div>
         <button id="status-expand-btn" class="icon-btn" aria-label="展開狀態" type="button">▾</button>
         <button id="panels-toggle-btn" class="icon-btn" aria-label="物品與人物" type="button">📋</button>
         <button id="menu-toggle-btn" class="icon-btn" aria-label="選單" type="button">⚙</button>
