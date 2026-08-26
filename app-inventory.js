@@ -546,3 +546,17 @@ function executeUseItem() {
   document.getElementById('use-modal').classList.add('hidden');
   if (typeof renderAll === 'function') renderAll(); 
 }
+
+function isWaterOnly(itemName) {
+  // 檢查是否包含水的關鍵字，且不包含湯、麵等有熱量的字眼
+  var waterHints = ['水', '礦泉水', '純水', '熱水', '髒水', '冰塊'];
+  for (var i = 0; i < waterHints.length; i++) {
+    if (itemName.indexOf(waterHints[i]) !== -1) {
+      // 如果是「湯」或是「藥水」，就不算純水
+      if (itemName.indexOf('湯') === -1 && itemName.indexOf('藥') === -1) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
