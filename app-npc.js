@@ -219,7 +219,7 @@ function renderNpcPanel() {
     var statusLabel = rel.frozen ? '（' + (WorldMemory.NPC_STATUS_LABELS[rel.npcStatus] || rel.npcStatus) + '）' : '';
     
     // =========================================================
-    // ✏️ 【新增】：包含改名與合併按鈕的標頭邏輯
+    // ✏️ 【真·修復】：完美隔離點擊事件的標頭邏輯
     // =========================================================
     var nameSpan = document.createElement('span');
     nameSpan.className = 'npc-name';
@@ -233,13 +233,15 @@ function renderNpcPanel() {
     editBtn.title = "修改姓名或合併檔案";
     
     editBtn.addEventListener('click', function(e) {
-      e.stopPropagation(); // 防止點擊按鈕時不小心收合面板
+      e.stopPropagation(); // ⛔ 阻止事件穿透到標題列
+      e.preventDefault();
+      
       var newName = prompt('請輸入【' + name + '】的真實姓名：\n(若輸入已有名字，系統將自動合併兩者的紀錄與背包)', name);
       if (newName && newName.trim() !== '' && newName !== name) {
         if (typeof renameOrMergeNpc === 'function') {
           renameOrMergeNpc(name, newName.trim());
-          if (typeof renderAll === 'function') renderAll(); else renderNpcPanel(); // 立即重新渲染畫面
-          if (typeof saveGame === 'function') saveGame(); // 觸發自動存檔
+          if (typeof renderAll === 'function') renderAll(); else renderNpcPanel(); 
+          if (typeof saveGame === 'function') saveGame(); 
         } else {
           alert('找不到改名邏輯，請確認已將 renameOrMergeNpc 函數貼到檔案的最下方！');
         }
@@ -249,9 +251,13 @@ function renderNpcPanel() {
     nameSpan.appendChild(editBtn);
 
     header.innerHTML = '';
-    header.appendChild(nameSpan);
-    header.innerHTML += '<span class="npc-stage-tag stage-' + rel.stage + '">' + escapeHtml(stageLabel) + '</span>' +
-                        '<span class="npc-card-arrow">▾</span>';
+    header.appendChild(nameSpan); 
+    // 【關鍵修復】改用 insertAdjacentHTML，確保按鈕的點擊記憶不會被洗掉
+    var safeStageLabel = typeof escapeHtml === 'function' ? escapeHtml(stageLabel) : stageLabel;
+    header.insertAdjacentHTML('beforeend', 
+      '<span class="npc-stage-tag stage-' + rel.stage + '">' + safeStageLabel + '</span>' +
+      '<span class="npc-card-arrow">▾</span>'
+    );
     // =========================================================
 
     var body = document.createElement('div');
