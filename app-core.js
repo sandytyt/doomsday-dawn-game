@@ -1111,51 +1111,59 @@ function checkEntityDeathCondition(stamina, injuryStatus) {
 function renderAll() {
   var testTag = gameState.isTestMode ? '🧪 ' : '';
   dom.statusTime.textContent = testTag + '⏱ 第' + gameState.time.day + '天 ' + pad2(gameState.time.hour) + ':' + pad2(gameState.time.minute);
-  dom.statusLocation.textContent = '📍 ' + gameState.location;
+  dom.statusLocation.textContent = '📍 ' + (gameState.location || '未知');
 
-  var staminaPct = (gameState.stamina / gameState.maxStamina) * 100;
+  var safeStamina = gameState.stamina || 0;
+  var safeMaxStamina = gameState.maxStamina || 100;
+  var staminaPct = (safeStamina / safeMaxStamina) * 100;
   dom.staminaFill.style.width = staminaPct + '%';
-  dom.staminaValue.textContent = gameState.stamina;
+  dom.staminaValue.textContent = Math.floor(safeStamina);
   dom.staminaFill.classList.remove('low', 'critical');
   if (staminaPct <= CONFIG.STAMINA_CRITICAL_THRESHOLD) dom.staminaFill.classList.add('critical');
   else if (staminaPct <= CONFIG.STAMINA_LOW_THRESHOLD) dom.staminaFill.classList.add('low');
 
-  var hungerPct = gameState.hunger;
+  var safeHunger = gameState.hunger || 0;
+  var hungerPct = safeHunger;
   dom.hungerFill.style.width = hungerPct + '%';
-  dom.hungerValue.textContent = gameState.hunger;
+  dom.hungerValue.textContent = Math.floor(safeHunger);
   dom.hungerFill.classList.remove('low', 'critical');
   if (hungerPct <= CONFIG.STAMINA_CRITICAL_THRESHOLD) dom.hungerFill.classList.add('critical');
   else if (hungerPct <= CONFIG.STAMINA_LOW_THRESHOLD) dom.hungerFill.classList.add('low');
 
   var dangerMap = { safe: '安全', warning: '警戒', critical: '危險' };
-  dom.statusDanger.textContent = dangerMap[gameState.dangerLevel] || '安全';
-  dom.statusDanger.className = 'danger-tag ' + gameState.dangerLevel;
+  var safeDanger = gameState.dangerLevel || 'safe';
+  dom.statusDanger.textContent = dangerMap[safeDanger] || '安全';
+  dom.statusDanger.className = 'danger-tag ' + safeDanger;
 
   var injuryMap = { none: '', minor: '輕傷', severe: '重傷' };
-  var injuryText = injuryMap[gameState.injuryStatus] || '';
+  var safeInjury = gameState.injuryStatus || 'none';
+  var injuryText = injuryMap[safeInjury] || '';
   if (injuryText) {
     dom.injuryTag.textContent = injuryText;
-    dom.injuryTag.className = 'injury-tag ' + gameState.injuryStatus;
+    dom.injuryTag.className = 'injury-tag ' + safeInjury;
     dom.injuryTag.classList.remove('hidden');
   } else {
     dom.injuryTag.classList.add('hidden');
   }
 
-  dom.statHumanity.textContent = gameState.humanity;
+  dom.statHumanity.textContent = gameState.humanity || 0;
 
   if (dom.statAwakening) {
-    dom.statAwakening.textContent = gameState.awakeningLevel > 0
-      ? ('Lv.' + gameState.awakeningLevel + ' ' + (gameState.awakeningAbility || '') + '（' + gameState.abilityExp + '/' + getAbilityExpNeeded(gameState.awakeningLevel) + '）')
+    dom.statAwakening.textContent = (gameState.awakeningLevel && gameState.awakeningLevel > 0)
+      ? ('Lv.' + gameState.awakeningLevel + ' ' + (gameState.awakeningAbility || '') + '（' + (gameState.abilityExp || 0) + '/' + getAbilityExpNeeded(gameState.awakeningLevel) + '）')
       : '未覺醒';
   }
 
-  dom.statWeather.textContent = gameState.weather;
-  if (dom.statCompanions) dom.statCompanions.textContent = gameState.companions.length ? gameState.companions.join('、') : '無';
+  dom.statWeather.textContent = gameState.weather || '未知';
+  
+  var safeCompanions = gameState.companions || [];
+  if (dom.statCompanions) dom.statCompanions.textContent = safeCompanions.length ? safeCompanions.join('、') : '無';
 
   var factionEntries = [];
-  for (var k in gameState.factionTrust) {
-    if (Object.prototype.hasOwnProperty.call(gameState.factionTrust, k)) {
-      factionEntries.push(k + ':' + gameState.factionTrust[k]);
+  var safeFactionTrust = gameState.factionTrust || {};
+  for (var k in safeFactionTrust) {
+    if (Object.prototype.hasOwnProperty.call(safeFactionTrust, k)) {
+      factionEntries.push(k + ':' + safeFactionTrust[k]);
     }
   }
 
@@ -1164,32 +1172,36 @@ function renderAll() {
   }
 
   if (dom.panelItemAwakening) {
-    dom.panelItemAwakening.classList.toggle('hidden', gameState.awakeningLevel <= 0);
+    dom.panelItemAwakening.classList.toggle('hidden', !gameState.awakeningLevel || gameState.awakeningLevel <= 0);
   }
   if (dom.panelItemFaction) {
-    var hasFactionContact = Object.keys(gameState.factionTrust).length > 0;
+    var hasFactionContact = Object.keys(safeFactionTrust).length > 0;
     dom.panelItemFaction.classList.toggle('hidden', !hasFactionContact);
   }
 
   if (dom.npcSectionToggle) {
-    var wmForVisibility = WorldMemory.ensureShape(gameState.worldMemory);
-    var npcCount = Object.keys(wmForVisibility.relationships).length;
+    var wmForVisibility = typeof WorldMemory !== 'undefined' ? WorldMemory.ensureShape(gameState.worldMemory) : (gameState.worldMemory || {});
+    var npcCount = wmForVisibility.relationships ? Object.keys(wmForVisibility.relationships).length : 0;
     var npcSpan = dom.npcSectionToggle.querySelector('span');
     if (npcSpan) npcSpan.textContent = '📇 人物檔案（' + npcCount + '）';
   }
 
   if (dom.vehicleSectionToggle) {
-    var hasVehicle = gameState.vehicles.some(function (v) { return v.status !== 'lost'; });
-    var vehicleCount = gameState.vehicles.filter(function (v) { return v.status !== 'lost'; }).length;
+    // 【防呆】確保載具陣列存在
+    var safeVehicles = gameState.vehicles || [];
+    var hasVehicle = safeVehicles.some(function (v) { return v && v.status !== 'lost'; });
+    var vehicleCount = safeVehicles.filter(function (v) { return v && v.status !== 'lost'; }).length;
     var vSpan = dom.vehicleSectionToggle.querySelector('span');
     if (vSpan) vSpan.textContent = '🚗 載具（' + vehicleCount + '）';
   }
 
-  renderCharProfile();
+  // 渲染所有子面板
+  if (typeof renderCharProfile === 'function') renderCharProfile();
   renderItemsAccordion();
-  renderNpcPanel();
+  if (typeof renderNpcPanel === 'function') renderNpcPanel();
   renderVehiclePanel();
 
+  // 更新動態視覺 (圖片切換)
   if (typeof updateDynamicVisuals === 'function') updateDynamicVisuals();
 }
 
