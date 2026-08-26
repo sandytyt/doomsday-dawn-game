@@ -657,14 +657,6 @@ function pad2(n) {
   return n < 10 ? '0' + n : String(n);
 }
 
-// 【階段1修改】通用版負重判定
-function getInventoryLoadLevel(invArray) {
-  var count = (invArray || []).length;
-  if (count <= 5) return '輕裝';
-  if (count <= 10) return '標準';
-  return '超載';
-}
-
 function getAbilityExpNeeded(level) {
   if (level >= 10) return ABILITY_LEVEL_THRESHOLDS[9];
   return ABILITY_LEVEL_THRESHOLDS[level];
