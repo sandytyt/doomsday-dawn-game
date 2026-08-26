@@ -512,16 +512,27 @@
 
 </div>
 
+<!-- 1. 設定、常數與外部工具 -->
+<script src="js/config.js"></script>
+<script src="js/test_script.js"></script> <!-- 你的測試劇本維持原位 -->
+<script src="js/world_memory.js"></script> <!-- 獨立的龐大世界記憶模組維持原位 -->
+<script src="js/proficiency.js"></script> <!-- 體格與異能設定 -->
+
+<!-- 2. 底層狀態與運算大腦 -->
+<script src="js/state.js"></script>
+
+<!-- 3. AI 網路通訊與存檔層 -->
+<script src="js/api.js"></script>
+<script src="js/save.js"></script>
+
+<!-- 4. 遊戲機制作業層 (解耦的次系統) -->
+<script src="js/inventory.js"></script>
+<script src="js/transfer.js"></script>
+<script src="js/npc.js"></script>
+
+<!-- 5. 畫面渲染與主控制台 (必須放在最後) -->
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
   
-<script src="config.js"></script>
-<script src="test_script.js"></script>
-<script src="world_memory.js"></script>
-<script src="app-save.js"></script>
-<script src="app-npc.js"></script>
-<script src="app-inventory.js"></script>
-<script src="app-npc-state.js"></script>
-<script src="app-proficiency.js"></script>
-<script src="app-transfer.js"></script>
-<script src="app-core.js"></script>
 </body>
 </html>
