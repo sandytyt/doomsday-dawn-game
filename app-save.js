@@ -269,31 +269,42 @@ function safeRichText(str, maxLen) {
   return [{ text: { content: s } }];
 }
 
-function buildNotionSyncBody() {
+function buildNotionSyncBody(gameState) {
+  // 1. 保留原本的重要變數與 JSON 存檔 (這是讀取進度的命脈)
   var injuryOption = gameState.injuryStatus || 'none';
-  var lastNarrative = gameState.recentTurns.length ? gameState.recentTurns[gameState.recentTurns.length - 1].narrative : '';
+  var lastNarrative = gameState.recentTurns && gameState.recentTurns.length ? gameState.recentTurns[gameState.recentTurns.length - 1].narrative : '';
   var briefSummary = lastNarrative.length > 450 ? lastNarrative.slice(0, 450) + '…' : lastNarrative;
   var fullStateJson = JSON.stringify(gameState);
+
+  // 2. 新增的載具判斷
+  var activeVehicle = gameState.vehicles ? gameState.vehicles.find(function(v) { return v.status === 'active'; }) : null;
+  var vehicleText = activeVehicle ? activeVehicle.name : '無代步工具';
 
   return {
     parent: { database_id: CONFIG.NOTION_DATABASE_ID },
     properties: {
+      // ===== 保留你原本的所有欄位 (確保 Notion 不報錯) =====
       '存檔名稱': { title: [{ text: { content: '同步-第' + gameState.time.day + '天-' + new Date().toLocaleTimeString() } }] },
-      '角色姓名': { rich_text: safeRichText(gameState.charSetup.name || '未命名倖存者', 1900) },
+      '角色姓名': { rich_text: safeRichText('無名倖存者', 1900) }, // 配合第二人稱，固定傳送字眼，不用刪除 Notion 欄位
       '遊戲天數': { number: gameState.time.day },
       '體力': { number: gameState.stamina },
       '當前地點': { rich_text: safeRichText(gameState.location, 1900) },
       '傷勢': { select: { name: injuryOption } },
-      '覺醒等級': { number: gameState.awakeningLevel },
+      '覺醒等級': { number: gameState.awakeningLevel || 0 },
       '危險等級': { select: { name: gameState.dangerLevel } },
       '人性值': { number: gameState.humanity },
       '飢餓值': { number: gameState.hunger },
-      '共鳴值': { number: gameState.resonanceValue },
+      '共鳴值': { number: gameState.resonanceValue || 0 },
       '背包物品': { rich_text: safeRichText(gameState.inventory.map(function (it) { return it.name + 'x' + it.quantity; }).join('、') || '無', 1900) },
-      '隨行隊員': { rich_text: safeRichText(gameState.companions.join('、') || '無', 1900) },
+      '隨行隊員': { rich_text: safeRichText(gameState.companions && gameState.companions.length > 0 ? gameState.companions.join('、') : '孤身一人', 1900) },
       '前文提要': { rich_text: safeRichText(briefSummary || '無', 1900) },
       '更新時間': { date: { start: new Date().toISOString() } },
-      '存檔JSON': { rich_text: chunkText(fullStateJson, NOTION_CHUNK_SIZE) }
+      '存檔JSON': { rich_text: chunkText(fullStateJson, NOTION_CHUNK_SIZE) },
+
+      // ===== 階段 A 新增的 3 個專屬欄位 =====
+      '地圖池': { select: { name: gameState.currentMapPresetId || "未知" } },
+      '已探索地點數': { number: gameState.exploredLocations ? gameState.exploredLocations.length : 0 },
+      '當前載具': { rich_text: safeRichText(vehicleText, 1900) }
     }
   };
 }
