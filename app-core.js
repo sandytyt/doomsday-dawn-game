@@ -651,19 +651,12 @@ function getAbilityExpNeeded(level) {
 }
 
 function buildContextPayload(playerAction) {
-  var userText = '';
+    var userText = '';
   if (playerAction === '__START__') {
     var c = gameState.charSetup;
-    if (playerAction === '__START__') {
-      var c = gameState.charSetup;
-      userText = '請開始遊戲，生成開局場景。角色設定：姓名：' + c.name +
-        '。性別：' + c.gender + '。末日爆發時的初始地點：' + c.location +
-        '。末世前職業：' + c.occupation + '。請自然融入敘事，不要生硬列出這些設定，也不要詢問玩家。';
-    } else {
-      userText = '請開始遊戲。生成開局場景，不要詢問玩家姓名或性別，直接讓玩家以第一人稱進入末日情境。';
-    }
+    userText = '請開始遊戲，生成開局場景。玩家設定為：性別' + c.gender + '，初始地點' + c.location + '，末世前職業' + c.occupation + '。請自然融入敘事。絕對不可為玩家命名，必須全程使用第二人稱「你」來稱呼玩家。';
   } else {
-    userText = '玩家選擇的行動：' + playerAction;
+    userText = '我的行動：' + playerAction;
   }
 
   var triggerBackgroundEvolution = WorldMemory.shouldTriggerBackgroundEvolution(gameState.worldMemory, gameState.turnCount);
