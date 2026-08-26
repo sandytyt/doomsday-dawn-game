@@ -956,7 +956,8 @@ function applyStatusUpdate(update) {
       gameState.injuryDetail = update.injury_detail;
     }
   }
-  if (update.inventory_changes && update.inventory_changes.length) {
+  
+  if (update.inventory_changes && update.inventory_changes.length) { // 修正為小寫 if
     var autoRecovery = applyInventoryChanges(update.inventory_changes);
     if (autoRecovery > 0) {
       gameState.hunger = clamp(gameState.hunger + autoRecovery, 0, 100);
@@ -991,21 +992,14 @@ function applyStatusUpdate(update) {
         // 處理 NPC 獨立背包的增減
         if (npcUpdate.inventory_changes && Array.isArray(npcUpdate.inventory_changes)) {
           npc.inventory = npc.inventory || [];
-          npcUpdate.inventory_changes.forEach(function(invChg) {
-            var existing = null;
-            for (var i = 0; i < npc.inventory.length; i++) {
-              if (npc.inventory[i].name === invChg.name) { existing = npc.inventory[i]; break; }
-            }
-            if (invChg.action === 'add') {
-              if (existing) existing.quantity += invChg.quantity;
-              else npc.inventory.push({ name: invChg.name, quantity: invChg.quantity });
-            } else if (invChg.action === 'remove' && existing) {
-              existing.quantity -= invChg.quantity;
-              if (existing.quantity <= 0) {
-                npc.inventory = npc.inventory.filter(function(item) { return item.name !== invChg.name; });
-              }
-            }
-          });
+          
+          // 1. 改呼叫你寫好的通用函數，同時接住計算出來的飽食恢復量
+          var npcAutoHunger = applyInventoryChangesTo(npc.inventory, npcUpdate.inventory_changes);
+          
+          // 2. 如果 NPC 在劇情中消耗了食物，把飽食度加給該 NPC
+          if (npcAutoHunger > 0) {
+            npc.hunger = Math.min(100, (npc.hunger || 0) + npcAutoHunger);
+          }
         }
         
         // 處理 NPC 的體格成長
