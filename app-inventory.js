@@ -446,23 +446,31 @@ function executeUseItem() {
   var target = document.getElementById('use-target-select').value;
   var itemName = useItemState.itemName;
   
-  var isFood = isLikelyFood(itemName) && !isWaterOnly(itemName);
+  // 為了防止 isWaterOnly 報錯的防呆寫法
+  var isWater = (typeof isWaterOnly === 'function') ? isWaterOnly(itemName) : false;
+  var isFood = isLikelyFood(itemName) && !isWater;
   var isMed = itemName.indexOf('醫療包') !== -1 || itemName.indexOf('繃帶') !== -1 || itemName.indexOf('藥') !== -1;
+  var isCore = itemName.indexOf('晶核') !== -1; // 新增：判斷是否為晶核
   
-  if (!isFood && !isMed) {
+  if (!isFood && !isMed && !isCore) {
     alert('此物品目前無法直接使用（可能是材料或無法食用的物品）。');
     return;
   }
   
+  // 晶核專屬檢查：通常晶核只能由主角自己吸收
+  if (isCore && target !== 'player') {
+    alert('晶核目前只能由主角自己吸收轉化！');
+    return;
+  }
+
   var targets = [];
   if (target === 'player') targets.push('player');
   else if (target.startsWith('npc_')) targets.push(target.substring(4));
   else if (target === 'all') {
     targets.push('player');
-    targets = targets.concat(gameState.companions);
+    targets = targets.concat(gameState.companions || []);
   }
   
-  // 【修正】改用 indexOf 模糊比對來取得 shareType
   var shareType = 'individual';
   if (typeof FOOD_SHARE_TYPES !== 'undefined') {
     for (var key in FOOD_SHARE_TYPES) {
@@ -472,46 +480,69 @@ function executeUseItem() {
       }
     }
   }
+  
   var recovery = getFoodRecoveryAmount(itemName);
   var qtyToConsume = 0;
   
   if (target === 'all' && shareType === 'shared') {
-    // 共享型：無論多少人，都只消耗 1 份
     qtyToConsume = 1;
   } else {
-    // 個人型：幾個人就消耗幾份
     qtyToConsume = targets.length;
   }
   
+  // 若為晶核，每次使用 1 顆 (你可以依據需求調整)
+  if (isCore) {
+    qtyToConsume = 1; 
+  }
+  
   if (useItemState.maxQty < qtyToConsume) {
-    alert('數量不足以分配！你需要 ' + qtyToConsume + ' 份，但背包只有 ' + useItemState.maxQty + ' 份。');
+    alert('數量不足！你需要 ' + qtyToConsume + ' 份，但背包只有 ' + useItemState.maxQty + ' 份。');
     return;
   }
   
   // 1. 扣除物品
   applyInventoryChangesTo(gameState.inventory, [{ name: itemName, quantity: qtyToConsume, action: 'remove' }]);
   
-  // 2. 應用效果給所有目標
-  targets.forEach(function(t) {
-    if (isFood) {
-      if (t === 'player') gameState.hunger = Math.min(100, gameState.hunger + recovery);
-      else if (gameState.npcStates && gameState.npcStates[t]) {
-        gameState.npcStates[t].hunger = Math.min(100, gameState.npcStates[t].hunger + recovery);
+  // 2. 應用效果
+  if (isCore) {
+    // 晶核效果：增加熟練度 (這裡假設每顆 10 點，你可自行修改)
+    if (typeof applyAbilityExpChange === 'function') {
+      applyAbilityExpChange(10); 
+    }
+    // 時間流逝 10 分鐘
+    if (typeof advanceTime === 'function') {
+      advanceTime(10); // 假設你有一個 advanceTime 函數處理時間進位
+    } else {
+      // 若無通用時間函數，則直接加強硬幣改時間 (需注意進位問題)
+      gameState.time.minute += 10;
+      if(gameState.time.minute >= 60) {
+        gameState.time.minute -= 60;
+        gameState.time.hour += 1;
       }
     }
-    if (isMed) {
-      if (t === 'player') {
-         gameState.injuryStatus = (gameState.injuryStatus === 'severe') ? 'minor' : 'none';
-      } else if (gameState.npcStates && gameState.npcStates[t]) {
-         gameState.npcStates[t].injuryStatus = (gameState.npcStates[t].injuryStatus === 'severe') ? 'minor' : 'none';
+    appendGMText('[系統] 你吸收了 ' + itemName + '，精神力有所提升，時間過去了 10 分鐘。');
+  } else {
+    // 食物與藥品效果
+    targets.forEach(function(t) {
+      if (isFood) {
+        if (t === 'player') gameState.hunger = Math.min(100, gameState.hunger + recovery);
+        else if (gameState.npcStates && gameState.npcStates[t]) {
+          gameState.npcStates[t].hunger = Math.min(100, gameState.npcStates[t].hunger + recovery);
+        }
       }
-    }
-  });
+      if (isMed) {
+        if (t === 'player') {
+           gameState.injuryStatus = (gameState.injuryStatus === 'severe') ? 'minor' : 'none';
+        } else if (gameState.npcStates && gameState.npcStates[t]) {
+           gameState.npcStates[t].injuryStatus = (gameState.npcStates[t].injuryStatus === 'severe') ? 'minor' : 'none';
+        }
+      }
+    });
+    var targetLabel = target === 'all' ? '全體人員' : (target === 'player' ? '自己' : target.substring(4));
+    appendGMText('[系統] 你將 ' + itemName + ' 分配給了 ' + targetLabel + ' (消耗 ' + qtyToConsume + ' 份)。');
+  }
   
   // 3. 收尾與日誌提示
   document.getElementById('use-modal').classList.add('hidden');
-  renderAll(); // 刷新 UI
-  
-  var targetLabel = target === 'all' ? '全體人員' : (target === 'player' ? '自己' : target.substring(4));
-  appendGMText('[系統] 你將 ' + itemName + ' 分配給了 ' + targetLabel + ' (消耗 ' + qtyToConsume + ' 份)。');
+  if (typeof renderAll === 'function') renderAll(); 
 }
