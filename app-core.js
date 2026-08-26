@@ -770,15 +770,17 @@ function callGeminiAPI(payload, providerConf) {
   var fullPrompt = buildFullPrompt(payload);
 
   var requestBody = {
-    system_instruction: {
-      parts: [
-        { text: gameState.rulesText }, // 直接使用 game_rules.txt 的內容作為主要系統指令
-        { text: '世界觀密檔參考資料： ' + gameState.loreText }
-      ]
-    },
-    contents: [{ role: 'user', parts: [{ text: fullPrompt }] }],
-    generationConfig: { temperature: 1.0, responseMimeType: 'application/json' }
-  };
+      system_instruction: {
+        parts: [
+          { text: gameState.rulesText || '' }, // AI 核心規則與 JSON 格式要求
+          { text: '\n\n【世界觀與主線真相】\n' + (gameState.loreText || '') },
+          { text: '\n\n【技能樹與判定鐵律】\n' + (gameState.skillTreesText || '') },
+          { text: '\n\n【勢力與地緣政治】\n' + (gameState.factionsText || '') }
+        ]
+      },
+      contents: [{ role: 'user', parts: [{ text: fullPrompt }] }],
+      generationConfig: { temperature: 1.0, responseMimeType: 'application/json' }
+    };
 
   return fetch(url, {
     method: 'POST',
