@@ -715,6 +715,14 @@ function buildContextPayload(playerAction) {
     userText += '\n\n' + deathHint;
   }
   
+  var dayHint = gameState.time.day <= 15 
+    ? "【時間線限制】目前為末日初期，所有變異體皆為普通物理變異，腦內僅有透明晶核，不可出現屬性喪屍。" 
+    : "【時間線演進】變異體已開始與靜默頻率深度共鳴，屍群中出現具備【金/木/水/火/土/電/狂化】屬性變異體的機率大幅提高。";
+    
+  var worldMemoryContext = WorldMemory.buildWorldMemoryPrompt(gameState.worldMemory, gameState.time.day);
+  worldMemoryContext += '\n【世界地理位置】' + (typeof WORLD_MACRO_MAP !== 'undefined' ? WORLD_MACRO_MAP : '');
+  worldMemoryContext += '\n' + dayHint;
+  
   return {
     userText: userText,
     statusSnapshot: statusSnapshot,
