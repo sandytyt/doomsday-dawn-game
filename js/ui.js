@@ -365,6 +365,7 @@ function updateDynamicVisuals() {
     // 開局常見地點
     "荒廢鐵路": "railway.jpg",
     "荒廢公路": "highway.jpg",
+    "荒廢藥房": "pharmacy.jpg",
     "市郊工業區": "industrial.jpg",
     "舊城區公寓": "apartment.jpg",
     "沿海漁村": "fishing_village.jpg",
