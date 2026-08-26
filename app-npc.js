@@ -344,7 +344,12 @@ function renderNpcPanel() {
     }
     body.appendChild(invDiv);
 
-    header.addEventListener('click', function () {
+    // 【修復按鈕衝突 Bug】
+    header.addEventListener('click', function (e) {
+      // 如果滑鼠點擊的目標剛好是「編輯按鈕(✏️)」，就直接略過，不執行展開/收合
+      if (e.target === editBtn || editBtn.contains(e.target)) {
+        return;
+      }
       body.classList.toggle('hidden');
       header.classList.toggle('expanded');
     });
