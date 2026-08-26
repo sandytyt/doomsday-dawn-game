@@ -262,7 +262,7 @@ function simpleMarkdownToHtml(text) {
 
 function loadRulesAndLore() {
   // 1. 讀取系統規則
-  fetch('ai_system_rules.txt').then(function (res) {
+  fetch('knowledge/ai_system_rules.txt').then(function (res) {
     return res.text();
   }).then(function (text) {
     gameState.rulesText = text;
