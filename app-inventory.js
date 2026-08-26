@@ -52,10 +52,12 @@ function applyInventoryChanges(changes) {
 }
 
 function getFoodRecoveryAmount(foodName) {
-  for (var key in FOOD_HUNGER_RECOVERY) {
-    if (foodName.indexOf(key) !== -1) return FOOD_HUNGER_RECOVERY[key];
+  // 直接呼叫你寫好的智慧食物推算系統
+  if (typeof getFoodStats === 'function') {
+    return getFoodStats(foodName).recovery;
   }
-  return DEFAULT_FOOD_RECOVERY;
+  // 防呆：如果找不到該系統，預設回傳 10
+  return 10; 
 }
 
 function isLikelyFood(name) {
@@ -450,7 +452,7 @@ function executeUseItem() {
   var isWater = (typeof isWaterOnly === 'function') ? isWaterOnly(itemName) : false;
   var isFood = isLikelyFood(itemName) && !isWater;
   var isMed = itemName.indexOf('醫療包') !== -1 || itemName.indexOf('繃帶') !== -1 || itemName.indexOf('藥') !== -1;
-  var isCore = itemName.indexOf('晶核') !== -1; // 新增：判斷是否為晶核
+  var isCore = itemName.indexOf('晶核') !== -1; // 判斷是否為晶核
   
   if (!isFood && !isMed && !isCore) {
     alert('此物品目前無法直接使用（可能是材料或無法食用的物品）。');
@@ -471,17 +473,19 @@ function executeUseItem() {
     targets = targets.concat(gameState.companions || []);
   }
   
+  // ─── 完美對接你的智慧食物系統 ───
   var shareType = 'individual';
-  if (typeof FOOD_SHARE_TYPES !== 'undefined') {
-    for (var key in FOOD_SHARE_TYPES) {
-      if (itemName.indexOf(key) !== -1) {
-        shareType = FOOD_SHARE_TYPES[key];
-        break;
-      }
-    }
+  var recovery = 10;
+  var staminaRecovery = 0;
+
+  if (typeof getFoodStats === 'function') {
+    var stats = getFoodStats(itemName);
+    shareType = stats.shareType;
+    recovery = stats.recovery;
+    staminaRecovery = stats.stamina || 0;
   }
+  // ────────────────────────────
   
-  var recovery = getFoodRecoveryAmount(itemName);
   var qtyToConsume = 0;
   
   if (target === 'all' && shareType === 'shared') {
@@ -505,15 +509,15 @@ function executeUseItem() {
   
   // 2. 應用效果
   if (isCore) {
-    // 晶核效果：增加熟練度 (這裡假設每顆 10 點，你可自行修改)
+    // 晶核效果：增加熟練度 (這裡假設每顆 10 點)
     if (typeof applyAbilityExpChange === 'function') {
       applyAbilityExpChange(10); 
     }
     // 時間流逝 10 分鐘
     if (typeof advanceTime === 'function') {
-      advanceTime(10); // 假設你有一個 advanceTime 函數處理時間進位
+      advanceTime(10); 
     } else {
-      // 若無通用時間函數，則直接加強硬幣改時間 (需注意進位問題)
+      // 若無通用時間函數，則直接加強硬幣改時間
       gameState.time.minute += 10;
       if(gameState.time.minute >= 60) {
         gameState.time.minute -= 60;
@@ -525,7 +529,11 @@ function executeUseItem() {
     // 食物與藥品效果
     targets.forEach(function(t) {
       if (isFood) {
-        if (t === 'player') gameState.hunger = Math.min(100, gameState.hunger + recovery);
+        if (t === 'player') {
+          gameState.hunger = Math.min(100, gameState.hunger + recovery);
+          // 若未來你想實裝體力恢復，可以把下面這行取消註解
+          // gameState.stamina = Math.min(100, (gameState.stamina || 0) + staminaRecovery);
+        }
         else if (gameState.npcStates && gameState.npcStates[t]) {
           gameState.npcStates[t].hunger = Math.min(100, gameState.npcStates[t].hunger + recovery);
         }
