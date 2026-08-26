@@ -1189,6 +1189,8 @@ function renderAll() {
   renderItemsAccordion();
   renderNpcPanel();
   renderVehiclePanel();
+
+  if (typeof updateDynamicVisuals === 'function') updateDynamicVisuals();
 }
 
 function appendGMText(text) {
