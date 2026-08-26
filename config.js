@@ -83,12 +83,12 @@ function getFoodStats(itemName) {
   // 依據字詞自動推算食物屬性
   if (/(箱|鍋|大|家庭|全家|桶|批|堆|袋)/.test(itemName)) stats.shareType = "shared";
   
-  if (/(罐頭|肉|便當|口糧|燉|烤|乾糧|飽餐)/.test(itemName)) {
+  if (/(罐頭|肉|便當|口糧|燉|烤|乾糧|飽餐|麵)/.test(itemName)) {
     stats.recovery = 30;
   } else if (/(水|飲料|果汁|鹽水|湯|茶|酒)/.test(itemName)) { 
     stats.recovery = 5; 
     stats.stamina = 10; 
-  } else if (/(糖|餅乾|巧克力|零食|薯條)/.test(itemName)) {
+  } else if (/(糖|餅乾|巧克力|零食|薯條|包)/.test(itemName)) {
     stats.recovery = 10;
   }
   
