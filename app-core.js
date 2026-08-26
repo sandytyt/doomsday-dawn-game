@@ -656,7 +656,7 @@ function buildContextPayload(playerAction) {
     var c = gameState.charSetup;
     userText = '請開始遊戲，生成開局場景。玩家設定為：性別' + c.gender + '，初始地點' + c.location + '，末世前職業' + c.occupation + '。請自然融入敘事。絕對不可為玩家命名，必須全程使用第二人稱「你」來稱呼玩家。';
   } else {
-    userText = '我的行動：' + playerAction;
+    userText = '你的行動：' + playerAction;
   }
 
   var triggerBackgroundEvolution = WorldMemory.shouldTriggerBackgroundEvolution(gameState.worldMemory, gameState.turnCount);
@@ -1341,7 +1341,7 @@ function requestTravelTo(targetLocation) {
     activeVehicle.fuel = Math.max(0, activeVehicle.fuel - fuelNeeded);
     activeVehicle.durability = Math.max(0, activeVehicle.durability - ((dist / 10) * 2));
     advanceTime(dist * 1.5); // 開車時間
-    promptText = "我驅車抵達了【" + targetLocation + "】（總車程 " + dist + " 公里）。";
+    promptText = "你驅車抵達了【" + targetLocation + "】（總車程 " + dist + " 公里）。";
   } else {
     var staminaNeeded = dist * 3;
     if (staminaNeeded > gameState.stamina) {
@@ -1355,7 +1355,7 @@ function requestTravelTo(targetLocation) {
       });
     }
     advanceTime(dist * 12); // 徒步時間
-    promptText = "我徒步跋涉抵達了【" + targetLocation + "】（徒步 " + dist + " 公里）。我感到非常疲憊。";
+    promptText = "你徒步跋涉抵達了【" + targetLocation + "】（徒步 " + dist + " 公里）。";
   }
   
   // 更新位置並關閉UI，通知AI生成新地點敘事
@@ -1365,7 +1365,7 @@ function requestTravelTo(targetLocation) {
   toggleInfoPanel(false);
   if (dom.manualModal) dom.manualModal.classList.add('hidden');
   renderAll();
-  requestNextTurn(promptText + " 請描述我抵達後眼前的景象與當前遭遇。");
+  requestNextTurn(promptText);
 }
 
 
