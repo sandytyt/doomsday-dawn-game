@@ -671,9 +671,9 @@ function buildContextPayload(playerAction) {
   var companionList = gameState.companions.join('、');
 
   var statusSnapshot = '當前狀態：第' + gameState.time.day + '天 ' + pad2(gameState.time.hour) + ':' + pad2(gameState.time.minute) +
-    '，地點：' + gameState.location + '，體力：' + gameState.stamina + '/' + gameState.maxStamina +
-    '，飽食度：' + gameState.hunger + '，人性值：' + gameState.humanity +
-    '，共鳴值：' + gameState.resonanceValue + '，覺醒等級：' + gameState.awakeningLevel +
+    '，地點：' + gameState.location + '，體力：' + Math.round(gameState.stamina) + '/' + gameState.maxStamina +
+    '，飽食度：' + Math.round(gameState.hunger) + '，人性值：' + Math.round(gameState.humanity) +
+    '，共鳴值：' + Math.round(gameState.resonanceValue) + '，覺醒等級：' + gameState.awakeningLevel +
     '，能力熟練度：' + gameState.abilityExp + '/' + getAbilityExpNeeded(gameState.awakeningLevel) +
     '，危險等級：' + gameState.dangerLevel + '，傷勢：' + gameState.injuryStatus +
     '，背包負重：' + getInventoryLoadLevel(gameState.inventory) + '，持有物品：' + (inventoryList || '無') +
