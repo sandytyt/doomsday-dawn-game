@@ -129,11 +129,9 @@
 
   <div id="game-screen" class="screen hidden">
 
+
     <header id="status-bar">
-      <!-- 第一行：頭像、地點、時間與選單按鈕 -->
-      <div class="status-row" style="align-items: center;">
-        <div class="status-row">
-        <!-- 【新增】主角頭像框 -->
+      <div class="status-row">
         <div id="player-avatar-box" class="avatar-box"></div>
         
         <!-- 【微調】讓地點和時間排在頭像旁邊 -->
@@ -141,17 +139,12 @@
           <span id="status-location" class="status-item" style="font-size: 13px; font-weight: bold; color: var(--text-primary);">📍 未知地點</span>
           <span id="status-time" class="status-item" style="font-size: 11px; color: var(--text-dim);">⏱ 第1天 06:00</span>
         </div>
-        
-        <!-- 系統操作按鈕固定在最右側 -->
-        <div style="display: flex; gap: 2px; flex-shrink: 0;">
-          <button id="status-expand-btn" class="icon-btn" aria-label="展開狀態" type="button">▾</button>
-          <button id="panels-toggle-btn" class="icon-btn" aria-label="物品與人物" type="button">📋</button>
-          <button id="menu-toggle-btn" class="icon-btn" aria-label="選單" type="button">⚙</button>
-        </div>
-      </div>
 
-      <!-- 第二行：體力、飽食與狀態標籤 (維持不變) -->
-      <div class="status-row" style="margin-top: 12px;">
+        <button id="status-expand-btn" class="icon-btn" aria-label="展開狀態" type="button">▾</button>
+        <button id="panels-toggle-btn" class="icon-btn" aria-label="物品與人物" type="button">📋</button>
+        <button id="menu-toggle-btn" class="icon-btn" aria-label="選單" type="button">⚙</button>
+      </div>
+      <div class="status-row">
         <div class="stamina-wrapper">
           <span class="stamina-label">體力</span>
           <div class="stamina-bar-bg">
@@ -527,8 +520,8 @@
 
 <!-- 1. 設定、常數與外部工具 -->
 <script src="js/config.js"></script>
-<script src="js/test_script.js"></script> <!-- 你的測試劇本維持原位 -->
-<script src="js/world_memory.js"></script> <!-- 獨立的龐大世界記憶模組維持原位 -->
+<script src="test_script.js"></script> <!-- 你的測試劇本維持原位 -->
+<script src="world_memory.js"></script> <!-- 獨立的龐大世界記憶模組維持原位 -->
 <script src="js/proficiency.js"></script> <!-- 體格與異能設定 -->
 
 <!-- 2. 底層狀態與運算大腦 -->
