@@ -132,14 +132,8 @@
 
     <header id="status-bar">
       <div class="status-row">
-        <div id="player-avatar-box" class="avatar-box"></div>
-        
-        <!-- 【微調】讓地點和時間排在頭像旁邊 -->
-        <div style="display: flex; flex-direction: column; flex: 1; min-width: 0; margin-left: 8px;">
-          <span id="status-location" class="status-item" style="font-size: 13px; font-weight: bold; color: var(--text-primary);">📍 未知地點</span>
-          <span id="status-time" class="status-item" style="font-size: 11px; color: var(--text-dim);">⏱ 第1天 06:00</span>
-        </div>
-
+        <span id="status-time" class="status-item">⏱ 第1天 06:00</span>
+        <span id="status-location" class="status-item">📍 未知地點</span>
         <button id="status-expand-btn" class="icon-btn" aria-label="展開狀態" type="button">▾</button>
         <button id="panels-toggle-btn" class="icon-btn" aria-label="物品與人物" type="button">📋</button>
         <button id="menu-toggle-btn" class="icon-btn" aria-label="選單" type="button">⚙</button>
@@ -518,27 +512,16 @@
 
 </div>
 
-<!-- 1. 設定、常數與外部工具 -->
-<script src="js/config.js"></script>
-<script src="test_script.js"></script> <!-- 你的測試劇本維持原位 -->
-<script src="world_memory.js"></script> <!-- 獨立的龐大世界記憶模組維持原位 -->
-<script src="js/proficiency.js"></script> <!-- 體格與異能設定 -->
-
-<!-- 2. 底層狀態與運算大腦 -->
-<script src="js/state.js"></script>
-
-<!-- 3. AI 網路通訊與存檔層 -->
-<script src="js/api.js"></script>
-<script src="js/save.js"></script>
-
-<!-- 4. 遊戲機制作業層 (解耦的次系統) -->
-<script src="js/inventory.js"></script>
-<script src="js/transfer.js"></script>
-<script src="js/npc.js"></script>
-
-<!-- 5. 畫面渲染與主控制台 (必須放在最後) -->
-<script src="js/ui.js"></script>
-<script src="js/main.js"></script>
   
+<script src="config.js"></script>
+<script src="test_script.js"></script>
+<script src="world_memory.js"></script>
+<script src="app-save.js"></script>
+<script src="app-npc.js"></script>
+<script src="app-inventory.js"></script>
+<script src="app-npc-state.js"></script>
+<script src="app-proficiency.js"></script>
+<script src="app-transfer.js"></script>
+<script src="app-core.js"></script>
 </body>
 </html>
