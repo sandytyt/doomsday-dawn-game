@@ -231,7 +231,40 @@ function renderNpcPanel() {
     var stageLabel = WorldMemory.STAGE_LABELS[rel.stage] || (rel.stage === 'unknown' ? '無關係紀錄' : rel.stage);
     var statusLabel = rel.frozen ? '（' + (WorldMemory.NPC_STATUS_LABELS[rel.npcStatus] || rel.npcStatus) + '）' : '';
     
-    header.innerHTML = '<span class="npc-name">' + escapeHtml(name) + statusLabel + '</span><span class="npc-stage-tag stage-' + rel.stage + '">' + escapeHtml(stageLabel) + '</span><span class="npc-card-arrow">▾</span>';
+    // =========================================================
+    // ✏️ 新增：包含改名與合併按鈕的標頭邏輯
+    // =========================================================
+    var nameSpan = document.createElement('span');
+    nameSpan.className = 'npc-name';
+    nameSpan.textContent = name + statusLabel;
+    
+    var editBtn = document.createElement('span');
+    editBtn.innerHTML = ' ✏️';
+    editBtn.style.cursor = 'pointer';
+    editBtn.style.fontSize = '12px';
+    editBtn.style.marginLeft = '6px';
+    editBtn.title = "修改姓名或合併檔案";
+    
+    editBtn.addEventListener('click', function(e) {
+      e.stopPropagation(); // 防止點擊按鈕時不小心收合面板
+      var newName = prompt('請輸入【' + name + '】的真實姓名：\n(若輸入已有名字，系統將自動合併兩者的紀錄與背包)', name);
+      if (newName && newName.trim() !== '' && newName !== name) {
+        if (typeof renameOrMergeNpc === 'function') {
+          renameOrMergeNpc(name, newName.trim());
+          renderNpcPanel(); // 立即重新渲染畫面
+          if (typeof saveGame === 'function') saveGame(); // 觸發自動存檔
+        } else {
+          alert('找不到改名邏輯，請確認已將 renameOrMergeNpc 函數貼到 npc.js 最下方！');
+        }
+      }
+    });
+
+    nameSpan.appendChild(editBtn);
+
+    header.innerHTML = '';
+    header.appendChild(nameSpan);
+    header.innerHTML += '<span class="npc-stage-tag stage-' + rel.stage + '">' + escapeHtml(stageLabel) + '</span><span class="npc-card-arrow">▾</span>';
+    // =========================================================
 
     var body = document.createElement('div'); body.className = 'npc-card-body hidden';
 
@@ -294,4 +327,59 @@ function renderNpcPanel() {
     header.addEventListener('click', function () { body.classList.toggle('hidden'); header.classList.toggle('expanded'); });
     card.appendChild(header); card.appendChild(body); dom.npcList.appendChild(card);
   });
+}
+
+// ==========================================
+// NPC 改名與資料合併引擎
+// ==========================================
+function renameOrMergeNpc(oldName, newName) {
+  if (!oldName || !newName || oldName === newName) return;
+
+  var wm = typeof WorldMemory !== 'undefined' ? WorldMemory.ensureShape(gameState.worldMemory) : gameState.worldMemory;
+
+  // 1. 轉移/合併 npcStates (體力、飽食、背包、熟練度、異能等)
+  if (gameState.npcStates && gameState.npcStates[oldName]) {
+    if (!gameState.npcStates[newName]) {
+      gameState.npcStates[newName] = gameState.npcStates[oldName];
+    } else {
+      // 若新名字已存在，將舊背包物品塞進新背包
+      var oldInv = gameState.npcStates[oldName].inventory || [];
+      var newInv = gameState.npcStates[newName].inventory || [];
+      gameState.npcStates[newName].inventory = newInv.concat(oldInv);
+    }
+    delete gameState.npcStates[oldName];
+  }
+
+  // 2. 轉移/合併 WorldMemory relationships (信任度、背景故事、關係階段)
+  if (wm.relationships && wm.relationships[oldName]) {
+    if (!wm.relationships[newName]) {
+      wm.relationships[newName] = wm.relationships[oldName];
+    } else {
+      // 若新名字已存在，合併背景與里程碑
+      var oldBg = wm.relationships[oldName].background || [];
+      var newBg = wm.relationships[newName].background || [];
+      wm.relationships[newName].background = newBg.concat(oldBg);
+
+      var oldMs = wm.relationships[oldName].milestones || [];
+      var newMs = wm.relationships[newName].milestones || [];
+      wm.relationships[newName].milestones = newMs.concat(oldMs);
+
+      // 信任度取兩者之間較高的
+      wm.relationships[newName].trust = Math.max(wm.relationships[newName].trust || 0, wm.relationships[oldName].trust || 0);
+    }
+    delete wm.relationships[oldName];
+  }
+
+  // 3. 更新隊伍清單 companions (如果他剛好在隊伍中)
+  if (gameState.companions) {
+    var idx = gameState.companions.indexOf(oldName);
+    if (idx !== -1) {
+      gameState.companions.splice(idx, 1); // 移除舊名
+      if (gameState.companions.indexOf(newName) === -1) {
+        gameState.companions.push(newName); // 加入新名
+      }
+    }
+  }
+
+  console.log('[NPC系統] 成功將 ' + oldName + ' 改名/合併為 ' + newName);
 }
