@@ -218,7 +218,10 @@ function applyAbilityExpChange(delta) {
 function renderVehiclePanel() {
   if (!dom.vehicleList) return;
   dom.vehicleList.innerHTML = '';
-  var activeVehicles = gameState.vehicles.filter(function (v) { return v.status !== 'lost'; });
+  
+  // 【防呆】確保 gameState.vehicles 存在，若無則視為空陣列
+  var safeVehicles = gameState.vehicles || [];
+  var activeVehicles = safeVehicles.filter(function (v) { return v && v.status !== 'lost'; });
   
   // 【修復】把標題數字更新移進來，確保只要重繪清單就會同步更新標題
   if (dom.vehicleSectionToggle) {
@@ -238,25 +241,32 @@ function renderVehiclePanel() {
     var card = document.createElement('div');
     card.className = 'vehicle-card' + (v.id === gameState.activeVehicleId ? ' vehicle-active' : '');
     
+    // 【防呆】確保有名字，避免 undefined 報錯
+    var safeName = v.name || '未知載具';
+    
     card.innerHTML =
       '<div class="vehicle-card-header">' +
-        '<span class="vehicle-name">' + escapeHtml(v.name) + (v.id === gameState.activeVehicleId ? '（使用中）' : '') + '</span>' +
+        '<span class="vehicle-name">' + escapeHtml(safeName) + (v.id === gameState.activeVehicleId ? '（使用中）' : '') + '</span>' +
       '</div>' +
       '<div class="vehicle-stat-row">' +
-        '<span>耐久 ' + v.durability + '/' + v.maxDurability + '</span>' +
-        '<span>油量 ' + v.fuel + '/' + v.maxFuel + '</span>' +
+        '<span>耐久 ' + (v.durability || 0) + '/' + (v.maxDurability || 0) + '</span>' +
+        '<span>油量 ' + (v.fuel || 0) + '/' + (v.maxFuel || 0) + '</span>' +
       '</div>';
 
     var cargoRow = document.createElement('div');
     cargoRow.className = 'vehicle-cargo-row';
-    cargoRow.textContent = '貨艙（' + v.cargo.length + '/' + v.cargoCapacity + '）：';
     
-    if (v.cargo.length === 0) {
+    // 【防呆】確保貨艙存在
+    var safeCargo = v.cargo || [];
+    cargoRow.textContent = '貨艙（' + safeCargo.length + '/' + (v.cargoCapacity || 0) + '）：';
+    
+    if (safeCargo.length === 0) {
       cargoRow.textContent += '空';
     } else {
-      v.cargo.forEach(function (it, index) {
+      safeCargo.forEach(function (it, index) {
+        if (!it) return;
         var tag = document.createElement('span');
-        tag.textContent = it.name + ' x' + it.quantity;
+        tag.textContent = (it.name || '未知物') + ' x' + (it.quantity || 1);
         
         // 【階段3新增】轉移模式視覺與點擊事件
         if (typeof transferState !== 'undefined' && transferState.isTransferMode) {
@@ -269,7 +279,7 @@ function renderVehiclePanel() {
           });
         }
         cargoRow.appendChild(tag);
-        if (index < v.cargo.length - 1) cargoRow.appendChild(document.createTextNode('、'));
+        if (index < safeCargo.length - 1) cargoRow.appendChild(document.createTextNode('、'));
       });
     }
     card.appendChild(cargoRow);
@@ -284,19 +294,27 @@ function renderItemsAccordion() {
   dom.itemsAccordion.innerHTML = '';
 
   var locations = [];
+  
+  // 【防呆】確保背包陣列存在
+  var safeInventory = gameState.inventory || [];
   locations.push({
     key: '__backpack__',
     label: '隨身背包',
-    items: gameState.inventory,
+    items: safeInventory,
     isBackpack: true
   });
-  gameState.stashes.forEach(function (s) {
-    locations.push({
-      key: s.id,
-      label: s.locationName,
-      items: s.items,
-      isBackpack: false
-    });
+  
+  // 【防呆】確保暫存點陣列存在
+  var safeStashes = gameState.stashes || [];
+  safeStashes.forEach(function (s) {
+    if (s) {
+      locations.push({
+        key: s.id,
+        label: s.locationName || '未知暫存點',
+        items: s.items || [],
+        isBackpack: false
+      });
+    }
   });
 
   locations.forEach(function (loc) {
@@ -305,32 +323,36 @@ function renderItemsAccordion() {
 
     var loadTagHtml = '';
     if (loc.isBackpack) {
-      var loadLevel = getInventoryLoadLevel(gameState.inventory);
+      var loadLevel = getInventoryLoadLevel(safeInventory);
       loadTagHtml = '<span class="inventory-load-tag load-' + loadLevel + '">' + loadLevel + '</span>';
     }
 
     var header = document.createElement('button');
     header.type = 'button';
     header.className = 'item-location-header' + (expandedItemLocations[loc.key] ? ' expanded' : '');
+    
+    var itemsCount = (loc.items && loc.items.length) ? loc.items.length : 0;
+    
     header.innerHTML =
       '<span class="location-name">' + escapeHtml(loc.label) + '</span>' +
       loadTagHtml +
-      '<span class="location-count">' + loc.items.length + '項</span>' +
+      '<span class="location-count">' + itemsCount + '項</span>' +
       '<span class="item-location-arrow">▾</span>';
 
     var body = document.createElement('div');
     body.className = 'item-location-body' + (expandedItemLocations[loc.key] ? '' : ' hidden');
 
-    if (loc.items.length === 0) {
+    if (itemsCount === 0) {
       var emptyTag = document.createElement('span');
       emptyTag.className = 'inventory-empty';
       emptyTag.textContent = '空';
       body.appendChild(emptyTag);
     } else {
       loc.items.forEach(function (it) {
+        if (!it) return;
         var tag = document.createElement('span');
         tag.className = 'inventory-item';
-        tag.textContent = it.name + ' x' + it.quantity;
+        tag.textContent = (it.name || '未知物') + ' x' + (it.quantity || 1);
 
         // 【階段3與4整合】轉移模式與使用模式的分流
         if (typeof transferState !== 'undefined' && transferState.isTransferMode) {
@@ -368,6 +390,13 @@ function renderItemsAccordion() {
     card.appendChild(body);
     dom.itemsAccordion.appendChild(card);
   });
+}
+
+function getInventoryLoadLevel(invArray) {
+  var count = (invArray || []).length;
+  if (count <= 5) return '輕裝';
+  if (count <= 10) return '標準';
+  return '超載';
 }
 
 // ==========================================
