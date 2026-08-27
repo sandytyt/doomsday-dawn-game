@@ -516,23 +516,24 @@ function renderProfileSafezones() {
   var container = document.getElementById('profile-safezone-list');
   if (!container) return;
   
-  var worldMemory = WorldMemory.ensureShape(gameState.worldMemory);
-  
-  // 兼容 Array 或 Object 格式的安全區資料
-  var zones = [];
-  if (Array.isArray(worldMemory.safeZones)) {
-    zones = worldMemory.safeZones;
-  } else if (typeof worldMemory.safeZones === 'object') {
-    for (var key in worldMemory.safeZones) {
-      if (Object.prototype.hasOwnProperty.call(worldMemory.safeZones, key)) {
-        var z = worldMemory.safeZones[key];
+  // 【修正 1】防呆：直接讀取，避免 ensureShape 造成當機
+  var worldMemory = gameState.worldMemory || {}; 
+  var zones = worldMemory.safeZones || [];
+
+  // 轉換物件為陣列 (以防萬一)
+  if (!Array.isArray(zones) && typeof zones === 'object') {
+    var temp = [];
+    for (var key in zones) {
+      if (Object.prototype.hasOwnProperty.call(zones, key)) {
+        var z = zones[key];
         z.name = z.name || key; 
-        zones.push(z);
+        temp.push(z);
       }
     }
+    zones = temp;
   }
 
-  container.innerHTML = ''; // 清空列表
+  container.innerHTML = ''; 
   
   if (zones.length === 0) {
     var emptyEl = document.createElement('div');
@@ -542,18 +543,15 @@ function renderProfileSafezones() {
     return;
   }
 
-  // 取得我們寫在 HTML 的模板
   var template = document.getElementById('safezone-card-template');
   if (!template) {
-    console.error('找不到 safezone-card-template 模板，請確認 index.html 已更新。');
+    console.error('找不到 safezone-card-template 模板');
     return;
   }
 
-  // 遍歷安全區並填寫資料
   zones.forEach(function (zone) {
-    var clone = template.content.cloneNode(true); // 複製一份乾淨的 UI
+    var clone = template.content.cloneNode(true); 
 
-    // 填寫文字內容
     clone.querySelector('.profile-safezone-name').textContent = zone.name;
     clone.querySelector('.profile-safezone-pop').textContent = '人口 ' + (zone.population || 0);
     
@@ -562,7 +560,6 @@ function renderProfileSafezones() {
       : '暫無已知設施';
     clone.querySelector('.profile-safezone-facilities').textContent = '📍 ' + (zone.location || '位置未知') + ' ・ 設施：' + facilitiesText;
 
-    // 處理勢力備註 (如果有就顯示)
     var relNote = zone.factionRelations && (zone.factionRelations.note || zone.factionRelations.backgroundNote);
     if (relNote) {
       var relNoteEl = clone.querySelector('.profile-safezone-relnote');
@@ -570,32 +567,35 @@ function renderProfileSafezones() {
       relNoteEl.classList.remove('hidden');
     }
 
-    // 判斷玩家是否在該安全區內
+    // 【修正 2】使用正確的地點變數 gameState.location
+    var curLoc = gameState.location || '';
     var isPlayerHere = false;
-    var curLoc = gameState.currentLocation || '';
     if (curLoc.indexOf(zone.name) !== -1 || (zone.location && curLoc.indexOf(zone.location) !== -1)) {
       isPlayerHere = true;
     }
 
-    // 依據玩家位置，切換按鈕或提示訊息的顯示
     if (isPlayerHere) {
       clone.querySelector('.profile-safezone-stash-action').classList.remove('hidden');
-      
       var btn = clone.querySelector('.stash-access-btn');
+      
+      // 【優化整合】將按鈕改為快捷鍵，點擊後自動幫玩家打開「物品」手風琴
+      btn.textContent = '🎒 管理基地倉庫 (開啟背包)';
       btn.addEventListener('click', function() {
-        if (typeof window.openBaseStashModal === 'function') {
-          window.openBaseStashModal(zone.name);
+        var itemsToggle = document.getElementById('items-section-toggle');
+        var itemsBody = document.getElementById('items-section-body');
+        if (itemsToggle && itemsBody && itemsBody.classList.contains('hidden')) {
+          itemsToggle.click(); // 模擬點擊，展開物品面板
         }
+        // 若有側邊欄，確保側邊欄是開啟狀態
+        toggleInfoPanel(true);
       });
     } else {
       clone.querySelector('.profile-safezone-locked-msg').classList.remove('hidden');
     }
 
-    // 把填好的卡片塞進列表裡
     container.appendChild(clone);
   });
 }
-
 function renderProfileFactions() {
   if (!dom.profileFactionList) return;
   var worldMemory = WorldMemory.ensureShape(gameState.worldMemory);
