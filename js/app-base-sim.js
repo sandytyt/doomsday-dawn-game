@@ -12,18 +12,19 @@ window.runDailyBaseSimulation = function(daysPassed) {
 
   var allReports = [];
 
-  // 若玩家一次出門 3 天，就連續模擬 3 次
   for (var d = 0; d < daysPassed; d++) {
     safeZones.forEach(function(zone) {
       if (!zone.population || zone.population <= 0) return;
       
-      // 找到對應的倉庫
+      // 【修復核心】：如果找不到這個避難所的倉庫，就自動初始化一個空的，絕對不要 return！
       var stash = gameState.stashes.find(function(s) { return s.locationName === zone.name; });
-      if (!stash) return;
+      if (!stash) {
+        stash = { id: 'base_' + Date.now() + '_' + Math.floor(Math.random()*1000), locationName: zone.name, items: [] };
+        gameState.stashes.push(stash);
+      }
 
       var report = processSingleDayForZone(zone, stash);
       
-      // 只記錄最後一天的報表，或有發生死亡/飢荒的重大報表，避免報表洗頻
       if (d === daysPassed - 1 || report.starvationDeaths > 0) {
         allReports.push(report);
       }
