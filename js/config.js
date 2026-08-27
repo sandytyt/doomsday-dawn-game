@@ -65,30 +65,34 @@ function pickRandom(arr) {
 }
 
 // ----------------------------------------
-// 3. 智慧食物推算系統 (加強版)
+// 3. 智慧食物推算系統
 // ----------------------------------------
 var FOOD_DICTIONARY = {
-  "能量棒": { recovery: 35, stamina: 15, shareType: "individual" },
-  "食用生理鹽水": { recovery: 10, stamina: 30, shareType: "individual" },
-  "軍用口糧": { recovery: 60, stamina: 25, shareType: "individual" },
-  "一箱軍用罐頭": { recovery: 150, stamina: 50, shareType: "shared" },
-  "大鍋變異獸肉湯": { recovery: 120, stamina: 40, shareType: "shared" }
+  '能量棒': { recovery: 15, stamina: 10, shareType: 'individual' },
+  '軍用罐頭': { recovery: 35, stamina: 20, shareType: 'individual' },
+  '蔬菜': { recovery: 15, stamina: 5, shareType: 'individual' },
+  '水果': { recovery: 15, stamina: 5, shareType: 'individual' },
+  '生肉': { recovery: 20, stamina: 5, shareType: 'individual' },
+  '乾癟的野果': { recovery: 5, stamina: 0, shareType: 'individual' },
+  '半瓶礦泉水': { recovery: 0, stamina: 15, shareType: 'individual' },
+  '過濾水': { recovery: 0, stamina: 20, shareType: 'individual' },
+  '乾淨的純水': { recovery: 0, stamina: 35, shareType: 'individual' }
 };
 
 function getFoodStats(itemName) {
+  // 1. 優先查閱標準字典
   if (FOOD_DICTIONARY[itemName]) return FOOD_DICTIONARY[itemName];
   
-  // 基礎值全面提升
+  // 2. 若不在字典內，則套用動態推算邏輯
   var stats = { recovery: 25, stamina: 5, shareType: "individual" };
-  
   if (/(箱|鍋|大|家庭|全家|桶|批|堆|袋)/.test(itemName)) stats.shareType = "shared";
   
   if (/(罐頭|肉|便當|口糧|燉|烤|乾糧|飽餐|麵)/.test(itemName)) {
     stats.recovery = 50;
-    stats.stamina = 15; // 額外增加主食/肉類的體力回復
+    stats.stamina = 15; 
   } else if (/(水|飲料|果汁|鹽水|湯|茶|酒)/.test(itemName)) { 
     stats.recovery = 10; 
-    stats.stamina = 25; // 強化水分的體力效益
+    stats.stamina = 25; 
   } else if (/(糖|餅乾|巧克力|零食|薯條|包)/.test(itemName)) {
     stats.recovery = 20;
     stats.stamina = 5;
