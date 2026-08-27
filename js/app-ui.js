@@ -99,7 +99,18 @@ function renderAll() {
 
 function appendGMText(text) {
   var el = document.createElement('div');
-  el.className = 'narrative-entry gm-text';
+  
+  // 預設樣式
+  var classNames = 'narrative-entry gm-text';
+  
+  // 偵測開頭並加入專屬樣式
+  if (text.startsWith('[系統]')) {
+    classNames += ' system-text';
+  } else if (text.startsWith('[開發者權限]')) {
+    classNames += ' developer-text';
+  }
+  
+  el.className = classNames;
   el.textContent = text;
   dom.narrativeContent.appendChild(el);
   scrollToBottom();

@@ -122,7 +122,7 @@ function handleFreeInputSend() {
         applyInventoryChangesTo(gameState.inventory, [{ name: cheatItemName, quantity: cheatQty, action: 'add' }]);
         
         if (typeof appendGMText === 'function') {
-           appendGMText('<br><span style="color:#FFD700;">[開發者權限] 虛空扭曲，已將 ' + cheatItemName + ' x' + cheatQty + ' 加入背包。</span>');
+          appendGMText('[開發者權限] 虛空扭曲，已將 ' + cheatItemName + ' x' + cheatQty + ' 加入背包。');
         }
         if (typeof renderAll === 'function') renderAll();
         
