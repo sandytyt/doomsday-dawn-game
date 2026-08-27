@@ -57,6 +57,8 @@ function applyStatusUpdate(update) {
     applyAbilityExpChange(update.ability_exp_change);
   }
   if (update.injury_status) {
+    // 防呆：如果沒有狀態，預設為 none (健康)
+    gameState.injuryStatus = gameState.injuryStatus || 'none';
     // 傷勢降級邏輯 (只允許一階一階降，重傷 -> 輕傷 -> 健康)
     if (gameState.injuryStatus === 'severe' && update.injury_status === 'none') {
       gameState.injuryStatus = 'minor';
