@@ -136,6 +136,29 @@ function handleFreeInputSend() {
       return; 
     }
   }
+  // 【新增】：刪除錯誤勢力的作弊指令
+  if (text.startsWith('#delfaction ')) {
+    var factionToDel = text.replace('#delfaction ', '').trim();
+    
+    if (gameState.factionTrust && typeof gameState.factionTrust[factionToDel] !== 'undefined') {
+      delete gameState.factionTrust[factionToDel]; // 刪除該勢力
+      
+      if (typeof appendGMText === 'function') {
+         appendGMText('[開發者權限] 虛空扭曲，已將錯誤勢力「' + factionToDel + '」從系統記憶中徹底抹除。');
+      }
+      if (typeof renderAll === 'function') renderAll();
+    } else {
+      if (typeof appendGMText === 'function') {
+         appendGMText('[系統] 找不到名為「' + factionToDel + '」的勢力紀錄。');
+      }
+    }
+    
+    // 恢復 UI 狀態並中斷，不把這句話傳給 AI
+    dom.freeInputText.value = '';
+    dom.freeInputRow.classList.add('hidden');
+    dom.freeInputToggle.classList.remove('hidden');
+    return;
+  }
   // ────────────────────────────────
 
   // 原本正常的發送邏輯
