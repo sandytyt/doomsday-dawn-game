@@ -159,6 +159,35 @@ function handleFreeInputSend() {
     dom.freeInputToggle.classList.remove('hidden');
     return;
   }
+
+  // 【新增】：手動建立安全區與專屬暫存點
+  if (text.startsWith('#makesafe ')) {
+    var zoneName = text.replace('#makesafe ', '').trim();
+    if (!zoneName) zoneName = '銅礦避難所'; // 預設名稱
+    
+    // 1. 建立安全區紀錄
+    gameState.worldMemory = gameState.worldMemory || {};
+    gameState.worldMemory.safeZones = gameState.worldMemory.safeZones || {};
+    gameState.worldMemory.safeZones[zoneName] = {
+      location: gameState.currentLocation || '未知地點',
+      population: 2,
+      facilities: ['基礎防禦', '物資儲藏櫃']
+    };
+    
+    // 2. 自動綁定一個同名的暫存點 (Stash)
+    gameState.stashes = gameState.stashes || {};
+    gameState.stashes[zoneName] = []; 
+    
+    if (typeof appendGMText === 'function') {
+       appendGMText('[開發者權限] 虛空扭曲，已強制將此地註冊為安全區「' + zoneName + '」，並開闢專屬物資庫。');
+    }
+    
+    dom.freeInputText.value = '';
+    dom.freeInputRow.classList.add('hidden');
+    dom.freeInputToggle.classList.remove('hidden');
+    if (typeof renderAll === 'function') renderAll();
+    return;
+  }
   // ────────────────────────────────
 
   // 原本正常的發送邏輯
