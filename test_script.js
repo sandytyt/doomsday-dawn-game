@@ -1,73 +1,72 @@
-// test_script.js
 if (typeof CONFIG === 'undefined') { var CONFIG = {}; }
 
 CONFIG.TEST_SCRIPT = [
   {
-    "narrative": "【測試回合 1：開局與隊友加入】你從一間破舊的避難所中醒來，空氣中瀰漫著霉味。門口傳來腳步聲，名叫「愛麗絲」的倖存者走了進來，她遞給你一些補給品，並表示願意與你同行。",
+    "narrative": "【測試回合 1：建立避難所與獲取物資】\n你與愛麗絲來到了一處廢棄的銅礦坑。這裡地勢隱蔽，非常適合做為長期據點。你們清理了入口的喪屍，並決定將此地命名為「銅礦避難所」。\n\n(💡 系統提示：請打開「角色檔案」確認安全區是否建立。接著打開「物品」介面，勾選「啟用物資轉移模式」，將你剛獲得的罐頭與水存入「暫存點：銅礦避難所」，為明天的結算做準備！)",
     "status_update": {
-      "time_advance_minutes": 30,
-      "stamina_change": -5,
-      "current_location": "破舊避難所",
+      "time_advance_minutes": 120,
+      "stamina_change": -10,
+      "current_location": "廢棄銅礦",
       "danger_level": "safe",
-      "weather": "陰天",
+      "weather": "晴朗",
       "inventory_changes": [
-        { "name": "軍用罐頭", "quantity": 2, "action": "add" },
-        { "name": "烹煮的野味", "quantity": 1, "action": "add" }
-      ],
-      "companion_changes": [
-        { "name": "愛麗絲", "action": "join" }
-      ],
-      "proficiency_triggered": ["scouting", "negotiation"],
-      "injury_status": "none"
+        { "name": "軍用罐頭", "quantity": 5, "action": "add" },
+        { "name": "過濾水", "quantity": 5, "action": "add" },
+        { "name": "廢鐵", "quantity": 10, "action": "add" }
+      ]
+    },
+    "world_memory_update": {
+      "new_safe_zone": {
+        "name": "銅礦避難所",
+        "location": "廢棄銅礦",
+        "population": 2,
+        "facilities": ["基礎防禦", "拾荒"]
+      }
     },
     "options": [
-      { "id": "A", "label": "詢問愛麗絲外面的情況", "risk_hint": "安全交談", "risk_level": "low" },
-      { "id": "B", "label": "整理背包準備出發", "risk_hint": "耗費體力", "risk_level": "low" }
-    ],
-    "relationship_update": {
-      "npc_name": "愛麗絲",
-      "gender": "女性",
-      "trust_delta": 10,
-      "closeness_delta": 5,
-      "romantic_tension_delta": 0,
-      "note": "愛麗絲對你的警覺心降低了。"
-    }
-  },
-  {
-    "narrative": "【測試回合 2：遭遇危機與戰鬥】你們離開避難所不久，一隻變異喪屍從廢棄車輛後方撲了出來！你憑藉本能進行反擊，雖然擊退了牠，但你也受了輕傷，體力大幅消耗。",
-    "status_update": {
-      "time_advance_minutes": 45,
-      "stamina_change": -40,
-      "current_location": "廢棄街道",
-      "danger_level": "warning",
-      "weather": "微雨",
-      "inventory_changes": [],
-      "injury_status": "minor",
-      "injury_detail": "手臂擦傷",
-      "proficiency_triggered": ["combat", "agility"]
-    },
-    "options": [
-      { "id": "A", "label": "在原地包紮傷口", "risk_hint": "可能引來更多喪屍", "risk_level": "medium" },
-      { "id": "B", "label": "立刻逃離現場", "risk_hint": "高消耗", "risk_level": "medium" }
+      { "id": "A", "label": "已將物資放入倉庫，準備擴建", "risk_hint": "推進劇情", "risk_level": "low" },
+      { "id": "B", "label": "不放物資，我想測試飢荒懲罰", "risk_hint": "高風險測試", "risk_level": "high" }
     ]
   },
   {
-    "narrative": "【測試回合 3：瀕死與異能覺醒】危機並未解除，更多的喪屍將你們包圍。在千鈞一髮之際，你感覺到體內深處湧現出一股未知的熱流，強大的能量爆發開來，震退了周圍的敵人！",
+    "narrative": "【測試回合 2：設施升級與勞動力配置】\n你利用手邊的廢鐵，指導避難所的居民在礦坑內部搭建了簡易的「農場」與「集水」設施。有了這些設施，基地每天就能穩定產出生肉與過濾水了。\n\n(💡 系統提示：現在基地有「拾荒」、「農場」、「集水」3座設施，但人口只有 2 人。明天的結算將會測試「勞動力不足」的停工機制。)",
     "status_update": {
-      "time_advance_minutes": 10,
-      "stamina_change": -30,
-      "current_location": "廢棄街道",
-      "danger_level": "critical",
-      "weather": "大雨",
-      "inventory_changes": [],
-      "injury_status": "severe",
-      "injury_detail": "失血過多",
-      "special_event": "awakening",
-      "special_event_text": "在生死關頭，你覺醒了未知的異能！"
+      "time_advance_minutes": 240,
+      "stamina_change": -15,
+      "current_location": "廢棄銅礦",
+      "danger_level": "safe",
+      "weather": "微風",
+      "inventory_changes": [
+        { "name": "廢鐵", "quantity": 10, "action": "remove" }
+      ]
+    },
+    "world_memory_update": {
+      "safe_zone_update": {
+        "name": "銅礦避難所",
+        "population": 2,
+        "facilities_add": ["農場", "集水"],
+        "faction_relation_note": "基地的雛形已然建立。"
+      }
     },
     "options": [
-      { "id": "A", "label": "嘗試使用新力量突圍", "risk_hint": "未知風險", "risk_level": "high" },
-      { "id": "B", "label": "掩護愛麗絲撤退", "risk_hint": "捨己為人", "risk_level": "high" }
+      { "id": "A", "label": "在基地深眠兩天 (測試跨日結算)", "risk_hint": "時間大幅推進", "risk_level": "low" },
+      { "id": "B", "label": "離開基地去探索 (測試跨日結算)", "risk_hint": "時間大幅推進", "risk_level": "medium" }
+    ]
+  },
+  {
+    "narrative": "【測試回合 3：時間流逝與基地日結算】\n整整兩天的時間過去了。廢土的日夜交替，但你的基地依舊維持著運作。每天早上 06:00，基地的無線電都會準時傳來晨間匯報。\n\n(💡 系統提示：你應該已經看到橘黃色的「📻 避難所晨間匯報」彈出！請檢查居民是否正確消耗了食物？農場是否有產出？如果有設施因為人數不足而停工，報表上也會顯示警告。)",
+    "status_update": {
+      "time_advance_minutes": 2880, 
+      "stamina_change": 50,
+      "current_location": "廢棄銅礦",
+      "danger_level": "safe",
+      "weather": "陰天",
+      "inventory_changes": [],
+      "injury_status": "none"
+    },
+    "options": [
+      { "id": "A", "label": "打開基地倉庫查看盈餘", "risk_hint": "驗收成果", "risk_level": "low" },
+      { "id": "B", "label": "繼續推進測試", "risk_hint": "結束", "risk_level": "low" }
     ]
   }
 ];
