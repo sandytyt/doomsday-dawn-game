@@ -549,6 +549,31 @@ button {
   padding-top: 4px;
 }
 
+/* 你原本的劇情文字樣式 (維持不變) */
+.narrative-entry.gm-text {
+  clear: both;
+  color: var(--text-primary);
+  font-size: 15px;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  padding-top: 4px;
+}
+
+/* 新增：[系統] 的專屬樣式 */
+.narrative-entry.system-text {
+  color: #4CAF50; /* 柔和的綠色，可依你的 UI 風格調整 */
+  font-size: 14px; /* 稍微縮小字體，降低視覺干擾 */
+  font-style: italic; /* 斜體 */
+  opacity: 0.9;
+}
+
+/* 新增：[開發者權限] 的專屬樣式 */
+.narrative-entry.developer-text {
+  color: #FFD700; /* 你原本設定的金黃色 */
+  font-weight: bold; /* 加粗 */
+  text-shadow: 0 0 5px rgba(255, 215, 0, 0.3); /* 微微的發光效果 */
+}
+
 .typing-indicator {
   display: flex;
   gap: 5px;
