@@ -219,6 +219,7 @@ var WorldMemory = (function () {
         if (!su2.name) continue;
         var zone = findByName(worldMemory.safeZones, su2.name);
         if (zone && su2.note) {
+          zone.factionRelations = zone.factionRelations || {};
           zone.factionRelations.backgroundNote = truncateText(su2.note);
         }
       }
