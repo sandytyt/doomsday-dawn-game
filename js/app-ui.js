@@ -335,6 +335,9 @@ function renderProfileInjury() {
   }
 }
 
+// 用來記憶玩家展開了哪些地區的手風琴狀態
+var expandedLocationGroups = {};
+
 function renderProfileExploredLocations() {
   var container = document.getElementById('profile-explored-list');
   if (!container) return;
@@ -347,26 +350,127 @@ function renderProfileExploredLocations() {
     container.appendChild(emptyEl);
     return;
   }
-  
-  gameState.exploredLocations.forEach(function(loc) {
-    // 建立可點擊的清單項目
-    var div = document.createElement('div');
-    div.className = 'char-profile-item';
-    div.style.cursor = 'pointer';
-    div.style.color = '#4a90e2';
-    div.style.textDecoration = 'underline';
-    div.style.marginBottom = '6px';
-    
-    // escapeHtml() 確保特殊字元不會弄壞版面
-    div.innerHTML = '<span>📍 ' + escapeHtml(loc) + '</span><span style="font-size:0.9em; color:#888; margin-left:8px;">(點擊前往)</span>';
-    
-    // 綁定我們剛寫好的 JS 自動導航與計算系統
-    div.addEventListener('click', function() {
-      requestTravelTo(loc); 
-    });
-    
-    container.appendChild(div);
+
+  // 1. 智能分組演算法：將地點依長度排序，最短的當作主區域基礎
+  var sortedLocs = gameState.exploredLocations.slice().sort(function(a, b) {
+    return a.length - b.length;
   });
+  
+  var groups = {};
+  sortedLocs.forEach(function(loc) {
+    var matchedGroup = null;
+    // 尋找是否屬於現有的主區域 (例如「沿海漁村廢棄住宅」開頭包含「沿海漁村」)
+    for (var groupName in groups) {
+      if (loc.indexOf(groupName) === 0) { 
+        matchedGroup = groupName;
+        break;
+      }
+    }
+    
+    if (matchedGroup) {
+      groups[matchedGroup].push(loc);
+    } else {
+      groups[loc] = [loc]; // 建立新群組
+    }
+  });
+
+  // 2. 限制容器高度並加入滾動條，防止撐爆畫面
+  container.style.maxHeight = '350px';
+  container.style.overflowY = 'auto';
+  container.style.paddingRight = '5px'; // 預留滾動條空間
+
+  // 3. 渲染分組介面
+  for (var groupName in groups) {
+    if (Object.prototype.hasOwnProperty.call(groups, groupName)) {
+      (function(gName, locs) {
+        var groupDiv = document.createElement('div');
+        groupDiv.style.marginBottom = '8px';
+
+        // 如果該群組只有 1 個地點，直接顯示單一按鈕
+        if (locs.length === 1) {
+          groupDiv.appendChild(createLocationButton(locs[0]));
+        } else {
+          // 如果有多個地點，建立手風琴摺疊標題
+          var header = document.createElement('div');
+          var isExpanded = expandedLocationGroups[gName] || false;
+          
+          header.style.display = 'flex';
+          header.style.justifyContent = 'space-between';
+          header.style.alignItems = 'center';
+          header.style.padding = '8px 12px';
+          header.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+          header.style.borderLeft = '3px solid #4a90e2';
+          header.style.borderRadius = '4px';
+          header.style.cursor = 'pointer';
+          header.style.color = '#e0e0e0';
+          
+          header.innerHTML = '<span style="font-weight:bold;">🗺️ ' + escapeHtml(gName) + ' 地區</span>' + 
+                             '<span style="font-size: 0.8em; color: #888;">' + locs.length + ' 處 ' + (isExpanded ? '▼' : '▶') + '</span>';
+          
+          var body = document.createElement('div');
+          body.style.display = isExpanded ? 'block' : 'none';
+          body.style.paddingLeft = '12px';
+          body.style.marginTop = '4px';
+
+          locs.forEach(function(loc) {
+            body.appendChild(createLocationButton(loc));
+          });
+
+          // 綁定點擊展開/收合事件
+          header.addEventListener('click', function() {
+            var willExpand = (body.style.display === 'none');
+            body.style.display = willExpand ? 'block' : 'none';
+            expandedLocationGroups[gName] = willExpand;
+            header.innerHTML = '<span style="font-weight:bold;">🗺️ ' + escapeHtml(gName) + ' 地區</span>' + 
+                               '<span style="font-size: 0.8em; color: #888;">' + locs.length + ' 處 ' + (willExpand ? '▼' : '▶') + '</span>';
+          });
+
+          groupDiv.appendChild(header);
+          groupDiv.appendChild(body);
+        }
+        container.appendChild(groupDiv);
+      })(groupName, groups[groupName]);
+    }
+  }
+}
+
+// 輔助函數：建立質感的單一地點按鈕 (取代原本的藍色底線)
+function createLocationButton(locName) {
+  var btn = document.createElement('div');
+  
+  // 使用 JavaScript 直接寫入樣式，無需額外修改 CSS 檔案
+  btn.style.display = 'flex';
+  btn.style.justifyContent = 'space-between';
+  btn.style.alignItems = 'center';
+  btn.style.padding = '10px 12px';
+  btn.style.margin = '4px 0';
+  btn.style.backgroundColor = 'rgba(255,255,255,0.03)';
+  btn.style.border = '1px solid rgba(255,255,255,0.1)';
+  btn.style.borderRadius = '6px';
+  btn.style.cursor = 'pointer';
+  btn.style.color = '#dcdcdc';
+  btn.style.transition = 'all 0.2s ease';
+  
+  btn.innerHTML = '<span>📍 ' + escapeHtml(locName) + '</span>' +
+                  '<span style="color:#4a90e2; font-weight:bold; font-size:1.1em; opacity:0.8;">➔</span>';
+
+  // 模擬 CSS Hover 效果
+  btn.addEventListener('mouseenter', function() {
+    btn.style.backgroundColor = 'rgba(74, 144, 226, 0.15)';
+    btn.style.borderColor = 'rgba(74, 144, 226, 0.5)';
+    btn.style.color = '#ffffff';
+  });
+  btn.addEventListener('mouseleave', function() {
+    btn.style.backgroundColor = 'rgba(255,255,255,0.03)';
+    btn.style.borderColor = 'rgba(255,255,255,0.1)';
+    btn.style.color = '#dcdcdc';
+  });
+  
+  btn.addEventListener('click', function() {
+    if (typeof requestTravelTo === 'function') requestTravelTo(locName); 
+  });
+  
+  return btn;
 }
 
 function renderProfileAwakening() {
