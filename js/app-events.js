@@ -160,10 +160,10 @@ function handleFreeInputSend() {
     return;
   }
 
-  // 【新增】：手動建立安全區與專屬暫存點
+  // 手動建立安全區與專屬暫存點
   if (text.startsWith('#makesafe ')) {
     var zoneName = text.replace('#makesafe ', '').trim();
-    if (!zoneName) zoneName = '銅礦避難所'; // 預設名稱
+    if (!zoneName) zoneName = '銅礦避難所'; 
     
     // 1. 建立安全區紀錄
     gameState.worldMemory = gameState.worldMemory || {};
@@ -174,9 +174,16 @@ function handleFreeInputSend() {
       facilities: ['基礎防禦', '物資儲藏櫃']
     };
     
-    // 2. 自動綁定一個同名的暫存點 (Stash)
-    gameState.stashes = gameState.stashes || {};
-    gameState.stashes[zoneName] = []; 
+    // 2. 建立符合系統格式的暫存點 (Array 格式)
+    gameState.stashes = gameState.stashes || [];
+    var existingStash = gameState.stashes.find(function(s) { return s.locationName === zoneName; });
+    if (!existingStash) {
+      gameState.stashes.push({
+        id: 'base_' + Date.now(), // 給予獨立 ID
+        locationName: zoneName,
+        items: [] // 初始化空背包
+      });
+    }
     
     if (typeof appendGMText === 'function') {
        appendGMText('[開發者權限] 虛空扭曲，已強制將此地註冊為安全區「' + zoneName + '」，並開闢專屬物資庫。');
