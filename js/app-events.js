@@ -165,23 +165,28 @@ function handleFreeInputSend() {
     var zoneName = text.replace('#makesafe ', '').trim();
     if (!zoneName) zoneName = '銅礦避難所'; 
     
-    // 1. 建立安全區紀錄
+    // 1. 建立安全區紀錄 (修正為 Array 格式)
     gameState.worldMemory = gameState.worldMemory || {};
-    gameState.worldMemory.safeZones = gameState.worldMemory.safeZones || {};
-    gameState.worldMemory.safeZones[zoneName] = {
-      location: gameState.currentLocation || '未知地點',
-      population: 2,
-      facilities: ['基礎防禦', '物資儲藏櫃']
-    };
+    gameState.worldMemory.safeZones = gameState.worldMemory.safeZones || [];
+    
+    var existingZone = gameState.worldMemory.safeZones.find(function(z) { return z.name === zoneName; });
+    if (!existingZone) {
+      gameState.worldMemory.safeZones.push({
+        name: zoneName,
+        location: gameState.currentLocation || '未知地點',
+        population: 2,
+        facilities: ['基礎防禦', '物資儲藏櫃']
+      });
+    }
     
     // 2. 建立符合系統格式的暫存點 (Array 格式)
     gameState.stashes = gameState.stashes || [];
     var existingStash = gameState.stashes.find(function(s) { return s.locationName === zoneName; });
     if (!existingStash) {
       gameState.stashes.push({
-        id: 'base_' + Date.now(), // 給予獨立 ID
+        id: 'base_' + Date.now(), 
         locationName: zoneName,
-        items: [] // 初始化空背包
+        items: [] 
       });
     }
     
