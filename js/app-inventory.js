@@ -244,13 +244,14 @@ function executeUseItem() {
   var target = document.getElementById('use-target-select').value;
   var itemName = useItemState.itemName;
   
-  // 為了防止 isWaterOnly 報錯的防呆寫法
+  // 1. 【修復喝水 Bug】將食物與水合併視為「可飲食消耗品」
   var isWater = (typeof isWaterOnly === 'function') ? isWaterOnly(itemName) : false;
-  var isFood = isLikelyFood(itemName) && !isWater;
+  // 把 && !isWater 拿掉，只要是食物或是水，都允許使用！
+  var isConsumable = isLikelyFood(itemName) || isWater; 
   var isMed = itemName.indexOf('醫療包') !== -1 || itemName.indexOf('繃帶') !== -1 || itemName.indexOf('藥') !== -1 || itemName.indexOf('紗布') !== -1;
-  var isCore = itemName.indexOf('晶核') !== -1; // 判斷是否為晶核
+  var isCore = itemName.indexOf('晶核') !== -1;
   
-  if (!isFood && !isMed && !isCore) {
+  if (!isConsumable && !isMed && !isCore) {
     alert('此物品目前無法直接使用（可能是材料或無法食用的物品）。');
     return;
   }
@@ -290,7 +291,6 @@ function executeUseItem() {
     qtyToConsume = targets.length;
   }
   
-  // 若為晶核，每次使用 1 顆 (你可以依據需求調整)
   if (isCore) {
     qtyToConsume = 1; 
   }
@@ -302,19 +302,17 @@ function executeUseItem() {
   
   // 1. 扣除物品
   applyInventoryChangesTo(gameState.inventory, [{ name: itemName, quantity: qtyToConsume, action: 'remove' }]);
+  
   // 2. 應用效果
   if (isCore) {
-    // 透過智能推算系統計算這次吸收能獲得多少熟練度
     var expGained = (typeof getCoreExpGained === 'function') ? getCoreExpGained(itemName) : 10;
     
     if (typeof applyAbilityExpChange === 'function') {
       applyAbilityExpChange(expGained); 
     }
-    // 時間流逝 10 分鐘
     if (typeof advanceTime === 'function') {
       advanceTime(10); 
     } else {
-      // 若無通用時間函數，則直接加強硬幣改時間
       gameState.time.minute += 10;
       if(gameState.time.minute >= 60) {
         gameState.time.minute -= 60;
@@ -325,33 +323,37 @@ function executeUseItem() {
   } else {
     // 食物與藥品效果
     targets.forEach(function(t) {
-      if (isFood) {
+      // 2. 【修復體力 Bug】讓水跟食物都能進入恢復迴圈，並加上 Number 防呆確保數值相加正確
+      if (isConsumable) { 
         if (t === 'player') {
           gameState.hunger = Math.min(100, gameState.hunger + recovery);
-          // 若未來你想實裝體力恢復，可以把下面這行取消註解
-          // gameState.stamina = Math.min(100, (gameState.stamina || 0) + staminaRecovery);
+          gameState.stamina = Math.min(gameState.maxStamina || 100, (Number(gameState.stamina) || 0) + staminaRecovery);
         }
         else if (gameState.npcStates && gameState.npcStates[t]) {
           gameState.npcStates[t].hunger = Math.min(100, gameState.npcStates[t].hunger + recovery);
+          gameState.npcStates[t].stamina = Math.min(100, (Number(gameState.npcStates[t].stamina) || 0) + staminaRecovery);
         }
       }
       if (isMed) {
         if (t === 'player') {
-           // 降級傷勢
            gameState.injuryStatus = (gameState.injuryStatus === 'severe') ? 'minor' : 'none';
-           // 【新增】如果完全康復，徹底清空受傷細節描述
            if (gameState.injuryStatus === 'none') gameState.injuryDetail = ''; 
         } else if (gameState.npcStates && gameState.npcStates[t]) {
-           // NPC 降級傷勢
            var npc = gameState.npcStates[t];
            npc.injuryStatus = (npc.injuryStatus === 'severe') ? 'minor' : 'none';
-           // 【新增】清空 NPC 的受傷細節
            if (npc.injuryStatus === 'none') npc.injuryDetail = '';
         }
       }
     });
+    
     var targetLabel = target === 'all' ? '全體人員' : (target === 'player' ? '自己' : target.substring(4));
-    appendGMText('[系統] 你將 ' + itemName + ' 分配給了 ' + targetLabel + ' (消耗 ' + qtyToConsume + ' 份)。');
+    
+    // 讓日誌清楚顯示喝水/吃東西後恢復了體力
+    if (isConsumable && !isMed) {
+       appendGMText('[系統] 你將 ' + itemName + ' 分配給了 ' + targetLabel + ' (消耗 ' + qtyToConsume + ' 份)，恢復了飽食度與體力。');
+    } else {
+       appendGMText('[系統] 你將 ' + itemName + ' 分配給了 ' + targetLabel + ' (消耗 ' + qtyToConsume + ' 份)。');
+    }
   }
   
   // 3. 收尾與日誌提示
