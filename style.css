@@ -504,7 +504,7 @@ button {
 .narrative-entry.player-action {
   text-align: right;
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: 14px;
   font-style: italic;
   margin-bottom: 14px;
   padding: 8px 12px;
@@ -543,7 +543,7 @@ button {
 .narrative-entry.gm-text {
   clear: both;
   color: var(--text-primary);
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1.8;
   white-space: pre-wrap;
   padding-top: 4px;
@@ -553,7 +553,7 @@ button {
 .narrative-entry.gm-text {
   clear: both;
   color: var(--text-primary);
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1.8;
   white-space: pre-wrap;
   padding-top: 4px;
@@ -562,7 +562,7 @@ button {
 /* 新增：[系統] 的專屬樣式 */
 .narrative-entry.system-text {
   color: #4CAF50; /* 柔和的綠色，可依你的 UI 風格調整 */
-  font-size: 14px; /* 稍微縮小字體，降低視覺干擾 */
+  font-size: 15px; /* 稍微縮小字體，降低視覺干擾 */
   font-style: italic; /* 斜體 */
   opacity: 0.9;
 }
