@@ -147,10 +147,34 @@ function applyStatusUpdate(update) {
     applyStashUpdate(update.stash_update);
   }
   if (update.faction_trust_update) {
-    for (var faction in update.faction_trust_update) {
-      if (Object.prototype.hasOwnProperty.call(update.faction_trust_update, faction)) {
-        var delta = update.faction_trust_update[faction];
-        gameState.factionTrust[faction] = (gameState.factionTrust[faction] || 0) + delta;
+    // 1. 定義合法的五大勢力白名單
+    var VALID_FACTIONS = ['鐵幕守望者', '方舟商會', '荒原拾骸者', '靜默之子', '深層獵手'];
+    
+    // 2. 建立「據點」自動對應「勢力」的轉換表
+    var FACTION_ALIASES = {
+      '灰堡': '鐵幕守望者',
+      '方舟海上堡壘': '方舟商會',
+      '荒原鎮群': '荒原拾骸者',
+      '靜默聖所': '靜默之子',
+      '深谷中繼站': '深層獵手'
+    };
+
+    for (var rawFaction in update.faction_trust_update) {
+      if (Object.prototype.hasOwnProperty.call(update.faction_trust_update, rawFaction)) {
+        var targetFaction = rawFaction;
+        var delta = update.faction_trust_update[rawFaction];
+
+        // 偵測到 AI 使用據點名稱時，自動校正為對應勢力
+        if (FACTION_ALIASES[targetFaction]) {
+          targetFaction = FACTION_ALIASES[targetFaction];
+        }
+
+        // 嚴格攔截：只有在白名單內的勢力，才允許寫入系統
+        if (VALID_FACTIONS.indexOf(targetFaction) !== -1) {
+          gameState.factionTrust[targetFaction] = (gameState.factionTrust[targetFaction] || 0) + delta;
+        } else {
+          console.warn('[系統警告] 攔截到 AI 虛構的勢力名稱並已捨棄：' + targetFaction);
+        }
       }
     }
   }
