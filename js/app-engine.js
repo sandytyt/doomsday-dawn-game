@@ -234,7 +234,7 @@ function advanceTime(minutes) {
   // 主角飢餓衰減
   gameState.hunger = clamp(gameState.hunger - hungerDecay, 0, 100);
 
-  // 【修正】只有「當前隨行」的 NPC 才會隨時間自然消耗飢餓度，不在身邊的完全凍結
+  // 只有「當前隨行」的 NPC 才會隨時間自然消耗飢餓度
   if (gameState.npcStates && gameState.companions && gameState.companions.length > 0) {
     gameState.companions.forEach(function(npcName) {
       var npc = gameState.npcStates[npcName];
@@ -242,6 +242,11 @@ function advanceTime(minutes) {
         npc.hunger = clamp(npc.hunger - hungerDecay, 0, 100);
       }
     });
+  }
+
+  // 【最關鍵的新增】：如果跨越了天數，觸發基地日結算引擎
+  if (daysToAdd > 0 && typeof runDailyBaseSimulation === 'function') {
+    runDailyBaseSimulation(daysToAdd);
   }
 }
 
