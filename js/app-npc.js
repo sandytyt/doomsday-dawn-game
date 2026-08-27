@@ -56,34 +56,66 @@ function processNpcMicroActions() {
     var npc = gameState.npcStates[npcName];
     if (!npc) continue;
 
-    // 1. 自動消耗體力與飽食度 (隨著時間自然流失)
+    // 1. 自動消耗體力與飽食度
     npc.stamina = Math.max(0, npc.stamina - 2); 
     npc.hunger = Math.max(0, npc.hunger - 1);
 
-    // 2. 自動進食邏輯 (低於 50 就吃，並限制進食頻率)
+    // 2. 自動進食邏輯
     if (npc.hunger < 50 && npc.inventory && npc.inventory.length > 0) {
       for (var j = 0; j < npc.inventory.length; j++) {
         var item = npc.inventory[j];
         if (isLikelyFood(item.name) && !isWaterOnly(item.name)) {
-          var recovery = getFoodRecoveryAmount(item.name);
+          var foodStats = (typeof getFoodStats === 'function') ? getFoodStats(item.name) : { recovery: 15, stamina: 0 };
           applyInventoryChangesTo(npc.inventory, [{ name: item.name, quantity: 1, action: 'remove' }]);
-          npc.hunger = Math.min(100, npc.hunger + recovery);
-          console.log('[NPC系統] ' + npcName + ' 自動進食了 ' + item.name);
-          break; // 每回合吃一個就停
+          
+          npc.hunger = Math.min(100, npc.hunger + foodStats.recovery);
+          npc.stamina = Math.min(100, npc.stamina + (foodStats.stamina || 0));
+          
+          // 進食也顯示在日誌中
+          if (typeof appendGMText === 'function') {
+             appendGMText('[系統] 隨行隊員 ' + npcName + ' 消耗了 ' + item.name + '，恢復了體力與飽食度。');
+          }
+          break; 
         }
       }
     }
 
-    // 3. 自動搜尋物資/打怪模擬 (機率觸發，增加真實感)
+    // 3. 自動搜尋物資/打怪模擬
     if (npc.stamina > 30 && npc.injuryStatus !== 'severe') {
       var actionRoll = Math.random();
-      if (actionRoll < 0.15) { // 15% 機率撿到垃圾/物資
-        var lootName = (Math.random() > 0.5) ? '廢鐵' : '乾癟的野果';
+      
+      if (actionRoll < 0.15) { 
+        // 15% 機率撿到物資：建立擴充版搜刮池
+        var lootName = '廢鐵';
+        var lootRoll = Math.random();
+        
+        if (lootRoll < 0.10) {
+          // 10% 稀有物資
+          var rares = ['透明晶核', '醫療包', '抗生素', '精密機械零件', '一箱軍用罐頭'];
+          lootName = rares[Math.floor(Math.random() * rares.length)];
+        } else if (lootRoll < 0.35) {
+          // 25% 實用物資
+          var uncommons = ['能量棒', '簡易繃帶', '礦泉水', '手槍子彈', '粗鹽'];
+          lootName = uncommons[Math.floor(Math.random() * uncommons.length)];
+        } else {
+          // 65% 一般廢品
+          var commons = ['廢鐵', '空塑膠瓶', '餅幹', '破布'];
+          lootName = commons[Math.floor(Math.random() * commons.length)];
+        }
+
         applyInventoryChangesTo(npc.inventory, [{ name: lootName, quantity: 1, action: 'add' }]);
-        console.log('[NPC系統] ' + npcName + ' 在附近搜刮到了 ' + lootName);
-      } else if (actionRoll > 0.9) { // 10% 機率與小型喪屍交戰消耗額外體力
+        
+        // 觸發 UI 日誌
+        if (typeof appendGMText === 'function') {
+           appendGMText('[系統] ' + npcName + ' 在附近搜刮，幸運地找到了 ' + lootName + ' x1。');
+        }
+        
+      } else if (actionRoll > 0.9) { 
+        // 10% 機率與小型喪屍交戰
         npc.stamina = Math.max(0, npc.stamina - 10);
-        console.log('[NPC系統] ' + npcName + ' 獨自處理了一隻落單的喪屍，消耗了體力');
+        if (typeof appendGMText === 'function') {
+           appendGMText('[系統] ' + npcName + ' 獨自處理了一隻落單的喪屍，消耗了少許體力。');
+        }
       }
     }
   }

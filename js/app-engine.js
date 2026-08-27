@@ -70,10 +70,19 @@ function applyStatusUpdate(update) {
       gameState.injuryDetail = update.injury_detail;
     }
   }  
-  if (update.inventory_changes && update.inventory_changes.length) { // 修正為小寫 if
+  if (update.inventory_changes && update.inventory_changes.length) { 
     var autoRecovery = applyInventoryChanges(update.inventory_changes);
     if (autoRecovery > 0) {
       gameState.hunger = clamp(gameState.hunger + autoRecovery, 0, 100);
+    }
+    // 【新增】印出主角獲得物品的日誌
+    if (typeof appendGMText === 'function') {
+      update.inventory_changes.forEach(function(change) {
+        if (change.action === 'add' || change.action === 'add_weapon') {
+          var qty = change.quantity || 1;
+          appendGMText('[系統] 你獲得了 ' + change.name + ' x' + qty + '。');
+        }
+      });
     }
   }
 
@@ -113,12 +122,19 @@ function applyStatusUpdate(update) {
         if (npcUpdate.inventory_changes && Array.isArray(npcUpdate.inventory_changes)) {
           npc.inventory = npc.inventory || [];
           
-          // 1. 改呼叫你寫好的通用函數，同時接住計算出來的飽食恢復量
           var npcAutoHunger = applyInventoryChangesTo(npc.inventory, npcUpdate.inventory_changes);
           
-          // 2. 如果 NPC 在劇情中消耗了食物，把飽食度加給該 NPC
           if (npcAutoHunger > 0) {
             npc.hunger = Math.min(100, (npc.hunger || 0) + npcAutoHunger);
+          }
+          // 【新增】印出 NPC 獲得物品的日誌
+          if (typeof appendGMText === 'function') {
+            npcUpdate.inventory_changes.forEach(function(change) {
+              if (change.action === 'add' || change.action === 'add_weapon') {
+                var qty = change.quantity || 1;
+                appendGMText('[系統] 隨行隊員 ' + npcUpdate.name + ' 獲得了 ' + change.name + ' x' + qty + '。');
+              }
+            });
           }
         }
         
