@@ -516,11 +516,9 @@ function renderProfileSafezones() {
   var container = document.getElementById('profile-safezone-list');
   if (!container) return;
   
-  // 【修正 1】防呆：直接讀取，避免 ensureShape 造成當機
   var worldMemory = gameState.worldMemory || {}; 
   var zones = worldMemory.safeZones || [];
 
-  // 轉換物件為陣列 (以防萬一)
   if (!Array.isArray(zones) && typeof zones === 'object') {
     var temp = [];
     for (var key in zones) {
@@ -534,7 +532,6 @@ function renderProfileSafezones() {
   }
 
   container.innerHTML = ''; 
-  
   if (zones.length === 0) {
     var emptyEl = document.createElement('div');
     emptyEl.className = 'profile-subentity-empty';
@@ -544,14 +541,10 @@ function renderProfileSafezones() {
   }
 
   var template = document.getElementById('safezone-card-template');
-  if (!template) {
-    console.error('找不到 safezone-card-template 模板');
-    return;
-  }
+  if (!template) return;
 
   zones.forEach(function (zone) {
     var clone = template.content.cloneNode(true); 
-
     clone.querySelector('.profile-safezone-name').textContent = zone.name;
     clone.querySelector('.profile-safezone-pop').textContent = '人口 ' + (zone.population || 0);
     
@@ -566,36 +559,11 @@ function renderProfileSafezones() {
       relNoteEl.textContent = relNote;
       relNoteEl.classList.remove('hidden');
     }
-
-    // 【修正 2】使用正確的地點變數 gameState.location
-    var curLoc = gameState.location || '';
-    var isPlayerHere = false;
-    if (curLoc.indexOf(zone.name) !== -1 || (zone.location && curLoc.indexOf(zone.location) !== -1)) {
-      isPlayerHere = true;
-    }
-
-    if (isPlayerHere) {
-      clone.querySelector('.profile-safezone-stash-action').classList.remove('hidden');
-      var btn = clone.querySelector('.stash-access-btn');
-      
-      // 【優化整合】將按鈕改為快捷鍵，點擊後自動幫玩家打開「物品」手風琴
-      btn.textContent = '🎒 管理基地倉庫 (開啟背包)';
-      btn.addEventListener('click', function() {
-        var itemsToggle = document.getElementById('items-section-toggle');
-        var itemsBody = document.getElementById('items-section-body');
-        if (itemsToggle && itemsBody && itemsBody.classList.contains('hidden')) {
-          itemsToggle.click(); // 模擬點擊，展開物品面板
-        }
-        // 若有側邊欄，確保側邊欄是開啟狀態
-        toggleInfoPanel(true);
-      });
-    } else {
-      clone.querySelector('.profile-safezone-locked-msg').classList.remove('hidden');
-    }
-
+    
     container.appendChild(clone);
   });
 }
+
 function renderProfileFactions() {
   if (!dom.profileFactionList) return;
   var worldMemory = WorldMemory.ensureShape(gameState.worldMemory);
