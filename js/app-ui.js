@@ -356,21 +356,42 @@ function renderProfileExploredLocations() {
     return a.length - b.length;
   });
   
+  // 1. 定義遊戲中的「主要大區關鍵字」（你可以隨時自由擴充）
+  var REGION_ANCHORS = [
+    '沿海漁村', 
+    '內陸荒原', 
+    '荒原鎮群', 
+    '荒原深處', 
+    '廢棄村落', 
+    '深谷中繼站', 
+    '醫療站'
+  ];
+  
   var groups = {};
-  sortedLocs.forEach(function(loc) {
+  
+  // 2. 只要地點名稱「包含」大區關鍵字，就自動歸類進去
+  gameState.exploredLocations.forEach(function(loc) {
     var matchedGroup = null;
-    // 尋找是否屬於現有的主區域 (例如「沿海漁村廢棄住宅」開頭包含「沿海漁村」)
-    for (var groupName in groups) {
-      if (loc.indexOf(groupName) === 0) { 
-        matchedGroup = groupName;
+    
+    for (var i = 0; i < REGION_ANCHORS.length; i++) {
+      // 使用 indexOf !== -1，代表只要字串中有出現該關鍵字就算數 (不限字首)
+      if (loc.indexOf(REGION_ANCHORS[i]) !== -1) {
+        matchedGroup = REGION_ANCHORS[i];
         break;
       }
     }
     
-    if (matchedGroup) {
-      groups[matchedGroup].push(loc);
-    } else {
-      groups[loc] = [loc]; // 建立新群組
+    // 如果有對應到大區，就放入該大區；如果沒有，就把自己當作獨立的群組
+    var finalGroupName = matchedGroup ? matchedGroup : loc;
+    
+    if (!groups[finalGroupName]) {
+      groups[finalGroupName] = [];
+    }
+    // 避免群組標題自己又重複出現在清單中 (可選)
+    if (loc !== matchedGroup) {
+       groups[finalGroupName].push(loc);
+    } else if (groups[finalGroupName].length === 0) {
+       groups[finalGroupName].push(loc);
     }
   });
 

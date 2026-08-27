@@ -247,7 +247,7 @@ function executeUseItem() {
   // 為了防止 isWaterOnly 報錯的防呆寫法
   var isWater = (typeof isWaterOnly === 'function') ? isWaterOnly(itemName) : false;
   var isFood = isLikelyFood(itemName) && !isWater;
-  var isMed = itemName.indexOf('醫療包') !== -1 || itemName.indexOf('繃帶') !== -1 || itemName.indexOf('藥') !== -1;
+  var isMed = itemName.indexOf('醫療包') !== -1 || itemName.indexOf('繃帶') !== -1 || itemName.indexOf('藥') !== -1 || itemName.indexOf('紗布') !== -1;
   var isCore = itemName.indexOf('晶核') !== -1; // 判斷是否為晶核
   
   if (!isFood && !isMed && !isCore) {
@@ -337,9 +337,16 @@ function executeUseItem() {
       }
       if (isMed) {
         if (t === 'player') {
+           // 降級傷勢
            gameState.injuryStatus = (gameState.injuryStatus === 'severe') ? 'minor' : 'none';
+           // 【新增】如果完全康復，徹底清空受傷細節描述
+           if (gameState.injuryStatus === 'none') gameState.injuryDetail = ''; 
         } else if (gameState.npcStates && gameState.npcStates[t]) {
-           gameState.npcStates[t].injuryStatus = (gameState.npcStates[t].injuryStatus === 'severe') ? 'minor' : 'none';
+           // NPC 降級傷勢
+           var npc = gameState.npcStates[t];
+           npc.injuryStatus = (npc.injuryStatus === 'severe') ? 'minor' : 'none';
+           // 【新增】清空 NPC 的受傷細節
+           if (npc.injuryStatus === 'none') npc.injuryDetail = '';
         }
       }
     });
