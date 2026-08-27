@@ -398,8 +398,30 @@
               <li><strong>飢餓枷鎖：</strong>飢餓度會隨時間自然下降。若飢餓低於 40%，你的體力最高只能恢復到 70%；低於 15% 時，每回合更會額外流失體力。</li>
               <li><strong>恢復體力：</strong>在安全的據點深眠可大幅恢復，臨時假寐則只能恢復少許。吃飽肚子是保持體力的關鍵。</li>
             </ul>
+            <h3 style="color: #4a90e2;">廢土食物字典</h3>
+            <ul>
+              <li><strong>軍用罐頭：</strong>+35 飽食 / +20 體力</li>
+              <li><strong>生肉：</strong>+20 飽食 / +5 體力</li>
+              <li><strong>能量棒/蔬菜/水果：</strong>+15 飽食 / +5~10 體力</li>
+              <li><strong>乾癟的野果：</strong>+5 飽食 / +0 體力</li>
+              <li><strong>純水：</strong>+0 飽食 / +35 體力</li>
+              <li><strong>過濾水：</strong>+0 飽食 / +20 體力</li>
+              <li><strong>半瓶礦泉水：</strong>+0 飽食 / +15 體力</li>
+            </ul>
             <h3 style="color: #4a90e2;">危險等級與夜晚</h3>
             <p>每天的 <strong>19:00 至 05:00</strong> 是喪屍最活躍的時刻，變異體出現的機率也會大增。非必要請避免在夜間進行長途遷徙。右上角的危險標籤（安全、警戒、危險）能幫助你判斷當前局勢。</p>
+          </div>
+
+                    <!-- 分頁：避難所基地運作 -->
+          <div id="manual-inventory" class="manual-pane hidden">
+            <h3 style="color: #4a90e2; margin-top: 0;">避難所基地運作</h3>
+            <p>建立並維護你的避難所基地是生存的關鍵。基地的運作需要合理的資源分配與人力配置。</p>
+            <ul>
+              <li><strong>每日消耗：</strong>每 1 單位人口每日需消耗 1 份食物與水，若倉庫庫存不足將引發飢荒與流失。</li>
+              <li><strong>勞動力限制：</strong>每 1 名人口每日僅能運作 1 座設施。</li>
+              <li><strong>智能進食：</strong>居民會優先食用易腐壞的農作物與髒水，最後才消耗軍用口糧。</li>
+              <li><strong>設施產出對象：</strong>【農場】產生肉、【水培】產蔬菜、【溫室】產水果、【集水】產過濾水、【拾荒】產廢鐵/木材、【誘捕/分離】產透明晶核。</li>
+            </ul>
           </div>
 
           <!-- 分頁：探索與物資 -->
@@ -508,6 +530,58 @@
     </div>
   </div>
 
+  <!-- ========================================= -->
+  <!-- 基地系統專屬 UI (倉庫、日報表、安全區模板) -->
+  <!-- ========================================= -->
+
+  <!-- 基地專屬倉庫彈窗 -->
+  <div id="stash-modal" class="event-modal hidden">
+    <div class="event-modal-content stash-modal-container">
+      <h2 id="stash-title" class="stash-title">📦 基地倉庫</h2>
+      <div id="stash-list" class="stash-list">
+        <!-- 物品清單由 JS 動態生成 -->
+      </div>
+      <div class="stash-footer">
+        <button id="stash-close-btn" class="btn-secondary stash-close-btn">關閉倉庫</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 基地每日日報彈窗 -->
+  <div id="daily-report-modal" class="event-modal hidden">
+    <div class="event-modal-content report-modal-container">
+      <h2 class="report-title">📻 避難所晨間匯報</h2>
+      <div id="daily-report-content" class="report-content">
+        <!-- 結算報告由 JS 動態生成 -->
+      </div>
+      <div class="report-footer">
+        <button id="daily-report-close-btn" class="btn-primary report-close-btn">確認並開始新的一天</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 安全區卡片 UI 模板 (給 JS 動態生成用，預設隱藏) -->
+  <template id="safezone-card-template">
+    <div class="profile-safezone-card">
+      <div class="profile-safezone-header">
+        <span class="profile-safezone-name"></span>
+        <span class="profile-safezone-pop"></span>
+      </div>
+      <div class="profile-safezone-facilities"></div>
+      <div class="profile-safezone-relnote hidden"></div>
+      
+      <!-- 倉庫管理按鈕區 -->
+      <div class="profile-safezone-stash-action hidden">
+        <button class="stash-access-btn" type="button">📦 管理基地倉庫</button>
+      </div>
+      <!-- 倉庫鎖定提示區 -->
+      <div class="profile-safezone-locked-msg hidden">
+        (必須抵達此地才能開啟倉庫)
+      </div>
+    </div>
+  </template>
+  <!-- ========================================= -->
+
   <div id="loading-overlay" class="loading-overlay hidden">
     <div class="loading-spinner"></div>
   </div>
@@ -534,6 +608,8 @@
 <!-- 4. 遊戲核心大腦 -->
 <script src="js/app-api.js"></script>
 <script src="js/app-engine.js"></script>
+<script src="app-base-sim.js"></script>
+<script src="js/app-base-sim.js"></script>
 
 <!-- 5. 畫面渲染與玩家互動 -->
 <script src="js/app-ui.js"></script>
@@ -541,27 +617,6 @@
 
 <!-- 6. 主程式進入點 (負責點火) -->
 <script src="js/app-main.js"></script>
-
-<!-- 安全區卡片 UI 模板 (給 JS 動態生成用) -->
-<template id="safezone-card-template">
-  <div class="profile-safezone-card">
-    <div class="profile-safezone-header">
-      <span class="profile-safezone-name"></span>
-      <span class="profile-safezone-pop"></span>
-    </div>
-    <div class="profile-safezone-facilities"></div>
-    <div class="profile-safezone-relnote hidden"></div>
-    
-    <!-- 倉庫管理按鈕區 (預設隱藏，由 JS 決定是否顯示) -->
-    <div class="profile-safezone-stash-action hidden">
-      <button class="stash-access-btn" type="button">📦 管理基地倉庫</button>
-    </div>
-    <!-- 倉庫鎖定提示區 (預設隱藏) -->
-    <div class="profile-safezone-locked-msg hidden">
-      (必須抵達此地才能開啟倉庫)
-    </div>
-  </div>
-</template>
 
 </body>
 </html>

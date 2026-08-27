@@ -1665,3 +1665,42 @@ button {
   color: #666;
   text-align: right;
 }
+
+/* =========================================
+   基地每日日報 (Daily Report) 樣式
+========================================= */
+.report-modal-container {
+  text-align: left;
+  border-top: 4px solid #f39c12; /* 廢土警告橘黃色 */
+  background-color: #1a1a1a;
+}
+
+.report-title {
+  margin-top: 0;
+  color: #f39c12;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 10px;
+}
+
+.report-content {
+  margin-top: 15px;
+  margin-bottom: 20px;
+  font-family: 'Courier New', Courier, monospace; /* 無線電報表風格 */
+  line-height: 1.6;
+  color: #e0e0e0;
+  max-height: 50vh;
+  overflow-y: auto;
+  font-size: 0.95em;
+}
+
+/* 報表文字顏色分類 */
+.report-log-title { font-weight: bold; color: #fff; margin-top: 10px; margin-bottom: 5px; font-size: 1.05em; }
+.report-log-positive { color: #4CAF50; } /* 產出、好消息 */
+.report-log-negative { color: #f44336; } /* 飢餓、死亡、掠奪 */
+.report-log-warning { color: #f39c12; }  /* 庫存不足警告 */
+.report-log-neutral { color: #aaa; }     /* 一般消耗 */
+
+.report-close-btn {
+  width: 100%;
+  font-weight: bold;
+}
