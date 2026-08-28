@@ -519,7 +519,7 @@ button { font-family: inherit; }
 /* 5. 統一的分區標題 (Section Titles) */
 .char-profile-section-title,
 .menu-section-label {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--text-dim);
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -552,7 +552,21 @@ button { font-family: inherit; }
 
 /* 角色基本資料網格 */
 .char-profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.char-profile-item { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-secondary); }
+.char-profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+/* 【修改】：調大字體至 14px，並將右側數值改為最亮的 primary 顏色 */
+.char-profile-item { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center;
+  font-size: 14px; 
+  color: var(--text-primary); 
+}
+
+/* 【新增】：專屬於終端機內容區的標籤樣式 (性別、職業等左側文字) */
+.info-panes-container .panel-label {
+  color: var(--text-secondary); /* 從最暗的 dim 稍微提亮為 secondary */
+  font-size: 13px; /* 標籤字體稍微比數值小一點點，做出層次感 */
+}
 
 /* 傷勢與異能 */
 .profile-injury-card { display: flex; align-items: center; gap: 10px; }
@@ -644,7 +658,7 @@ button { font-family: inherit; }
 .info-tabs::-webkit-scrollbar { display: none; }
 .info-tab-btn {
   flex: 1; background: transparent; color: var(--text-dim); border: none; padding: 14px 0;
-  font-size: 13px; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; text-align: center;
+  font-size: 14px; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; text-align: center;
 }
 .info-tab-btn:active { background: rgba(255, 255, 255, 0.05); }
 .info-tab-btn.active { color: var(--text-primary); border-bottom: 2px solid var(--accent-red); background: rgba(139, 30, 30, 0.1); font-weight: bold; }
