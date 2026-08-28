@@ -99,10 +99,22 @@ var WorldMemory = (function () {
     return Math.max(min, Math.min(max, val));
   }
 
-  /* ---------- 主角見聞事件寫入（world_memory_update） ---------- */
   function applyWorldMemoryUpdate(worldMemory, update, turnCount) {
     worldMemory = ensureShape(worldMemory);
     if (!update) return worldMemory;
+
+    // 【終極防呆】：如果傳進來的 update 其實被包在 world_memory_update 屬性裡，就解開它
+    if (update.world_memory_update) {
+      update = update.world_memory_update;
+    }
+
+    // 【終極防呆】：有些 AI 會把 new_safe_zone 回傳成陣列
+    var safeZonesToAdd = [];
+    if (Array.isArray(update.new_safe_zone)) {
+      safeZonesToAdd = update.new_safe_zone;
+    } else if (update.new_safe_zone && update.new_safe_zone.name) {
+      safeZonesToAdd.push(update.new_safe_zone);
+    }
 
     // 1. 建立新安全區
     if (update.new_safe_zone && update.new_safe_zone.name) {
@@ -141,6 +153,14 @@ var WorldMemory = (function () {
           }
         }
       }
+    }
+
+    // 【終極防呆】：有些 AI 會把 safe_zone_update 回傳成陣列
+    var safeZonesToUpdate = [];
+    if (Array.isArray(update.safe_zone_update)) {
+      safeZonesToUpdate = update.safe_zone_update;
+    } else if (update.safe_zone_update && update.safe_zone_update.name) {
+      safeZonesToUpdate.push(update.safe_zone_update);
     }
 
     // 2. 更新安全區 (藍圖與建材攔截)
