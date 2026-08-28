@@ -237,7 +237,7 @@ function updateDynamicVisuals() {
     "廢棄地鐵隧道": "subway.jpg",
     "大型購物中心廢墟": "mall.jpg",
     "警局軍械庫": "armory.jpg",
-    "體育館避難所": "stadium.jpg",
+    "體育館基地": "stadium.jpg",
     "自來水處理廠": "water_plant.jpg",
     "荒野廣播電台": "radio_tower.jpg",
     
@@ -535,7 +535,7 @@ function renderProfileSafezones() {
   if (zones.length === 0) {
     var emptyEl = document.createElement('div');
     emptyEl.className = 'profile-subentity-empty';
-    emptyEl.textContent = '尚未建立或發現任何安全區';
+    emptyEl.textContent = '尚未建立或發現任何基地';
     container.appendChild(emptyEl);
     return;
   }
