@@ -168,7 +168,7 @@ function applyStatusUpdate(update) {
     // 1. 定義合法的五大勢力白名單
     var VALID_FACTIONS = ['鐵幕守望者', '方舟商會', '荒原拾骸者', '靜默之子', '深層獵手'];
     
-    // 2. 建立「據點」自動對應「勢力」的轉換表
+    // 2. 建立「基地」自動對應「勢力」的轉換表
     var FACTION_ALIASES = {
       '灰堡': '鐵幕守望者',
       '方舟海上堡壘': '方舟商會',
@@ -182,7 +182,7 @@ function applyStatusUpdate(update) {
         var targetFaction = rawFaction;
         var delta = update.faction_trust_update[rawFaction];
 
-        // 偵測到 AI 使用據點名稱時，自動校正為對應勢力
+        // 偵測到 AI 使用基地名稱時，自動校正為對應勢力
         if (FACTION_ALIASES[targetFaction]) {
           targetFaction = FACTION_ALIASES[targetFaction];
         }
@@ -349,7 +349,7 @@ function executeTravel(targetLocation, dist, costType, costValue, timeCost, acti
 }
 
 function getLocationCoords(locName) {
-  // 1. 先查玩家的安全區記憶 (抓取預先分配好的 GPS 座標)
+  // 1. 先查玩家的基地記憶 (抓取預先分配好的 GPS 座標)
   if (gameState.worldMemory && gameState.worldMemory.safeZones) {
     var safeZone = gameState.worldMemory.safeZones.find(function(z) { return z.name === locName; });
     if (safeZone && typeof safeZone.x === 'number') {
