@@ -286,54 +286,78 @@ function handleEventModalClose() {
 function requestTravelTo(targetLocation) {
   if (isWaitingForAI || gameState.isDead) return;
   if (gameState.location === targetLocation) {
-    alert("📍 你已經在【" + targetLocation + "】了。"); return;
+    showEventModal('📍', '無法移動', '你已經在【' + targetLocation + '】了。'); 
+    return;
   }
   
   var currentCoords = getLocationCoords(gameState.location);
   var targetCoords = getLocationCoords(targetLocation);
   var dx = currentCoords.x - targetCoords.x;
   var dy = currentCoords.y - targetCoords.y;
-  var dist = Math.max(1, Math.round(Math.sqrt(dx * dx + dy * dy))); // 至少 1km
+  var dist = Math.max(1, Math.round(Math.sqrt(dx * dx + dy * dy))); 
   
   var activeVehicle = gameState.vehicles.find(function(v) { return v.status === 'active'; });
-  var promptText = "";
+  var costType, costValue, timeCost, canTravel = true, errorMsg = '';
   
   if (activeVehicle) {
-    var fuelNeeded = (dist / 10) * 5;
-    if (activeVehicle.fuel < fuelNeeded && activeVehicle.fuel <= 0) {
-      alert("📍 距離：" + dist + "公里。載具油量耗盡，無法開車前往。"); return;
+    costType = 'fuel';
+    costValue = parseFloat(((dist / 10) * 5).toFixed(1));
+    timeCost = Math.round(dist * 1.5);
+    if (activeVehicle.fuel < costValue && activeVehicle.fuel <= 0) {
+      canTravel = false;
+      errorMsg = '載具油量耗盡，無法開車前往。';
     }
-    activeVehicle.fuel = Math.max(0, activeVehicle.fuel - fuelNeeded);
-    activeVehicle.durability = Math.max(0, activeVehicle.durability - ((dist / 10) * 2));
-    advanceTime(dist * 1.5); // 開車時間
-    promptText = "你驅車抵達了【" + targetLocation + "】（總車程 " + dist + " 公里）。";
   } else {
-    var staminaNeeded = dist * 3;
-    if (staminaNeeded > gameState.stamina) {
-      alert("📍 距離過遠（" + dist + "公里），需要 " + staminaNeeded + " 體力。徒步前往等同自殺。請先準備載具、紮營或規劃中繼點。"); return;
+    costType = 'stamina';
+    costValue = dist * 3;
+    timeCost = dist * 12;
+    if (costValue > gameState.stamina) {
+      canTravel = false;
+      errorMsg = '體力不足以應付這段旅程。徒步前往等同自殺，請準備載具或規劃中繼點。';
     }
-    // JS 直接扣除主角與NPC體力
-    gameState.stamina = Math.max(0, gameState.stamina - staminaNeeded);
-    if (gameState.companions && gameState.npcStates) {
-      gameState.companions.forEach(function(npc) {
-        if(gameState.npcStates[npc]) gameState.npcStates[npc].stamina = Math.max(0, gameState.npcStates[npc].stamina - staminaNeeded);
-      });
-    }
-    advanceTime(dist * 12); // 徒步時間
-    promptText = "你徒步跋涉抵達了【" + targetLocation + "】（徒步 " + dist + " 公里）。";
   }
   
-  // 更新位置並關閉UI，通知AI生成新地點敘事
+  // 開啟出發確認視窗 (UI 函數定義在 app-ui.js)
+  if (typeof openTravelConfirmModal === 'function') {
+    openTravelConfirmModal(targetLocation, dist, costType, costValue, timeCost, canTravel, errorMsg, activeVehicle);
+  }
+}
+
+// 玩家點擊「確認出發」後真正執行的邏輯
+function executeTravel(targetLocation, dist, costType, costValue, timeCost, activeVehicle) {
+  if (costType === 'fuel') {
+    activeVehicle.fuel = Math.max(0, activeVehicle.fuel - costValue);
+    activeVehicle.durability = Math.max(0, activeVehicle.durability - ((dist / 10) * 2));
+  } else {
+    gameState.stamina = Math.max(0, gameState.stamina - costValue);
+    if (gameState.companions && gameState.npcStates) {
+      gameState.companions.forEach(function(npc) {
+        if(gameState.npcStates[npc]) gameState.npcStates[npc].stamina = Math.max(0, gameState.npcStates[npc].stamina - costValue);
+      });
+    }
+  }
+  
+  advanceTime(timeCost);
   gameState.location = targetLocation;
   if (gameState.exploredLocations.indexOf(targetLocation) === -1) gameState.exploredLocations.push(targetLocation);
   
-  toggleInfoPanel(false);
-  if (dom.manualModal) dom.manualModal.classList.add('hidden');
-  renderAll();
+  if (typeof toggleInfoPanel === 'function') toggleInfoPanel(false);
+  if (typeof renderAll === 'function') renderAll();
+  
+  var promptText = (costType === 'fuel' ? "你驅車抵達了【" : "你徒步跋涉抵達了【") + targetLocation + "】（總路程 " + dist + " 公里）。";
   requestNextTurn(promptText);
 }
 
 function getLocationCoords(locName) {
+  // 1. 先查玩家的安全區記憶 (抓取預先分配好的 GPS 座標)
+  if (gameState.worldMemory && gameState.worldMemory.safeZones) {
+    var safeZone = gameState.worldMemory.safeZones.find(function(z) { return z.name === locName; });
+    if (safeZone && typeof safeZone.x === 'number') {
+      return { x: safeZone.x, y: safeZone.y };
+    }
+  }
+
+  // 2. 再查系統預設大地圖 (MAP_PRESETS)
   for (var poolId in MAP_PRESETS) {
     var pool = MAP_PRESETS[poolId];
     if (pool.name === locName) return { x: pool.x, y: pool.y };
@@ -341,8 +365,10 @@ function getLocationCoords(locName) {
       if (pool.locations[i].name === locName) return { x: pool.locations[i].x, y: pool.locations[i].y };
     }
   }
+  
+  // 3. 都查不到，回傳當前大區中心點
   if (gameState.currentMapPresetId && MAP_PRESETS[gameState.currentMapPresetId]) {
     return { x: MAP_PRESETS[gameState.currentMapPresetId].x, y: MAP_PRESETS[gameState.currentMapPresetId].y };
   }
-  return { x: 0, y: 0 }; // 找不到就當作原點
+  return { x: 0, y: 0 };
 }
