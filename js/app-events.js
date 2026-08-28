@@ -179,12 +179,12 @@ function handleFreeInputSend() {
     return;
   }
 
-  // 手動建立安全區與專屬暫存點
+  // 手動建立基地與專屬暫存點
   if (text.startsWith('#makesafe ')) {
     var zoneName = text.replace('#makesafe ', '').trim();
-    if (!zoneName) zoneName = '銅礦避難所'; 
+    if (!zoneName) zoneName = '銅礦基地'; 
     
-    // 1. 建立安全區紀錄 (修正為 Array 格式)
+    // 1. 建立基地紀錄 (修正為 Array 格式)
     gameState.worldMemory = gameState.worldMemory || {};
     gameState.worldMemory.safeZones = gameState.worldMemory.safeZones || [];
     
@@ -210,7 +210,7 @@ function handleFreeInputSend() {
     }
     
     if (typeof appendGMText === 'function') {
-       appendGMText('[開發者權限] 虛空扭曲，已強制將此地註冊為安全區「' + zoneName + '」，並開闢專屬物資庫。');
+       appendGMText('[開發者權限] 虛空扭曲，已強制將此地註冊為基地「' + zoneName + '」，並開闢專屬物資庫。');
     }
     
     dom.freeInputText.value = '';
