@@ -545,7 +545,17 @@ function renderProfileSafezones() {
 
   zones.forEach(function (zone) {
     var clone = template.content.cloneNode(true); 
+    
     clone.querySelector('.profile-safezone-name').textContent = zone.name;
+    
+    // 【修改】：直接選取模板裡的按鈕並綁定事件
+    var travelBtn = clone.querySelector('.safezone-travel-btn');
+    if (travelBtn) {
+      travelBtn.onclick = function() {
+        if (typeof requestTravelTo === 'function') requestTravelTo(zone.name);
+      };
+    }
+
     clone.querySelector('.profile-safezone-pop').textContent = '人口 ' + (zone.population || 0);
     
     var facilitiesText = (zone.facilities && zone.facilities.length)
