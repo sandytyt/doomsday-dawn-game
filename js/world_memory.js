@@ -4,13 +4,6 @@
  * world_memory.js
  * 獨立管理長期世界記憶：安全區、關鍵NPC、勢力歷史、重大事件、
  * 志向系統(aspirations)、人物關係系統(relationships)。
- *
- * 志向系統：四條可疊加、不互斥的長期發展路線，AI依劇情自由判定推進。
- * 關係系統：三軸獨立數值(trust/closeness/romanticTension) + 六階段敘事節點。
- *   acquainted(初識) -> incipient(初萌)：不受天數限制，屬自然認識過程。
- *   incipient之後每個階段轉換，須已在目前階段停留至少STAGE_MIN_DAYS天，
- *   此驗證在程式碼端硬性執行，不依賴AI自行計算天數。
- * NPC死亡或失散後，關係狀態凍結（不可再變動或轉換階段），但保留供玩家回顧。
  */
 
 var WorldMemory = (function () {
@@ -22,7 +15,7 @@ var WorldMemory = (function () {
   var MAX_MAJOR_EVENTS = 60;
   var TEXT_TRUNCATE_LENGTH = 200;
   var STAGE_MIN_DAYS = 5;
-  var TRIAL_OVERDUE_DAYS = 10; // developing階段停留超過此天數，提示AI可考慮安排風險考驗
+  var TRIAL_OVERDUE_DAYS = 10; 
 
   var ASPIRATION_KEYS = ['shelterBuilder', 'cureSeeker', 'shadowHunter', 'factionLeader'];
   var ASPIRATION_LABELS = { shelterBuilder: '庇護建設者', cureSeeker: '治療探索者', shadowHunter: '暗影獵人', factionLeader: '勢力締造者' };
@@ -111,6 +104,7 @@ var WorldMemory = (function () {
     worldMemory = ensureShape(worldMemory);
     if (!update) return worldMemory;
 
+    // 1. 建立新安全區
     if (update.new_safe_zone && update.new_safe_zone.name) {
       var nz = update.new_safe_zone;
       if (!findByName(worldMemory.safeZones, nz.name)) {
@@ -122,15 +116,31 @@ var WorldMemory = (function () {
           factionRelations: {}
         });
         capList(worldMemory.safeZones, MAX_SAFE_ZONES);
+        
+        // 【機制一：自動建立同名暫存點 (倉庫)】
+        if (typeof gameState !== 'undefined') {
+          gameState.stashes = gameState.stashes || [];
+          var existingStash = gameState.stashes.find(function(s) { return s.locationName === nz.name; });
+          if (!existingStash) {
+            gameState.stashes.push({
+              id: 'base_' + Date.now(), 
+              locationName: nz.name,
+              items: [] 
+            });
+          }
+        }
       }
     }
 
+    // 2. 更新安全區 (藍圖與建材攔截)
     if (update.safe_zone_update && update.safe_zone_update.name) {
       var su = update.safe_zone_update;
       var zone = findByName(worldMemory.safeZones, su.name);
+      
       if (zone) {
         if (typeof su.population === 'number') zone.population = su.population;
-        // 【新增】：藍圖建造成本攔截機制
+        
+        // 【機制二：藍圖建造成本攔截機制】
         if (Array.isArray(su.facilities_add)) {
           for (var i = 0; i < su.facilities_add.length; i++) {
             var fName = su.facilities_add[i];
@@ -138,59 +148,40 @@ var WorldMemory = (function () {
             if (zone.facilities.indexOf(fName) === -1) {
               var canBuild = true;
               
-              // 檢查是否有這份設施的藍圖
               if (window.FACILITY_BLUEPRINTS && window.FACILITY_BLUEPRINTS[fName]) {
                 var bp = window.FACILITY_BLUEPRINTS[fName];
-                
-                // 防呆：確保 stashes 陣列存在
-                gameState.stashes = gameState.stashes || []; 
                 var stash = gameState.stashes.find(function(s) { return s.locationName === zone.name; });
                 
                 if (bp.cost && Object.keys(bp.cost).length > 0) {
                   if (!stash || !stash.items) {
-                    canBuild = false; // 根本沒倉庫就不能蓋
+                    canBuild = false; 
                     if (typeof appendGMText === 'function') appendGMText('[系統警告] 缺乏基地倉庫，無法建設「' + fName + '」。');
                   } else {
                     var missing = [];
-                    // 檢查所有需要的材料是否足夠
                     for (var mat in bp.cost) {
                       var requiredQty = bp.cost[mat];
                       var matItem = stash.items.find(function(item) { return item.name === mat; });
                       var currentQty = matItem ? matItem.quantity : 0;
-                      if (currentQty < requiredQty) {
-                        missing.push(mat + ' x' + (requiredQty - currentQty));
-                      }
+                      if (currentQty < requiredQty) missing.push(mat + ' x' + (requiredQty - currentQty));
                     }
                     
                     if (missing.length > 0) {
-                      canBuild = false; // 材料不足，攔截！
-                      if (typeof appendGMText === 'function') {
-                        appendGMText('[系統警告] 倉庫建材不足 (缺少 ' + missing.join(', ') + ')，「' + fName + '」建設失敗。');
-                      }
+                      canBuild = false;
+                      if (typeof appendGMText === 'function') appendGMText('[系統警告] 倉庫建材不足 (缺少 ' + missing.join(', ') + ')，「' + fName + '」建設失敗。');
                     } else {
-                      // 材料充足，扣除材料
                       var changes = [];
-                      for (var matCost in bp.cost) {
-                        changes.push({ name: matCost, quantity: bp.cost[matCost], action: 'remove' });
-                      }
-                      if (typeof applyInventoryChangesTo === 'function') {
-                        applyInventoryChangesTo(stash.items, changes);
-                      }
-                      if (typeof appendGMText === 'function') {
-                        appendGMText('[基地建設] 消耗了建材，成功在 ' + zone.name + ' 建造了「' + fName + '」！');
-                      }
+                      for (var matCost in bp.cost) changes.push({ name: matCost, quantity: bp.cost[matCost], action: 'remove' });
+                      if (typeof applyInventoryChangesTo === 'function') applyInventoryChangesTo(stash.items, changes);
+                      if (typeof appendGMText === 'function') appendGMText('[基地建設] 消耗了建材，成功在 ' + zone.name + ' 建造了「' + fName + '」！');
                     }
                   }
                 }
               }
-              
-              // 只有材料足夠，或是沒有限制的設施，才會真正加入基地
-              if (canBuild) {
-                zone.facilities.push(fName);
-              }
+              if (canBuild) zone.facilities.push(fName);
             }
           }
         }
+        
         if (Array.isArray(su.facilities_remove)) {
           zone.facilities = zone.facilities.filter(function (f) {
             return su.facilities_remove.indexOf(f) === -1;
@@ -332,16 +323,9 @@ var WorldMemory = (function () {
   function getOrCreateRelationship(worldMemory, npcName, currentDay) {
     if (!worldMemory.relationships[npcName]) {
       worldMemory.relationships[npcName] = {
-        gender: '',
-        trust: 0,
-        closeness: 0,
-        romanticTension: 0,
-        stage: 'acquainted',
-        stageEnteredDay: currentDay,
-        background: [],
-        milestones: [],
-        frozen: false,
-        npcStatus: 'alive'
+        gender: '', trust: 0, closeness: 0, romanticTension: 0,
+        stage: 'acquainted', stageEnteredDay: currentDay, background: [], milestones: [],
+        frozen: false, npcStatus: 'alive'
       };
     }
     return worldMemory.relationships[npcName];
@@ -371,7 +355,6 @@ var WorldMemory = (function () {
     var rel = getOrCreateRelationship(worldMemory, update.npc_name, currentDay);
 
     if (rel.frozen) {
-      // NPC已死亡或失散，關係凍結，僅允許補充背景資訊，不再變動數值或階段
       if (update.background_note) {
         rel.background.push({ text: truncateText(update.background_note), day: currentDay });
         if (rel.background.length > 30) rel.background.splice(0, rel.background.length - 30);
