@@ -71,20 +71,19 @@ function renderAll() {
     dom.panelItemFaction.classList.toggle('hidden', !hasFactionContact);
   }
 
-  if (dom.npcSectionToggle) {
+  // 【更新】將舊的手風琴按鈕判斷，改為新版終端機頁籤 (Tabs)
+  var npcTabBtn = document.querySelector('.info-tab-btn[data-target="info-npcs"]');
+  if (npcTabBtn) {
     var wmForVisibility = typeof WorldMemory !== 'undefined' ? WorldMemory.ensureShape(gameState.worldMemory) : (gameState.worldMemory || {});
     var npcCount = wmForVisibility.relationships ? Object.keys(wmForVisibility.relationships).length : 0;
-    var npcSpan = dom.npcSectionToggle.querySelector('span');
-    if (npcSpan) npcSpan.textContent = '📇 人物檔案（' + npcCount + '）';
+    npcTabBtn.textContent = '📇 隊友（' + npcCount + '）';
   }
 
-  if (dom.vehicleSectionToggle) {
-    // 【防呆】確保載具陣列存在
+  var vehicleTabBtn = document.querySelector('.info-tab-btn[data-target="info-vehicles"]');
+  if (vehicleTabBtn) {
     var safeVehicles = gameState.vehicles || [];
-    var hasVehicle = safeVehicles.some(function (v) { return v && v.status !== 'lost'; });
     var vehicleCount = safeVehicles.filter(function (v) { return v && v.status !== 'lost'; }).length;
-    var vSpan = dom.vehicleSectionToggle.querySelector('span');
-    if (vSpan) vSpan.textContent = '🚗 載具（' + vehicleCount + '）';
+    vehicleTabBtn.textContent = '🚗 載具（' + vehicleCount + '）';
   }
 
   // 渲染所有子面板
@@ -603,10 +602,10 @@ function renderVehiclePanel() {
   var safeVehicles = gameState.vehicles || [];
   var activeVehicles = safeVehicles.filter(function (v) { return v && v.status !== 'lost'; });
   
-  // 【修復】把標題數字更新移進來，確保只要重繪清單就會同步更新標題
-  if (dom.vehicleSectionToggle) {
-    var vSpan = dom.vehicleSectionToggle.querySelector('span');
-    if (vSpan) vSpan.textContent = '🚗 載具（' + activeVehicles.length + '）';
+  // 【適應新版 Tab UI】把標題數字更新移進來，確保只要重繪清單就會同步更新頁籤
+  var vehicleTabBtn = document.querySelector('.info-tab-btn[data-target="info-vehicles"]');
+  if (vehicleTabBtn) {
+    vehicleTabBtn.textContent = '🚗 載具（' + activeVehicles.length + '）';
   }
 
   if (activeVehicles.length === 0) {
