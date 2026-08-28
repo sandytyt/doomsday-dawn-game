@@ -5,7 +5,7 @@
   --border-color: #3a3a3a;
   --text-primary: #e8e4dc;
   --text-secondary: #9a9a9a;
-  --text-dim: #6b6b6b;
+  --text-dim: #999999;
   --accent-red: #8b1e1e;
   --accent-red-bright: #c62828;
   --accent-amber: #b8860b;
@@ -284,10 +284,24 @@ button {
 
 .stamina-bar-bg {
   flex: 1;
-  height: 8px;
-  background: var(--bg-elevated);
-  border-radius: 4px;
+  height: 10px; /* 稍微加粗，原本 8px */
+  background: rgba(0, 0, 0, 0.4); /* 加深底色對比 */
+  border-radius: 5px;
   overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.5); /* 增加凹陷質感 */
+}
+
+/* 【新增】頂部右側按鈕的統一底板與放大觸控範圍 */
+#status-bar .icon-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-left: 4px; /* 拉開按鈕間距 */
+  transition: all 0.2s ease;
+}
+#status-bar .icon-btn:active {
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .stamina-bar-fill {
@@ -747,13 +761,20 @@ button {
 
 .btn-free-toggle {
   width: 100%;
-  padding: 11px;
-  background: transparent;
-  border: 1px dashed var(--border-color);
+  text-align: left; /* 與選項一致靠左 */
+  padding: 13px 16px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--text-dim); /* 加上中性的灰色風險邊條 */
   border-radius: 10px;
-  color: var(--text-secondary);
-  font-size: 13px;
+  color: var(--text-primary);
+  font-size: 14px;
   cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-free-toggle:active {
+  background: #333;
+  border-color: var(--text-dim);
 }
 
 .free-input-row {
@@ -1310,6 +1331,10 @@ button {
 }
 
 .char-profile-grid {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 12px 14px;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
@@ -1329,9 +1354,13 @@ button {
 }
 
 .profile-subentity-empty {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
   font-size: 12px;
   color: var(--text-dim);
-  padding: 4px 0;
 }
 
 .profile-safezone-card, .profile-faction-card {
