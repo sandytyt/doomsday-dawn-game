@@ -130,10 +130,64 @@ var WorldMemory = (function () {
       var zone = findByName(worldMemory.safeZones, su.name);
       if (zone) {
         if (typeof su.population === 'number') zone.population = su.population;
+        // 【新增】：藍圖建造成本攔截機制
         if (Array.isArray(su.facilities_add)) {
           for (var i = 0; i < su.facilities_add.length; i++) {
-            if (zone.facilities.indexOf(su.facilities_add[i]) === -1) {
-              zone.facilities.push(su.facilities_add[i]);
+            var fName = su.facilities_add[i];
+            
+            if (zone.facilities.indexOf(fName) === -1) {
+              var canBuild = true;
+              
+              // 檢查是否有這份設施的藍圖
+              if (window.FACILITY_BLUEPRINTS && window.FACILITY_BLUEPRINTS[fName]) {
+                var bp = window.FACILITY_BLUEPRINTS[fName];
+                
+                // 防呆：確保 stashes 陣列存在
+                gameState.stashes = gameState.stashes || []; 
+                var stash = gameState.stashes.find(function(s) { return s.locationName === zone.name; });
+                
+                if (bp.cost && Object.keys(bp.cost).length > 0) {
+                  if (!stash || !stash.items) {
+                    canBuild = false; // 根本沒倉庫就不能蓋
+                    if (typeof appendGMText === 'function') appendGMText('[系統警告] 缺乏基地倉庫，無法建設「' + fName + '」。');
+                  } else {
+                    var missing = [];
+                    // 檢查所有需要的材料是否足夠
+                    for (var mat in bp.cost) {
+                      var requiredQty = bp.cost[mat];
+                      var matItem = stash.items.find(function(item) { return item.name === mat; });
+                      var currentQty = matItem ? matItem.quantity : 0;
+                      if (currentQty < requiredQty) {
+                        missing.push(mat + ' x' + (requiredQty - currentQty));
+                      }
+                    }
+                    
+                    if (missing.length > 0) {
+                      canBuild = false; // 材料不足，攔截！
+                      if (typeof appendGMText === 'function') {
+                        appendGMText('[系統警告] 倉庫建材不足 (缺少 ' + missing.join(', ') + ')，「' + fName + '」建設失敗。');
+                      }
+                    } else {
+                      // 材料充足，扣除材料
+                      var changes = [];
+                      for (var matCost in bp.cost) {
+                        changes.push({ name: matCost, quantity: bp.cost[matCost], action: 'remove' });
+                      }
+                      if (typeof applyInventoryChangesTo === 'function') {
+                        applyInventoryChangesTo(stash.items, changes);
+                      }
+                      if (typeof appendGMText === 'function') {
+                        appendGMText('[基地建設] 消耗了建材，成功在 ' + zone.name + ' 建造了「' + fName + '」！');
+                      }
+                    }
+                  }
+                }
+              }
+              
+              // 只有材料足夠，或是沒有限制的設施，才會真正加入基地
+              if (canBuild) {
+                zone.facilities.push(fName);
+              }
             }
           }
         }
