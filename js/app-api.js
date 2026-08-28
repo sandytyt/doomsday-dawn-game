@@ -225,6 +225,20 @@ function handleAIResponse(response) {
   appendGMText(narrative);
   applyStatusUpdate(status_update);
 
+  // 建立基地後，強制將主角位置移動到基地內部
+  if (response.world_memory_update && response.world_memory_update.new_safe_zone) {
+    var nz = response.world_memory_update.new_safe_zone;
+    // 如果 AI 回傳的是陣列，就抓第一筆；如果是物件，就直接用
+    var targetZone = Array.isArray(nz) ? nz[0] : nz;
+    
+    if (targetZone && targetZone.name) {
+      gameState.location = targetZone.name; // 主角自動進入新建的基地
+      if (gameState.exploredLocations.indexOf(targetZone.name) === -1) {
+        gameState.exploredLocations.push(targetZone.name);
+      }
+    }
+  }
+
   gameState.turnCount += 1;
   gameState.recentTurns.push({ turn: gameState.turnCount, narrative: narrative, action: gameState.lastPlayerAction || '(開局)' });
   if (gameState.recentTurns.length > CONFIG.MAX_RECENT_TURNS) {
