@@ -1355,13 +1355,10 @@ button {
 
 /* 3. 空狀態提示 (尚未建立安全區等) */
 .profile-subentity-empty {
-  background: var(--bg-elevated);
-  border: 1px dashed var(--border-color); /* 用虛線區分它是空的 */
-  border-radius: 8px;
-  padding: 13px 14px;
-  text-align: center;
-  font-size: 13px;
-  color: var(--text-dim);
+  font-size: 12px;
+  color: var(--text-dim);
+  text-align: center;
+  padding: 8px 0;
 }
 
 .profile-safezone-header, .profile-faction-header {
