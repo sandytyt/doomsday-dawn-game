@@ -32,7 +32,7 @@ window.MANUAL_TEMPLATE = `
           <p>在這個末世，你的體力決定了你能走多遠。每一次行動（如搜索、戰鬥、趕路）都會消耗體力。當體力低於 20 時，你將無法奔跑，甚至可能在危機中暈厥。</p>
           <ul>
             <li><strong>飢餓枷鎖：</strong>飢餓度會隨時間自然下降。若飢餓低於 40%，你的體力最高只能恢復到 70%；低於 15% 時，每回合更會額外流失體力。</li>
-            <li><strong>恢復體力：</strong>在安全的據點深眠可大幅恢復，臨時假寐則只能恢復少許。吃飽肚子是保持體力的關鍵。</li>
+            <li><strong>恢復體力：</strong>在安全的基地深眠可大幅恢復，臨時假寐則只能恢復少許。吃飽肚子是保持體力的關鍵。</li>
           </ul>
           <h3 style="color: #4a90e2;">廢土食物字典</h3>
           <ul>
@@ -48,9 +48,9 @@ window.MANUAL_TEMPLATE = `
           <p>每天的 <strong>19:00 至 05:00</strong> 是喪屍最活躍的時刻，變異體出現的機率也會大增。非必要請避免在夜間進行長途遷徙。右上角的危險標籤（安全、警戒、危險）能幫助你判斷當前局勢。</p>
         </div>
 
-        <!-- 分頁：避難所基地運作 (修復 ID 衝突) -->
+        <!-- 分頁：基地基地運作 (修復 ID 衝突) -->
         <div id="manual-base" class="manual-pane hidden">
-          <h3 style="color: #f39c12; margin-top: 0;">🏕️ 避難所建設與藍圖系統</h3>
+          <h3 style="color: #f39c12; margin-top: 0;">🏕️ 基地建設與藍圖系統</h3>
           <p>基地是你在廢土中的最後堡壘，當你指示建立設施時，系統將自動從倉庫扣除對應建材，若材料不足則會建造失敗。</p>
           <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 0.9em; text-align: left;">
             <tr style="border-bottom: 1px solid #444; color: #4a90e2;">
