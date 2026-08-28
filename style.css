@@ -1331,10 +1331,10 @@ button {
 }
 
 .char-profile-grid {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
-  padding: 12px 14px;
+  padding: 13px 14px;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
@@ -1353,21 +1353,15 @@ button {
   gap: 8px;
 }
 
+/* 3. 空狀態提示 (尚未建立安全區等) */
 .profile-subentity-empty {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px dashed rgba(255, 255, 255, 0.15);
+  background: var(--bg-elevated);
+  border: 1px dashed var(--border-color); /* 用虛線區分它是空的 */
   border-radius: 8px;
-  padding: 12px;
+  padding: 13px 14px;
   text-align: center;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-dim);
-}
-
-.profile-safezone-card, .profile-faction-card {
-  background: var(--bg-panel);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 8px 10px;
 }
 
 .profile-safezone-header, .profile-faction-header {
@@ -1403,14 +1397,28 @@ button {
 .profile-faction-trust.trust-negative { color: #e57373; }
 .profile-faction-trust.trust-neutral { color: var(--text-dim); }
 
+/* 2. 傷勢、異能、安全區、勢力卡片統一外觀 */
+.profile-injury-card,
+.profile-awakening-card,
+.profile-safezone-card,
+.profile-faction-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 13px 14px;
+}
+
+/* 4. 微調卡片內部的排版，確保和新 padding 契合 */
 .profile-injury-card {
   display: flex;
   align-items: center;
+  gap: 10px;
+}
+
+.profile-awakening-card {
+  display: flex;
+  flex-direction: column;
   gap: 8px;
-  background: var(--bg-panel);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 8px 10px;
 }
 
 .profile-injury-level {
@@ -1434,16 +1442,6 @@ button {
 .profile-injury-detail {
   font-size: 12.5px;
   color: var(--text-secondary);
-}
-
-.profile-awakening-card {
-  background: var(--bg-panel);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 8px 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
 }
 
 .profile-awakening-row {
