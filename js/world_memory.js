@@ -108,9 +108,20 @@ var WorldMemory = (function () {
     if (update.new_safe_zone && update.new_safe_zone.name) {
       var nz = update.new_safe_zone;
       if (!findByName(worldMemory.safeZones, nz.name)) {
+        
+        // 【新增】：10個預先設定好的黃金安全區座標 (廣泛散佈於地圖各處)
+        var PREDEFINED_COORDS = [
+          {x: -30, y: 20}, {x: 40, y: -20}, {x: 10, y: 60}, {x: -50, y: -30}, {x: 25, y: 25},
+          {x: -20, y: -50}, {x: 55, y: 40}, {x: -10, y: -10}, {x: -60, y: 30}, {x: 60, y: -40}
+        ];
+        // 依照目前建立的安全區數量，依序分配座標 (超過10個就從頭循環)
+        var coordIdx = worldMemory.safeZones.length % PREDEFINED_COORDS.length;
+
         worldMemory.safeZones.push({
           name: nz.name,
           location: nz.location || '',
+          x: PREDEFINED_COORDS[coordIdx].x,
+          y: PREDEFINED_COORDS[coordIdx].y,
           population: typeof nz.population === 'number' ? nz.population : 0,
           facilities: Array.isArray(nz.facilities) ? nz.facilities.slice() : [],
           factionRelations: {}
