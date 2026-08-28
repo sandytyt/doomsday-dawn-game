@@ -2,7 +2,7 @@
 
 /*
  * world_memory.js
- * 獨立管理長期世界記憶：安全區、關鍵NPC、勢力歷史、重大事件、
+ * 獨立管理長期世界記憶：基地、關鍵NPC、勢力歷史、重大事件、
  * 志向系統(aspirations)、人物關係系統(relationships)。
  */
 
@@ -116,17 +116,17 @@ var WorldMemory = (function () {
       safeZonesToAdd.push(update.new_safe_zone);
     }
 
-    // 1. 建立新安全區
+    // 1. 建立新基地
     if (update.new_safe_zone && update.new_safe_zone.name) {
       var nz = update.new_safe_zone;
       if (!findByName(worldMemory.safeZones, nz.name)) {
         
-        // 【新增】：10個預先設定好的黃金安全區座標 (廣泛散佈於地圖各處)
+        // 【新增】：10個預先設定好的黃金基地座標 (廣泛散佈於地圖各處)
         var PREDEFINED_COORDS = [
           {x: -30, y: 20}, {x: 40, y: -20}, {x: 10, y: 60}, {x: -50, y: -30}, {x: 25, y: 25},
           {x: -20, y: -50}, {x: 55, y: 40}, {x: -10, y: -10}, {x: -60, y: 30}, {x: 60, y: -40}
         ];
-        // 依照目前建立的安全區數量，依序分配座標 (超過10個就從頭循環)
+        // 依照目前建立的基地數量，依序分配座標 (超過10個就從頭循環)
         var coordIdx = worldMemory.safeZones.length % PREDEFINED_COORDS.length;
 
         worldMemory.safeZones.push({
@@ -163,7 +163,7 @@ var WorldMemory = (function () {
       safeZonesToUpdate.push(update.safe_zone_update);
     }
 
-    // 2. 更新安全區 (藍圖與建材攔截)
+    // 2. 更新基地 (藍圖與建材攔截)
     if (update.safe_zone_update && update.safe_zone_update.name) {
       var su = update.safe_zone_update;
       var zone = findByName(worldMemory.safeZones, su.name);
@@ -438,7 +438,7 @@ var WorldMemory = (function () {
         var relNote = z.factionRelations && (z.factionRelations.note || z.factionRelations.backgroundNote);
         return z.name + '（位於' + (z.location || '未知位置') + '，人口約' + z.population + '人，' + facilitiesText + (relNote ? '，' + relNote : '') + '）';
       });
-      parts.push('已知安全區： ' + zoneTexts.join('； '));
+      parts.push('已知基地： ' + zoneTexts.join('； '));
     }
 
     if (worldMemory.keyNpcs.length > 0) {
