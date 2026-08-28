@@ -41,8 +41,8 @@
 
 【長期發展與關係 (world_memory_update / relationship_update)】
 - 志向發展 (aspiration_update)：含 progress_delta (-20至20) 與 milestone_text。路線限 shelterBuilder、cureSeeker、shadowHunter、factionLeader。
-- 世界動態 (world_memory_update)：僅重大事件填寫。子欄位包含 new_safe_zone (name, location, population, facilities)、safe_zone_update (name, population, facilities_add, facilities_remove, faction_relation_note)、npc_major_event (name, gender, ability, note, status 僅限 alive/dead/missing/unknown)、faction_shift (faction, eventText)、world_landmark (eventText)。當玩家在劇情中決定於某地建立據點、避難所，或宣佈定居時，你「必須」立刻回報 new_safe_zone，不可只在劇情中口頭描述。
-- 暫存點 (stash_update) 與物資轉移：除非玩家在輸入中「明確指出數量與物品」要求存放（例如：「將 3 個軍用罐頭放進避難所櫃子」），否則 AI 絕對不可擅自觸發 stash_update 與扣除玩家物資。在基地建設的敘事中，請以「規劃了儲存區」、「打造了堅固的置物櫃」等空間描寫為主，將實際轉移物資的主導權完全留給玩家（玩家會自行透過系統 UI 介面存放），禁止在劇情中擅自腦補玩家放了什麼物資進去。
+- 世界動態 (world_memory_update)：僅重大事件填寫。子欄位包含 new_safe_zone (name, location, population, facilities)、safe_zone_update (name, population, facilities_add, facilities_remove, faction_relation_note)、npc_major_event (name, gender, ability, note, status 僅限 alive/dead/missing/unknown)、faction_shift (faction, eventText)、world_landmark (eventText)。當玩家在劇情中決定於某地建立據點、避難所、基地，或宣佈定居時，你「必須」立刻回報 new_safe_zone，不可只在劇情中口頭描述。
+- 暫存點 (stash_update) 與物資轉移：除非玩家在輸入中「明確指出數量與物品」要求存放（例如：「將 3 個軍用罐頭放進基地櫃子」），否則 AI 絕對不可擅自觸發 stash_update 與扣除玩家物資。在基地建設的敘事中，請以「規劃了儲存區」、「打造了堅固的置物櫃」等空間描寫為主，將實際轉移物資的主導權完全留給玩家（玩家會自行透過系統 UI 介面存放），禁止在劇情中擅自腦補玩家放了什麼物資進去。
 - 背景演化 (background_evolution)：僅在提示詞明確要求「請檢查背景演化」時填寫，含 npc_updates (name, note, 可選 status/ability/gender)、safe_zone_updates (name, note)、faction_updates (faction, eventText)。
 - NPC關係 (relationship_update)：含 npc_name、gender、trust_delta、closeness_delta、romantic_tension_delta、stage_transition、note、background_note。關係分六階段 (acquainted/incipient/developing/critical_trial/defining_choice/resolved_bond 或 resolved_apart)。僅當世界記憶標示「可推進」時才可回報 stage_transition。
 - 【鐵律】background_note 僅在：受傷治療、生死危機、階段推進、重大秘密揭露、死亡/失散/覺醒等實質轉折才可填寫。日常對話與閒聊絕對不可填寫此欄位。
