@@ -1,6 +1,5 @@
 'use strict';
 
-/* STREAMING_CHUNK:Rendering main status UI... */
 function renderAll() {
   var testTag = gameState.isTestMode ? '🧪 ' : '';
   dom.statusTime.textContent = testTag + '⏱ 第' + gameState.time.day + '天 ' + pad2(gameState.time.hour) + ':' + pad2(gameState.time.minute);
@@ -72,34 +71,39 @@ function renderAll() {
     dom.panelItemFaction.classList.toggle('hidden', !hasFactionContact);
   }
 
-  /* STREAMING_CHUNK:Updating Tab badges... */
-  var npcTabBtn = document.querySelector('.info-tab-btn[data-target="info-npcs"]');
-  if (npcTabBtn) {
+  if (dom.npcSectionToggle) {
     var wmForVisibility = typeof WorldMemory !== 'undefined' ? WorldMemory.ensureShape(gameState.worldMemory) : (gameState.worldMemory || {});
     var npcCount = wmForVisibility.relationships ? Object.keys(wmForVisibility.relationships).length : 0;
-    npcTabBtn.textContent = '隊友(' + npcCount + ')';
+    var npcSpan = dom.npcSectionToggle.querySelector('span');
+    if (npcSpan) npcSpan.textContent = '📇 人物檔案（' + npcCount + '）';
   }
 
-  var vehicleTabBtn = document.querySelector('.info-tab-btn[data-target="info-vehicles"]');
-  if (vehicleTabBtn) {
+  if (dom.vehicleSectionToggle) {
+    // 【防呆】確保載具陣列存在
     var safeVehicles = gameState.vehicles || [];
+    var hasVehicle = safeVehicles.some(function (v) { return v && v.status !== 'lost'; });
     var vehicleCount = safeVehicles.filter(function (v) { return v && v.status !== 'lost'; }).length;
-    vehicleTabBtn.textContent = '載具(' + vehicleCount + ')';
+    var vSpan = dom.vehicleSectionToggle.querySelector('span');
+    if (vSpan) vSpan.textContent = '🚗 載具（' + vehicleCount + '）';
   }
 
+  // 渲染所有子面板
   if (typeof renderCharProfile === 'function') renderCharProfile();
   renderItemsAccordion();
   if (typeof renderNpcPanel === 'function') renderNpcPanel();
   renderVehiclePanel();
 
+  // 更新動態視覺 (圖片切換)
   if (typeof updateDynamicVisuals === 'function') updateDynamicVisuals();
 }
 
-/* STREAMING_CHUNK:Appending text elements... */
 function appendGMText(text) {
   var el = document.createElement('div');
+  
+  // 預設樣式
   var classNames = 'narrative-entry gm-text';
   
+  // 偵測開頭並加入專屬樣式
   if (text.startsWith('[系統]')) {
     classNames += ' system-text';
   } else if (text.startsWith('[開發者權限]')) {
@@ -131,7 +135,6 @@ function showTyping(show) {
   if (show) scrollToBottom();
 }
 
-/* STREAMING_CHUNK:Rendering interaction options... */
 function renderOptions(options) {
   gameState.lastOptions = options || [];
   dom.optionsContainer.innerHTML = '';
@@ -174,7 +177,6 @@ function applyOptionsDisplayMode() {
   dom.actionCollapsedBar.classList.toggle('hidden', !optionsMiniMode);
 }
 
-/* STREAMING_CHUNK:Modal dialogs... */
 function showEventModal(icon, title, text) {
   dom.eventModalIcon.textContent = icon;
   dom.eventModalTitle.textContent = title;
@@ -197,6 +199,7 @@ function updateDynamicVisuals() {
   var currentLoc = gameState.location || "未知";
   var currentZone = "未知";
   
+  // 1. 反推目前所在地屬於哪個大區域
   for (var poolId in MAP_PRESETS) {
     var pool = MAP_PRESETS[poolId];
     if (pool.name === currentLoc || pool.locations.some(function(l) { return l.name === currentLoc; })) {
@@ -208,6 +211,7 @@ function updateDynamicVisuals() {
      currentZone = gameState.currentMapPresetId;
   }
 
+  // 2. 圖片檔名對應字典 (大區域背景)
   var zoneBgMap = {
     "維爾赫姆市": "wilhelm_city.jpg",
     "灰堡": "greywall.jpg",
@@ -217,7 +221,9 @@ function updateDynamicVisuals() {
     "方舟海上堡壘": "ark_fortress.jpg"
   };
 
+  // 3. 圖片檔名對應字典 (具體小地點 - 可隨時擴充)
   var specificLocationBgMap = {
+    // 開局常見地點
     "荒廢鐵路": "railway.jpg",
     "荒廢公路": "highway.jpg",
     "市郊工業區": "industrial.jpg",
@@ -234,25 +240,30 @@ function updateDynamicVisuals() {
     "體育館避難所": "stadium.jpg",
     "自來水處理廠": "water_plant.jpg",
     "荒野廣播電台": "radio_tower.jpg",
+    
+    // 大勢力標誌性地標
     "廢棄仁愛醫院": "hospital.jpg",
     "地下彈藥庫": "ammo_bunker.jpg",
-    "拾荒者黑市": "black_market.jpg", 
+    "拾荒者 গণতান্ত্রিক": "black_market.jpg", // 注意：如果你前面用的是 拾荒者黑市，確保這對應一致
     "懺悔地牢": "dungeon.jpg",
     "通訊雷達塔": "radar_dish.jpg",
     "核心拍賣所": "auction_hall.jpg"
   };
   
+  // 決定最終背景：先找「具體地點」，找不到找「大區背景」，再沒有就「預設背景」
   var finalBgFileName = specificLocationBgMap[currentLoc] || zoneBgMap[currentZone] || "default.jpg";
   
   if (appContainer) {
     appContainer.style.backgroundImage = "url('images/bg/" + finalBgFileName + "')";
   }
 
+  // 4. 處理主角頭像切換與覺醒發光特效
   var avatarBox = document.getElementById('player-avatar-box');
   if (avatarBox && gameState.charSetup) {
     var gender = (gameState.charSetup.gender === '女性') ? 'female' : 'male';
     var bgType = gameState.charSetup.backgroundType;
     
+    // 【修改重點】：防呆機制，一般背景或無背景時，套用 survivor
     if (!bgType || bgType === 'generalist') {
       bgType = 'survivor';
     }
@@ -268,7 +279,6 @@ function updateDynamicVisuals() {
   }
 }
 
-/* STREAMING_CHUNK:Rendering character profile... */
 function renderCharProfile() {
   var c = gameState.charSetup;
   if (dom.profileName) dom.profileName.textContent = c.name || '未命名';
@@ -281,10 +291,12 @@ function renderCharProfile() {
   renderProfileAwakening();
   renderProfileSafezones();
   renderProfileFactions();
+  renderProfileExploredLocations();
 }
 
 function renderProfileProficiency() {
   if (!dom.charProfileBody) return;
+  // 檢查是否已存在，避免重複建立
   var existing = document.getElementById('profile-proficiency-section');
   if (existing) existing.remove();
 
@@ -323,6 +335,165 @@ function renderProfileInjury() {
   }
 }
 
+// 用來記憶玩家展開了哪些地區的手風琴狀態
+var expandedLocationGroups = {};
+
+function renderProfileExploredLocations() {
+  var container = document.getElementById('profile-explored-list');
+  if (!container) return;
+  container.innerHTML = '';
+  
+  if (!gameState.exploredLocations || gameState.exploredLocations.length === 0) {
+    var emptyEl = document.createElement('div');
+    emptyEl.className = 'profile-subentity-empty';
+    emptyEl.textContent = '尚未探索任何具體地點';
+    container.appendChild(emptyEl);
+    return;
+  }
+
+  // 1. 智能分組演算法：將地點依長度排序，最短的當作主區域基礎
+  var sortedLocs = gameState.exploredLocations.slice().sort(function(a, b) {
+    return a.length - b.length;
+  });
+  
+  // 1. 定義遊戲中的「主要大區關鍵字」（你可以隨時自由擴充）
+  var REGION_ANCHORS = [
+    '沿海漁村', 
+    '內陸荒原', 
+    '荒原鎮群', 
+    '荒原深處', 
+    '廢棄村落', 
+    '深谷中繼站', 
+    '醫療站'
+  ];
+  
+  var groups = {};
+  
+  // 2. 只要地點名稱「包含」大區關鍵字，就自動歸類進去
+  gameState.exploredLocations.forEach(function(loc) {
+    var matchedGroup = null;
+    
+    for (var i = 0; i < REGION_ANCHORS.length; i++) {
+      // 使用 indexOf !== -1，代表只要字串中有出現該關鍵字就算數 (不限字首)
+      if (loc.indexOf(REGION_ANCHORS[i]) !== -1) {
+        matchedGroup = REGION_ANCHORS[i];
+        break;
+      }
+    }
+    
+    // 如果有對應到大區，就放入該大區；如果沒有，就把自己當作獨立的群組
+    var finalGroupName = matchedGroup ? matchedGroup : loc;
+    
+    if (!groups[finalGroupName]) {
+      groups[finalGroupName] = [];
+    }
+    // 避免群組標題自己又重複出現在清單中 (可選)
+    if (loc !== matchedGroup) {
+       groups[finalGroupName].push(loc);
+    } else if (groups[finalGroupName].length === 0) {
+       groups[finalGroupName].push(loc);
+    }
+  });
+
+  // 2. 限制容器高度並加入滾動條，防止撐爆畫面
+  container.style.maxHeight = '350px';
+  container.style.overflowY = 'auto';
+  container.style.paddingRight = '5px'; // 預留滾動條空間
+
+  // 3. 渲染分組介面
+  for (var groupName in groups) {
+    if (Object.prototype.hasOwnProperty.call(groups, groupName)) {
+      (function(gName, locs) {
+        var groupDiv = document.createElement('div');
+        groupDiv.style.marginBottom = '8px';
+
+        // 如果該群組只有 1 個地點，直接顯示單一按鈕
+        if (locs.length === 1) {
+          groupDiv.appendChild(createLocationButton(locs[0]));
+        } else {
+          // 如果有多個地點，建立手風琴摺疊標題
+          var header = document.createElement('div');
+          var isExpanded = expandedLocationGroups[gName] || false;
+          
+          header.style.display = 'flex';
+          header.style.justifyContent = 'space-between';
+          header.style.alignItems = 'center';
+          header.style.padding = '8px 12px';
+          header.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+          header.style.borderLeft = '3px solid #4a90e2';
+          header.style.borderRadius = '4px';
+          header.style.cursor = 'pointer';
+          header.style.color = '#e0e0e0';
+          
+          header.innerHTML = '<span style="font-weight:bold;">🗺️ ' + escapeHtml(gName) + ' 地區</span>' + 
+                             '<span style="font-size: 0.8em; color: #888;">' + locs.length + ' 處 ' + (isExpanded ? '▼' : '▶') + '</span>';
+          
+          var body = document.createElement('div');
+          body.style.display = isExpanded ? 'block' : 'none';
+          body.style.paddingLeft = '12px';
+          body.style.marginTop = '4px';
+
+          locs.forEach(function(loc) {
+            body.appendChild(createLocationButton(loc));
+          });
+
+          // 綁定點擊展開/收合事件
+          header.addEventListener('click', function() {
+            var willExpand = (body.style.display === 'none');
+            body.style.display = willExpand ? 'block' : 'none';
+            expandedLocationGroups[gName] = willExpand;
+            header.innerHTML = '<span style="font-weight:bold;">🗺️ ' + escapeHtml(gName) + ' 地區</span>' + 
+                               '<span style="font-size: 0.8em; color: #888;">' + locs.length + ' 處 ' + (willExpand ? '▼' : '▶') + '</span>';
+          });
+
+          groupDiv.appendChild(header);
+          groupDiv.appendChild(body);
+        }
+        container.appendChild(groupDiv);
+      })(groupName, groups[groupName]);
+    }
+  }
+}
+
+// 輔助函數：建立質感的單一地點按鈕 (取代原本的藍色底線)
+function createLocationButton(locName) {
+  var btn = document.createElement('div');
+  
+  // 使用 JavaScript 直接寫入樣式，無需額外修改 CSS 檔案
+  btn.style.display = 'flex';
+  btn.style.justifyContent = 'space-between';
+  btn.style.alignItems = 'center';
+  btn.style.padding = '10px 12px';
+  btn.style.margin = '4px 0';
+  btn.style.backgroundColor = 'rgba(255,255,255,0.03)';
+  btn.style.border = '1px solid rgba(255,255,255,0.1)';
+  btn.style.borderRadius = '6px';
+  btn.style.cursor = 'pointer';
+  btn.style.color = '#dcdcdc';
+  btn.style.transition = 'all 0.2s ease';
+  
+  btn.innerHTML = '<span>📍 ' + escapeHtml(locName) + '</span>' +
+                  '<span style="color:#4a90e2; font-weight:bold; font-size:1.1em; opacity:0.8;">➔</span>';
+
+  // 模擬 CSS Hover 效果
+  btn.addEventListener('mouseenter', function() {
+    btn.style.backgroundColor = 'rgba(74, 144, 226, 0.15)';
+    btn.style.borderColor = 'rgba(74, 144, 226, 0.5)';
+    btn.style.color = '#ffffff';
+  });
+  btn.addEventListener('mouseleave', function() {
+    btn.style.backgroundColor = 'rgba(255,255,255,0.03)';
+    btn.style.borderColor = 'rgba(255,255,255,0.1)';
+    btn.style.color = '#dcdcdc';
+  });
+  
+  btn.addEventListener('click', function() {
+    if (typeof requestTravelTo === 'function') requestTravelTo(locName); 
+  });
+  
+  return btn;
+}
+
 function renderProfileAwakening() {
   if (!dom.profileAwakeningSection) return;
   if (gameState.awakeningLevel <= 0) {
@@ -341,7 +512,6 @@ function renderProfileAwakening() {
   }
 }
 
-/* STREAMING_CHUNK:Rendering Safezones & Fast Travel... */
 function renderProfileSafezones() {
   var container = document.getElementById('profile-safezone-list');
   if (!container) return;
@@ -375,23 +545,7 @@ function renderProfileSafezones() {
 
   zones.forEach(function (zone) {
     var clone = template.content.cloneNode(true); 
-    
-    var nameSpan = clone.querySelector('.profile-safezone-name');
-    nameSpan.textContent = zone.name;
-    
-    // 在安全區加上「前往」按鈕
-    var travelBtn = document.createElement('button');
-    travelBtn.className = 'icon-btn';
-    travelBtn.innerHTML = '➔ 前往';
-    travelBtn.style.fontSize = '12px';
-    travelBtn.style.color = '#4a90e2';
-    travelBtn.style.marginLeft = '8px';
-    travelBtn.style.padding = '0 6px';
-    travelBtn.onclick = function() {
-      if (typeof requestTravelTo === 'function') requestTravelTo(zone.name);
-    };
-    nameSpan.appendChild(travelBtn);
-
+    clone.querySelector('.profile-safezone-name').textContent = zone.name;
     clone.querySelector('.profile-safezone-pop').textContent = '人口 ' + (zone.population || 0);
     
     var facilitiesText = (zone.facilities && zone.facilities.length)
@@ -441,17 +595,18 @@ function renderProfileFactions() {
   });
 }
 
-/* STREAMING_CHUNK:Rendering Vehicles... */
 function renderVehiclePanel() {
   if (!dom.vehicleList) return;
   dom.vehicleList.innerHTML = '';
   
+  // 【防呆】確保 gameState.vehicles 存在，若無則視為空陣列
   var safeVehicles = gameState.vehicles || [];
   var activeVehicles = safeVehicles.filter(function (v) { return v && v.status !== 'lost'; });
   
-  var vehicleTabBtn = document.querySelector('.info-tab-btn[data-target="info-vehicles"]');
-  if (vehicleTabBtn) {
-    vehicleTabBtn.textContent = '載具(' + activeVehicles.length + ')';
+  // 【修復】把標題數字更新移進來，確保只要重繪清單就會同步更新標題
+  if (dom.vehicleSectionToggle) {
+    var vSpan = dom.vehicleSectionToggle.querySelector('span');
+    if (vSpan) vSpan.textContent = '🚗 載具（' + activeVehicles.length + '）';
   }
 
   if (activeVehicles.length === 0) {
@@ -466,6 +621,7 @@ function renderVehiclePanel() {
     var card = document.createElement('div');
     card.className = 'vehicle-card' + (v.id === gameState.activeVehicleId ? ' vehicle-active' : '');
     
+    // 【防呆】確保有名字，避免 undefined 報錯
     var safeName = v.name || '未知載具';
     
     card.innerHTML =
@@ -480,6 +636,7 @@ function renderVehiclePanel() {
     var cargoRow = document.createElement('div');
     cargoRow.className = 'vehicle-cargo-row';
     
+    // 【防呆】確保貨艙存在
     var safeCargo = v.cargo || [];
     cargoRow.textContent = '貨艙（' + safeCargo.length + '/' + (v.cargoCapacity || 0) + '）：';
     
@@ -491,6 +648,7 @@ function renderVehiclePanel() {
         var tag = document.createElement('span');
         tag.textContent = (it.name || '未知物') + ' x' + (it.quantity || 1);
         
+        // 【階段3新增】轉移模式視覺與點擊事件
         if (typeof transferState !== 'undefined' && transferState.isTransferMode) {
           tag.style.cursor = 'pointer';
           tag.style.border = '1px dashed #4a90e2';
@@ -509,15 +667,15 @@ function renderVehiclePanel() {
   });
 }
 
-var expandedItemLocations = {}; 
+var expandedItemLocations = {}; // 記錄每個地點分類目前是否展開
 
-/* STREAMING_CHUNK:Rendering Items Accordion... */
 function renderItemsAccordion() {
   if (!dom.itemsAccordion) return;
   dom.itemsAccordion.innerHTML = '';
 
   var locations = [];
   
+  // 【防呆】確保背包陣列存在
   var safeInventory = gameState.inventory || [];
   locations.push({
     key: '__backpack__',
@@ -526,6 +684,7 @@ function renderItemsAccordion() {
     isBackpack: true
   });
   
+  // 【防呆】確保暫存點陣列存在
   var safeStashes = gameState.stashes || [];
   safeStashes.forEach(function (s) {
     if (s) {
@@ -554,22 +713,11 @@ function renderItemsAccordion() {
     
     var itemsCount = (loc.items && loc.items.length) ? loc.items.length : 0;
     
-    // 渲染標題 (為非背包的暫存點加入前往按鈕)
-    var headerHtml = '<span class="location-name">' + escapeHtml(loc.label) + '</span>';
-    if (!loc.isBackpack) {
-      headerHtml += '<button type="button" class="icon-btn stash-travel-btn" style="font-size: 11px; color: #4a90e2; margin-right: 8px; border: 1px solid rgba(74, 144, 226, 0.4); border-radius: 4px; padding: 2px 6px;">➔ 前往</button>';
-    }
-    headerHtml += loadTagHtml + '<span class="location-count">' + itemsCount + '項</span><span class="item-location-arrow">▾</span>';
-    header.innerHTML = headerHtml;
-
-    // 綁定前往按鈕事件
-    var travelBtn = header.querySelector('.stash-travel-btn');
-    if (travelBtn) {
-      travelBtn.addEventListener('click', function(e) {
-        e.stopPropagation(); // 防止點擊按鈕時觸發手風琴展開
-        if (typeof requestTravelTo === 'function') requestTravelTo(loc.label);
-      });
-    }
+    header.innerHTML =
+      '<span class="location-name">' + escapeHtml(loc.label) + '</span>' +
+      loadTagHtml +
+      '<span class="location-count">' + itemsCount + '項</span>' +
+      '<span class="item-location-arrow">▾</span>';
 
     var body = document.createElement('div');
     body.className = 'item-location-body' + (expandedItemLocations[loc.key] ? '' : ' hidden');
@@ -586,6 +734,7 @@ function renderItemsAccordion() {
         tag.className = 'inventory-item';
         tag.textContent = (it.name || '未知物') + ' x' + (it.quantity || 1);
 
+        // 【階段3與4整合】轉移模式與使用模式的分流
         if (typeof transferState !== 'undefined' && transferState.isTransferMode) {
           tag.style.cursor = 'pointer';
           tag.style.border = '1px dashed #4a90e2';
@@ -596,7 +745,9 @@ function renderItemsAccordion() {
             }
           });
         } else if (loc.isBackpack) {
+          // 【階段4新增】非轉移模式下，且物品在隨身背包，點擊彈出使用選單
           tag.style.cursor = 'pointer';
+          // 微微改變背景色提示可點擊
           tag.addEventListener('mouseover', function() { tag.style.background = 'rgba(255,255,255,0.1)'; });
           tag.addEventListener('mouseout', function() { tag.style.background = 'transparent'; });
           tag.addEventListener('click', function(e) {
@@ -631,6 +782,7 @@ function openUseModal(itemName, qty) {
   var select = document.getElementById('use-target-select');
   select.innerHTML = '';
   
+  // 建立對象清單
   select.appendChild(new Option('自己 (' + (gameState.charSetup.name || '主角') + ')', 'player'));
   
   gameState.companions.forEach(function(npc) {
@@ -641,5 +793,57 @@ function openUseModal(itemName, qty) {
     select.appendChild(new Option('全體分配 (所有人)', 'all'));
   }
   
+  modal.classList.remove('hidden');
+}
+
+/* STREAMING_CHUNK:Cleaned Travel Confirmation Logic... */
+function openTravelConfirmModal(targetLocation, dist, costType, costValue, timeCost, canTravel, errorMsg, activeVehicle) {
+  var modal = document.getElementById('travel-modal');
+  var targetNameEl = document.getElementById('travel-target-name');
+  var infoDiv = document.getElementById('travel-cost-info');
+  var confirmBtn = document.getElementById('travel-confirm-btn');
+  var cancelBtn = document.getElementById('travel-cancel-btn');
+
+  // 防呆：確保 HTML 有載入
+  if (!modal) return;
+
+  // 1. 綁定取消按鈕 (防重複綁定，使用覆蓋 onclick 方式)
+  cancelBtn.onclick = function() {
+    modal.classList.add('hidden');
+  };
+
+  // 2. 注入資料
+  targetNameEl.textContent = '目的地：' + targetLocation;
+
+  var modeStr = costType === 'fuel' ? '<span style="color:#8fbc8f">🚗 載具駕駛</span>' : '<span style="color:#d4a017">🚶 徒步跋涉</span>';
+  var html = '📍 預估距離：<span style="color:#fff">' + dist + ' 公里</span><br>';
+  html += '⏱ 預估時間：<span style="color:#fff">' + Math.floor(timeCost/60) + ' 小時 ' + (timeCost%60) + ' 分鐘</span><br>';
+  html += '移動方式：' + modeStr + '<br><hr style="border-color: var(--border-color); margin:8px 0;">';
+
+  if (costType === 'fuel') {
+    html += '⛽ 消耗燃油：<span style="color:#fff">' + costValue + ' 單位</span><br>';
+    html += '🔧 消耗耐久：<span style="color:#fff">' + ((dist / 10) * 2).toFixed(1) + '</span>';
+  } else {
+    html += '⚡ 消耗體力：<span style="color:#fff">' + costValue + ' 點</span>';
+  }
+
+  // 3. 處理按鈕狀態與點擊事件
+  if (!canTravel) {
+    html += '<div style="color: #e57373; margin-top: 10px; font-weight:bold;">⚠️ ' + errorMsg + '</div>';
+    confirmBtn.style.opacity = '0.5';
+    confirmBtn.style.pointerEvents = 'none';
+    confirmBtn.onclick = null;
+  } else {
+    confirmBtn.style.opacity = '1';
+    confirmBtn.style.pointerEvents = 'auto';
+    confirmBtn.onclick = function() {
+      modal.classList.add('hidden');
+      if (typeof executeTravel === 'function') {
+        executeTravel(targetLocation, dist, costType, costValue, timeCost, activeVehicle);
+      }
+    };
+  }
+
+  infoDiv.innerHTML = html;
   modal.classList.remove('hidden');
 }
