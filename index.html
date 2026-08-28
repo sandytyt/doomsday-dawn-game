@@ -138,7 +138,7 @@
           <span id="status-time" class="status-item" style="font-size: 11px; color: var(--text-dim);">⏱ 第1天 06:00</span>
         </div>
         <button id="status-expand-btn" class="icon-btn" aria-label="展開狀態" type="button">▾</button>
-        <button id="panels-toggle-btn" class="icon-btn" aria-label="物品與人物" type="button">🎒</button>
+        <button id="panels-toggle-btn" class="icon-btn" aria-label="物品與人物" type="button">📋</button>
         <button id="menu-toggle-btn" class="icon-btn" aria-label="選單" type="button">⚙</button>
       </div>
       <div class="status-row">
@@ -254,91 +254,102 @@
 
   <div id="info-panel" class="side-menu hidden">
     <div id="info-panel-backdrop" class="side-menu-backdrop"></div>
-    <div class="side-menu-content info-panel-content">
+    <div class="side-menu-content">
+      <h2>物品與人物</h2>
+
+      <!-- 分類一：角色檔案（基本資料 + 安全區 + 勢力關係） -->      
+      <button id="char-profile-toggle" class="collapse-toggle-btn char-profile-section" type="button">
+        <span>👤 角色檔案</span>
+        <span class="collapse-arrow">▾</span>
+      </button>
+      <div id="char-profile-body" class="collapse-body hidden">
+        <div class="char-profile-section-title">基本資料</div>
+        <div class="char-profile-grid">
+          <div class="char-profile-item"><span class="panel-label">性別</span><span id="profile-gender">未指定</span></div>
+          <div class="char-profile-item"><span class="panel-label">初始地</span><span id="profile-location">--</span></div>
+          <div class="char-profile-item"><span class="panel-label">職業</span><span id="profile-occupation">--</span></div>
+        </div>
+
+        <div id="profile-injury-section" class="char-profile-section-title-wrap hidden">
+          <div class="char-profile-section-title">傷勢狀態</div>
+          <div class="profile-injury-card">
+            <span id="profile-injury-level" class="profile-injury-level"></span>
+            <span id="profile-injury-detail" class="profile-injury-detail"></span>
+          </div>
+        </div>
+        
+        <div id="profile-awakening-section" class="char-profile-section-title-wrap hidden">
+          <div class="char-profile-section-title">異能狀態</div>
+          <div class="profile-awakening-card">
+            <div class="profile-awakening-row">
+              <span class="panel-label">等級</span>
+              <span id="profile-awakening-level"></span>
+            </div>
+            <div class="profile-awakening-row">
+              <span class="panel-label">能力方向</span>
+              <span id="profile-awakening-ability"></span>
+            </div>
+            <div class="profile-awakening-row">
+              <span class="panel-label">熟練度</span>
+              <span id="profile-awakening-exp"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="char-profile-section-title">已探索地點</div>
+        <div id="profile-explored-list" class="profile-subentity-list">
+          <div class="profile-subentity-empty">尚未探索任何具體地點</div>
+        </div>
+        
+        <div class="char-profile-section-title">已知安全區</div>
+        <div id="profile-safezone-list" class="profile-subentity-list">
+          <div class="profile-subentity-empty">尚未建立或發現任何安全區</div>
+        </div>
       
-      <!-- 頂部頁籤列 (取代舊的 Collapse 按鈕) -->
-      <div class="info-tabs">
-        <button class="info-tab-btn active" data-target="info-profile">角色</button>
-        <button class="info-tab-btn" data-target="info-items">物品</button>
-        <button class="info-tab-btn" data-target="info-npcs">隊友</button>
-        <button class="info-tab-btn" data-target="info-vehicles">載具</button>
-      </div>
-
-      <!-- 內容顯示區 -->
-      <div class="info-panes-container">
-        
-        <!-- 分頁 1：角色檔案 -->
-        <div id="info-profile" class="info-pane">
-          <div class="char-profile-section-title">基本資料</div>
-          <div class="char-profile-grid">
-            <div class="char-profile-item"><span class="panel-label">性別</span><span id="profile-gender">未指定</span></div>
-            <div class="char-profile-item"><span class="panel-label">初始地</span><span id="profile-location">--</span></div>
-            <div class="char-profile-item"><span class="panel-label">職業</span><span id="profile-occupation">--</span></div>
-          </div>
-
-          <div id="profile-injury-section" class="char-profile-section-title-wrap hidden">
-            <div class="char-profile-section-title">傷勢狀態</div>
-            <div class="profile-injury-card">
-              <span id="profile-injury-level" class="profile-injury-level"></span>
-              <span id="profile-injury-detail" class="profile-injury-detail"></span>
-            </div>
-          </div>
-          
-          <div id="profile-awakening-section" class="char-profile-section-title-wrap hidden">
-            <div class="char-profile-section-title">異能狀態</div>
-            <div class="profile-awakening-card">
-              <div class="profile-awakening-row">
-                <span class="panel-label">等級</span>
-                <span id="profile-awakening-level"></span>
-              </div>
-              <div class="profile-awakening-row">
-                <span class="panel-label">能力方向</span>
-                <span id="profile-awakening-ability"></span>
-              </div>
-              <div class="profile-awakening-row">
-                <span class="panel-label">熟練度</span>
-                <span id="profile-awakening-exp"></span>
-              </div>
-            </div>
-          </div>
-        
-          <div class="char-profile-section-title">已知安全區</div>
-          <div id="profile-safezone-list" class="profile-subentity-list">
-            <div class="profile-subentity-empty">尚未建立或發現任何安全區</div>
-          </div>
-        
-          <div class="char-profile-section-title">勢力關係</div>
-          <div id="profile-faction-list" class="profile-subentity-list">
-            <div class="profile-subentity-empty">尚未與任何勢力建立聯繫</div>
-          </div>
-        </div>
-    
-        <!-- 分頁 2：物品 -->
-        <div id="info-items" class="info-pane hidden">
-          <div class="transfer-controls" style="padding: 10px 15px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 10px;">
-            <label style="cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.9em; color: #4a90e2;">
-              <input type="checkbox" id="transfer-mode-toggle"> 物資轉移
-            </label>
-          </div>
-          <div id="items-accordion" class="items-accordion"></div>
-        </div>
-    
-        <!-- 分頁 3：人物檔案 -->
-        <div id="info-npcs" class="info-pane hidden">
-          <div id="npc-list" class="npc-list"></div>
-        </div>
-    
-        <!-- 分頁 4：載具 -->
-        <div id="info-vehicles" class="info-pane hidden">
-          <div id="vehicle-list" class="vehicle-list"></div>
+        <div class="char-profile-section-title">勢力關係</div>
+        <div id="profile-faction-list" class="profile-subentity-list">
+          <div class="profile-subentity-empty">尚未與任何勢力建立聯繫</div>
         </div>
       </div>
   
+      <!-- 分類二：物品（隨身背包 + 所有暫存點，手風琴式） -->
+      <button id="items-section-toggle" class="collapse-toggle-btn" type="button">
+        <span>🎒 物品</span>
+        <span class="collapse-arrow">▾</span>
+      </button>
+      <div id="items-section-body" class="collapse-body hidden">
+        <div class="transfer-controls" style="padding: 10px 15px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 10px;">
+          <label style="cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.9em; color: #4a90e2;">
+            <input type="checkbox" id="transfer-mode-toggle"> 🔄 物資轉移
+          </label>
+        </div>
+        <div id="items-accordion" class="items-accordion"></div>
+      </div>
+  
+      <!-- 分類三：人物檔案 -->
+      <button id="npc-section-toggle" class="collapse-toggle-btn npc-section" type="button">
+        <span>📇 人物檔案（0）</span>
+        <span class="collapse-arrow">▾</span>
+      </button>
+      <div id="npc-section-body" class="collapse-body hidden">
+        <div id="npc-list" class="npc-list"></div>
+      </div>
+  
+      <!-- 分類四：載具 -->
+      <button id="vehicle-section-toggle" class="collapse-toggle-btn vehicle-section" type="button">
+        <span>🚗 載具（0）</span>
+        <span class="collapse-arrow">▾</span>
+      </button>
+      <div id="vehicle-section-body" class="collapse-body hidden">
+        <div id="vehicle-list" class="vehicle-list"></div>
+      </div>
+  
       <div class="side-menu-footer">
-        <button id="info-panel-close" class="btn-secondary" type="button">關閉終端機</button>
+        <button id="info-panel-close" class="btn-secondary" type="button">關閉</button>
       </div>
     </div>
   </div>
+
 
   <div id="named-save-modal" class="named-save-modal hidden">
     <div class="named-save-modal-content">
@@ -353,8 +364,116 @@
       <div id="named-save-list" class="named-save-list"></div>
     </div>
   </div>
-    <!-- 【瘦身後】遊戲手冊 Modal 容器 (內容將由 app-manual.js 動態注入) -->
-  <div id="manual-modal" class="modal hidden" style="z-index: 3000;"></div>
+  
+  <!-- 【全新】遊戲手冊 Modal -->
+  <div id="manual-modal" class="modal hidden" style="z-index: 3000;">
+    <div class="modal-content" style="max-width: 800px; width: 90%; height: 80vh; padding: 0; display: flex; flex-direction: column; background: #121212; border: 1px solid #333;">
+      
+      <!-- 手冊標題列 -->
+      <div style="padding: 15px 20px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; background: #1a1a1a;">
+        <h2 style="margin: 0; font-size: 1.2em; color: #e0e0e0;">📖 倖存者生存指南</h2>
+        <button id="manual-close-btn" style="background: transparent; border: none; color: #888; font-size: 1.5em; cursor: pointer;">&times;</button>
+      </div>
+
+      <!-- 手冊主體 (雙欄佈局) -->
+      <div class="manual-body">
+        
+        <!-- 左側 / 上方 頁籤選單 -->
+        <div class="manual-tabs">
+          <button class="manual-tab-btn active" data-target="manual-survival">生存機制</button>
+          <button class="manual-tab-btn" data-target="manual-inventory">探索與物資</button>
+          <button class="manual-tab-btn" data-target="manual-combat">戰鬥與體格</button>
+          <button class="manual-tab-btn" data-target="manual-npc">同行者與陣營</button>
+          <button class="manual-tab-btn" data-target="manual-vehicle">載具系統</button>
+        </div>
+
+        <!-- 右側 / 下方 內容區 -->
+        <div class="manual-content-container">
+          
+          <!-- 分頁：生存機制 -->
+          <div id="manual-survival" class="manual-pane">
+            <h3 style="color: #4a90e2; margin-top: 0;">體力與飢餓</h3>
+            <p>在這個末世，你的體力決定了你能走多遠。每一次行動（如搜索、戰鬥、趕路）都會消耗體力。當體力低於 20 時，你將無法奔跑，甚至可能在危機中暈厥。</p>
+            <ul>
+              <li><strong>飢餓枷鎖：</strong>飢餓度會隨時間自然下降。若飢餓低於 40%，你的體力最高只能恢復到 70%；低於 15% 時，每回合更會額外流失體力。</li>
+              <li><strong>恢復體力：</strong>在安全的據點深眠可大幅恢復，臨時假寐則只能恢復少許。吃飽肚子是保持體力的關鍵。</li>
+            </ul>
+            <h3 style="color: #4a90e2;">廢土食物字典</h3>
+            <ul>
+              <li><strong>軍用罐頭：</strong>+35 飽食 / +20 體力</li>
+              <li><strong>生肉：</strong>+20 飽食 / +5 體力</li>
+              <li><strong>能量棒/蔬菜/水果：</strong>+15 飽食 / +5~10 體力</li>
+              <li><strong>乾癟的野果：</strong>+5 飽食 / +0 體力</li>
+              <li><strong>純水：</strong>+0 飽食 / +35 體力</li>
+              <li><strong>過濾水：</strong>+0 飽食 / +20 體力</li>
+              <li><strong>半瓶礦泉水：</strong>+0 飽食 / +15 體力</li>
+            </ul>
+            <h3 style="color: #4a90e2;">危險等級與夜晚</h3>
+            <p>每天的 <strong>19:00 至 05:00</strong> 是喪屍最活躍的時刻，變異體出現的機率也會大增。非必要請避免在夜間進行長途遷徙。右上角的危險標籤（安全、警戒、危險）能幫助你判斷當前局勢。</p>
+          </div>
+
+                    <!-- 分頁：避難所基地運作 -->
+          <div id="manual-inventory" class="manual-pane hidden">
+            <h3 style="color: #4a90e2; margin-top: 0;">避難所基地運作</h3>
+            <p>建立並維護你的避難所基地是生存的關鍵。基地的運作需要合理的資源分配與人力配置。</p>
+            <ul>
+              <li><strong>每日消耗：</strong>每 1 單位人口每日需消耗 1 份食物與水，若倉庫庫存不足將引發飢荒與流失。</li>
+              <li><strong>勞動力限制：</strong>每 1 名人口每日僅能運作 1 座設施。</li>
+              <li><strong>智能進食：</strong>居民會優先食用易腐壞的農作物與髒水，最後才消耗軍用口糧。</li>
+              <li><strong>設施產出對象：</strong>【農場】產生肉、【水培】產蔬菜、【溫室】產水果、【集水】產過濾水、【拾荒】產廢鐵/木材、【誘捕/分離】產透明晶核。</li>
+            </ul>
+          </div>
+
+          <!-- 分頁：探索與物資 -->
+          <div id="manual-inventory" class="manual-pane hidden">
+            <h3 style="color: #4a90e2; margin-top: 0;">背包負重</h3>
+            <p>帶太多東西會成為你在末日中的致命傷。你的負重分為三級：</p>
+            <ul>
+              <li><strong>輕裝 (0-5件)：</strong>行動自如。</li>
+              <li><strong>標準 (6-10件)：</strong>常規狀態。</li>
+              <li><strong>超載 (11件以上)：</strong>所有行動消耗的體力大幅增加，移動將變得極度吃力。</li>
+              <p style="font-size: 0.9em; color: #888;">*註：喪屍晶核與某些關鍵任務物品不計入負重。</p>
+            </ul>
+            <h3 style="color: #4a90e2;">物資暫存點</h3>
+            <p>遇到帶不走的物資？你可以選擇將它們藏在隱蔽的死胡同或廢棄建築中。只要你記得地點，日後隨時可以回來取走。但要注意，若超過數週（約 20 回合）未返回，物資可能被他人拾走或遭喪屍破壞。</p>
+          </div>
+
+            <!-- 分頁：戰鬥與體格 -->
+          <div id="manual-combat" class="manual-pane hidden">
+            <h3 style="color: #4a90e2; margin-top: 0;">傷勢與治療</h3>
+            <p>受傷分為「輕傷」與「重傷」。若不幸重傷且未即時處理，你將持續流失體力，歸零即面臨死亡。</p>
+            <h3 style="color: #4a90e2;">體格熟練度與等級壓制</h3>
+            <p>共有 8 項核心體格。等級不僅會降低體力消耗，Lv.3 以上更會解鎖專屬的「生存特權」（如無工具修車、極限跑酷）。</p>
+            <p style="color: #e57373; font-weight: bold;">【極度警告】：請衡量自身能力！若未達相應等級卻試圖執行高難度動作，你將面臨極高的失敗率，並可能導致重傷或死亡。</p>
+            <h3 style="color: #f5a623;">凡人與覺醒者的界線</h3>
+            <p>在生死關頭累積滿 100 點共鳴值，你將 100% 覺醒專屬異能（共七大屬性，最高 Lv.5）。異能不僅用於戰鬥，更能輔助末日生存（如水屬性凝結食水）。</p>
+            <p>吸收變異體的「晶核」是升級的唯一捷徑。在未覺醒前，切勿妄想憑空施展超自然力量，那只會讓你成為喪屍的笑柄。</p>
+          </div>
+
+          <!-- 分頁：同行者與陣營 -->
+          <div id="manual-npc" class="manual-pane hidden">
+            <h3 style="color: #4a90e2; margin-top: 0;">同行者生存法則</h3>
+            <p>你最多可以帶領 2 名 NPC 結伴同行。他們是活生生的人，會受傷、會飢餓，甚至有自己的底線與異能。你必須分配食物給他們，否則當他們瀕臨崩潰且對你信任不足時，可能會私藏物資甚至拋棄你。</p>
+            <h3 style="color: #4a90e2;">關係發展</h3>
+            <p>與 NPC 的互動會影響三項數值：信任、親密、浪漫張力。共同經歷生死危機或重大抉擇，將能推動你們的關係階段（從初識一路發展至生死之交或形同陌路）。</p>
+            <h3 style="color: #4a90e2;">陣營外交</h3>
+            <p>世界中存在五大陣營。幫助其中一方可能會激怒其敵對陣營（例如：鐵幕守望者與荒原拾骸者）。當信任度夠高，你將能進入其核心區域；若淪為敵對，你將被視為獵殺目標。</p>
+          </div>
+
+          <!-- 分頁：載具系統 -->
+          <div id="manual-vehicle" class="manual-pane hidden">
+            <h3 style="color: #4a90e2; margin-top: 0;">載具優勢與風險</h3>
+            <p>一輛車能為你提供防護與巨大的載物空間（貨艙），並加快移動速度。但引擎聲在夜間或喪屍密集區也可能成為致命的催命符。</p>
+            <ul>
+              <li><strong>油量與耐久：</strong>移動會消耗油量，碰撞或遭受攻擊會降低耐久。耐久歸零則車輛報廢。</li>
+              <li><strong>修復條件：</strong>若想修復廢棄車輛，你或你的隊友必須具備工程或機械相關背景，並備妥足夠的零件物資。</li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
   
   <div id="event-modal" class="event-modal hidden">
     <div class="event-modal-content">
@@ -411,9 +530,35 @@
     </div>
   </div>
 
-  <!-- ========================================= -->
-  <!-- 基地系統專屬 UI (倉庫、日報表、安全區模板) -->
-  <!-- ========================================= -->
+  <!-- 使用物品彈窗 -->
+  <div id="use-modal" class="event-modal hidden">
+    <div class="event-modal-content" style="text-align: left;">
+      <h2 style="margin-top: 0;">使用物品</h2>
+      <p id="use-item-name" style="font-weight: bold; margin-bottom: 15px; color: #e0e0e0;"></p>
+      <div class="setup-field">
+        <label>使用對象：</label>
+        <select id="use-target-select"></select>
+      </div>
+      <div style="display: flex; gap: 10px; margin-top: 20px;">
+        <button id="use-confirm-btn" class="btn-primary" type="button" style="flex: 1;">確認使用</button>
+        <button id="use-cancel-btn" class="btn-secondary" type="button" style="flex: 1;">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 路線確認彈窗 (Travel Modal) -->
+  <div id="travel-modal" class="event-modal hidden" style="z-index: 350;">
+    <div class="event-modal-content travel-modal-container">
+      <h2 class="travel-modal-title">🗺️ 路線確認</h2>
+      <p id="travel-target-name" class="travel-target-name"></p>
+      <div id="travel-cost-info" class="travel-cost-info-box"></div>
+      <div class="travel-modal-actions">
+        <button id="travel-confirm-btn" class="btn-primary" type="button">確認出發</button>
+        <button id="travel-cancel-btn" class="btn-secondary" type="button">取消</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 基地每日日報彈窗 -->
   <div id="daily-report-modal" class="event-modal hidden">
     <div class="event-modal-content report-modal-container">
@@ -454,7 +599,6 @@
 <script src="js/app-api.js"></script>
 <script src="js/app-engine.js"></script>
 <script src="js/app-base-sim.js"></script>
-<script src="js/app-manual.js"></script>
 
 <!-- 5. 畫面渲染與玩家互動 -->
 <script src="js/app-ui.js"></script>
