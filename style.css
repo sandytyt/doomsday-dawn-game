@@ -1631,3 +1631,68 @@ button {
   width: 100%;
   font-weight: bold;
 }
+
+.report-log-warning { color: #f39c12; }  /* 庫存不足警告 */
+.report-log-neutral { color: #aaa; }     /* 一般消耗 */
+
+.report-close-btn {
+  width: 100%;
+  font-weight: bold;
+}
+
+/* =========================================
+   角色狀態與物品終端機 (Tabbed UI)
+   ========================================= */
+.info-panel-content {
+  padding: 0; /* 移除外層 padding，讓頁籤能貼齊邊緣 */
+  display: flex;
+  flex-direction: column;
+}
+
+.info-tabs {
+  display: flex;
+  background: #161616;
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.info-tab-btn {
+  flex: 1;
+  background: transparent;
+  color: var(--text-dim);
+  border: none;
+  padding: 14px 0;
+  font-size: 13px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.info-tab-btn:active {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.info-tab-btn.active {
+  color: var(--text-primary);
+  border-bottom: 2px solid var(--accent-red);
+  background: rgba(139, 30, 30, 0.1);
+  font-weight: bold;
+}
+
+.info-panes-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.info-pane {
+  animation: fade-in 0.3s ease;
+}
+
+/* 確保側邊欄底部的關閉按鈕有足夠留白 */
+.info-panel-content .side-menu-footer {
+  padding: 16px;
+  background: var(--bg-panel);
+  border-top: 1px solid var(--border-color);
+}
