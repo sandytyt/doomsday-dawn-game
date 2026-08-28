@@ -806,8 +806,8 @@ button {
   position: absolute;
   top: 0;
   right: 0;
-  width: 78%;
-  max-width: 320px;
+  width: 85%; /* 【修改】：加寬側邊欄，讓內容有更多空間 */
+  max-width: 380px; /* 【修改】：放寬最大限制 */
   height: 100%;
   overflow-y: auto;
   background: var(--bg-panel);
@@ -1654,6 +1654,16 @@ button {
   background: #161616;
   border-bottom: 1px solid var(--border-color);
   flex-shrink: 0;
+  /* 【新增】：補回頂部留白，閃避手機電池與時間列 */
+  padding-top: max(35px, env(safe-area-inset-top)); 
+  /* 【新增】：若文字真的太長，允許橫向滑動且不換行 */
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; 
+}
+.info-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .info-tab-btn {
