@@ -43,13 +43,32 @@ function bindEvents() {
   dom.freeInputSend.addEventListener('click', handleFreeInputSend);
   dom.freeInputText.addEventListener('keypress', handleFreeInputKeypress);
   dom.eventModalClose.addEventListener('click', handleEventModalClose);
+  
+  // 【終端機 UI 綁定】
   if (dom.panelsToggleBtn) dom.panelsToggleBtn.addEventListener('click', function () { toggleInfoPanel(true); });
   if (dom.infoPanelBackdrop) dom.infoPanelBackdrop.addEventListener('click', function () { toggleInfoPanel(false); });
   if (dom.infoPanelClose) dom.infoPanelClose.addEventListener('click', function () { toggleInfoPanel(false); });
-  if (dom.itemsSectionToggle) dom.itemsSectionToggle.addEventListener('click', function () { toggleCollapse(dom.itemsSectionToggle, dom.itemsSectionBody); });
-  if (dom.npcSectionToggle) dom.npcSectionToggle.addEventListener('click', function () { toggleCollapse(dom.npcSectionToggle, dom.npcSectionBody); renderNpcPanel(); });
-  if (dom.charProfileToggle) dom.charProfileToggle.addEventListener('click', function () { toggleCollapse(dom.charProfileToggle, dom.charProfileBody); renderCharProfile(); });
-  if (dom.vehicleSectionToggle) dom.vehicleSectionToggle.addEventListener('click', function () { toggleCollapse(dom.vehicleSectionToggle, dom.vehicleSectionBody); });
+  
+  var infoTabBtns = document.querySelectorAll('.info-tab-btn');
+  var infoPanes = document.querySelectorAll('.info-pane');
+
+  if (infoTabBtns.length > 0) {
+    infoTabBtns.forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        // 移除所有啟動狀態
+        infoTabBtns.forEach(function(b) { b.classList.remove('active'); });
+        infoPanes.forEach(function(p) { p.classList.add('hidden'); });
+        
+        // 啟動當前點擊的頁籤
+        btn.classList.add('active');
+        var targetId = btn.getAttribute('data-target');
+        var targetPane = document.getElementById(targetId);
+        if (targetPane) {
+          targetPane.classList.remove('hidden');
+        }
+      });
+    });
+  }
 
   // 【階段5新增】
   if (dom.bgSelect) dom.bgSelect.addEventListener('change', handleBackgroundTypeChange);
@@ -227,6 +246,7 @@ function toggleSideMenu(show) {
 function toggleInfoPanel(show) {
   if (!dom.infoPanel) return;
   dom.infoPanel.classList.toggle('hidden', !show);
+  // 打開終端機時，一次性渲染所有資料
   if (show) {
     renderCharProfile();
     renderItemsAccordion();
