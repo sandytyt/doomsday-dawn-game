@@ -58,6 +58,7 @@ function cacheDom() {
   dom.itemsSectionToggle = document.getElementById('items-section-toggle');
   dom.itemsSectionBody = document.getElementById('items-section-body');
   dom.itemsAccordion = document.getElementById('items-accordion');
+  dom.transferModeToggle = document.getElementById('transfer-mode-toggle');
   dom.inventoryList = document.getElementById('inventory-list');
   dom.inventoryLoadTag = document.getElementById('inventory-load-tag');
   dom.npcSectionToggle = document.getElementById('npc-section-toggle');
@@ -101,6 +102,13 @@ function cacheDom() {
   dom.saveTabNotion = document.getElementById('save-tab-notion');
   dom.manualModal = document.getElementById('manual-modal');
   dom.manualCloseBtn = document.getElementById('manual-close-btn');
+  dom.transferModal = document.getElementById('transfer-modal');
+  dom.transferItemName = document.getElementById('transfer-item-name');
+  dom.transferTargetSelect = document.getElementById('transfer-target-select');
+  dom.transferQuantityInput = document.getElementById('transfer-qty-input');
+  dom.transferConfirmBtn = document.getElementById('transfer-confirm-btn');
+  dom.transferCancelBtn = document.getElementById('transfer-cancel-btn');
+
 
   // ---------- 角色檔案面板 ----------
   dom.charProfileToggle = document.getElementById('char-profile-toggle');
@@ -186,6 +194,7 @@ function cacheDom() {
     itemsSectionToggle: dom.itemsSectionToggle,
     itemsSectionBody: dom.itemsSectionBody,
     itemsAccordion: dom.itemsAccordion,
+    transferModeToggle: dom.transferModeToggle,
     inventoryList: dom.inventoryList,
     inventoryLoadTag: dom.inventoryLoadTag,
     npcSectionToggle: dom.npcSectionToggle,
@@ -230,7 +239,15 @@ function cacheDom() {
     saveTabLocal: dom.saveTabLocal,
     saveTabNotion: dom.saveTabNotion,
     manual: dom.manualModal,
-    manualClose: dom.manualCloseBtn
+    manualClose: dom.manualCloseBtn,
+    transfer: {
+      root: dom.transferModal,
+      itemName: dom.transferItemName,
+      targetSelect: dom.transferTargetSelect,
+      quantityInput: dom.transferQuantityInput,
+      confirmBtn: dom.transferConfirmBtn,
+      cancelBtn: dom.transferCancelBtn
+    }
   };
 
   // 【已移除 name 欄位】依使用者指示，dom.profileName 已刪除
