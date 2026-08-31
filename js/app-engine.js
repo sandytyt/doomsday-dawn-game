@@ -29,146 +29,143 @@ function requestNextTurn(playerAction) {
 }
 
 function applyStatusUpdate(update) {
-  if (!update) return;
-  if (update.time_advance_minutes) advanceTime(update.time_advance_minutes);
-  if (typeof update.stamina_change === 'number') {
-    gameState.stamina = clamp(gameState.stamina + update.stamina_change, 0, gameState.maxStamina);
-  }
-  if (typeof update.hunger_change === 'number') {
-    gameState.hunger = clamp(gameState.hunger + update.hunger_change, 0, 100);
-  }
-  if (update.current_location) {
-    gameState.location = update.current_location;
-    // 【階段2新增】記錄已探索地點（排除「未知地點」且不重複記錄）
-    if (update.current_location !== '未知地點' && gameState.exploredLocations.indexOf(update.current_location) === -1) {
-      gameState.exploredLocations.push(update.current_location);
+  if (!update) return null;
+
+  // 【接線】所有欄位型別與列舉值防呆，統一交給 AppSchema 處理
+  var u = AppSchema.normalizeStatusUpdate(update);
+
+  if (u.time_advance_minutes) advanceTime(u.time_advance_minutes);
+
+  gameState.stamina = clamp(gameState.stamina + u.stamina_change, 0, gameState.maxStamina);
+  gameState.hunger = clamp(gameState.hunger + u.hunger_change, 0, 100);
+
+  if (u.current_location) {
+    gameState.location = u.current_location;
+    // 記錄已探索地點（排除「未知地點」且不重複記錄）
+    if (u.current_location !== '未知地點' && gameState.exploredLocations.indexOf(u.current_location) === -1) {
+      gameState.exploredLocations.push(u.current_location);
     }
   }
-  if (update.danger_level) {gameState.dangerLevel = update.danger_level;trackDangerLevel(update.danger_level);
+
+  if (u.danger_level) {
+    gameState.dangerLevel = u.danger_level;
+    trackDangerLevel(u.danger_level);
   }
-  if (update.weather) gameState.weather = update.weather;
-  if (typeof update.humanity_change === 'number') {
-    gameState.humanity = clamp(gameState.humanity + update.humanity_change, 0, 100);
+
+  if (u.weather) gameState.weather = u.weather;
+
+  gameState.humanity = clamp(gameState.humanity + u.humanity_change, 0, 100);
+  gameState.resonanceValue = clamp(gameState.resonanceValue + u.resonance_change, 0, 999);
+
+  if (u.ability_exp_change !== 0) {
+    applyAbilityExpChange(u.ability_exp_change);
   }
-  if (typeof update.resonance_change === 'number') {
-    gameState.resonanceValue = clamp(gameState.resonanceValue + update.resonance_change, 0, 999);
-  }
-  if (typeof update.ability_exp_change === 'number' && update.ability_exp_change !== 0) {
-    applyAbilityExpChange(update.ability_exp_change);
-  }
-  if (update.injury_status) {
-    // 防呆：如果沒有狀態，預設為 none (健康)
+
+  if (u.injury_status) {
+    // 防呆：如果沒有狀態，預設為 none（健康）
     gameState.injuryStatus = gameState.injuryStatus || 'none';
-    // 傷勢降級邏輯 (只允許一階一階降，重傷 -> 輕傷 -> 健康)
-    if (gameState.injuryStatus === 'severe' && update.injury_status === 'none') {
+    // 傷勢降級邏輯（只允許一階一階降，重傷 -> 輕傷 -> 健康）
+    if (gameState.injuryStatus === 'severe' && u.injury_status === 'none') {
       gameState.injuryStatus = 'minor';
     } else {
-      gameState.injuryStatus = update.injury_status;
+      gameState.injuryStatus = u.injury_status;
     }
 
     if (gameState.injuryStatus === 'none') {
       gameState.injuryDetail = '';
-    } else if (update.injury_detail) {
-      gameState.injuryDetail = update.injury_detail;
+    } else if (u.injury_detail) {
+      gameState.injuryDetail = u.injury_detail;
     }
-  }  
-  if (update.inventory_changes && update.inventory_changes.length) { 
-    var autoRecovery = applyInventoryChanges(update.inventory_changes);
+  }
+
+  if (u.inventory_changes.length) {
+    var autoRecovery = applyInventoryChanges(u.inventory_changes);
     if (autoRecovery > 0) {
       gameState.hunger = clamp(gameState.hunger + autoRecovery, 0, 100);
     }
-    // 【新增】印出主角獲得物品的日誌
+    // 印出主角獲得物品的日誌
     if (typeof appendGMText === 'function') {
-      update.inventory_changes.forEach(function(change) {
+      u.inventory_changes.forEach(function (change) {
         if (change.action === 'add' || change.action === 'add_weapon') {
-          var qty = change.quantity || 1;
-          appendGMText('[系統] 你獲得了 ' + change.name + ' x' + qty + '。');
+          appendGMText('[系統] 你獲得了 ' + change.name + ' x' + change.quantity + '。');
         }
       });
     }
   }
 
-  if (update.companion_changes && update.companion_changes.length) {
-    applyCompanionChanges(update.companion_changes);
-  }
-  
-// 【新增/升級】接收 NPC 的獨立狀態變化（含背包與體格）
-  if (update.npc_status_updates && Array.isArray(update.npc_status_updates)) {
-    update.npc_status_updates.forEach(function(npcUpdate) {
-      if (npcUpdate.name && gameState.npcStates && gameState.npcStates[npcUpdate.name]) {
-        var npc = gameState.npcStates[npcUpdate.name];
-        
-        // NPC 的體力與飽食度，與主角一樣正常接受 AI 的增減 (劇情休息、進食皆可恢復)
-        if (typeof npcUpdate.stamina_change === 'number') {
-          npc.stamina = clamp(npc.stamina + npcUpdate.stamina_change, 0, 100);
-        }
-        if (typeof npcUpdate.hunger_change === 'number') {
-          npc.hunger = clamp(npc.hunger + npcUpdate.hunger_change, 0, 100);
-        }
-        
-        // 傷勢降級邏輯 (NPC 也適用階梯式恢復)
-        if (npcUpdate.injury_status) {
-           if (npc.injuryStatus === 'severe' && npcUpdate.injury_status === 'none') {
-             npc.injuryStatus = 'minor';
-           } else {
-             npc.injuryStatus = npcUpdate.injury_status;
-           }
-        }
-        if (npc.injuryStatus === 'none') {
-          npc.injuryDetail = '';
-        } else if (npcUpdate.injury_detail) {
-          npc.injuryDetail = npcUpdate.injury_detail;
-        }
-        
-        // 處理 NPC 獨立背包的增減
-        if (npcUpdate.inventory_changes && Array.isArray(npcUpdate.inventory_changes)) {
-          npc.inventory = npc.inventory || [];
-          
-          var npcAutoHunger = applyInventoryChangesTo(npc.inventory, npcUpdate.inventory_changes);
-          
-          if (npcAutoHunger > 0) {
-            npc.hunger = Math.min(100, (npc.hunger || 0) + npcAutoHunger);
-          }
-          // 【新增】印出 NPC 獲得物品的日誌
-          if (typeof appendGMText === 'function') {
-            npcUpdate.inventory_changes.forEach(function(change) {
-              if (change.action === 'add' || change.action === 'add_weapon') {
-                var qty = change.quantity || 1;
-                appendGMText('[系統] 隨行隊員 ' + npcUpdate.name + ' 獲得了 ' + change.name + ' x' + qty + '。');
-              }
-            });
-          }
-        }
-        
-        // 處理 NPC 的體格成長
-        if (npcUpdate.proficiency_triggered && Array.isArray(npcUpdate.proficiency_triggered)) {
-          npc.proficiency = npc.proficiency || { combat: 0, shooting: 0, agility: 0, scouting: 0, medical: 0, negotiation: 0, searching: 0, mechanics: 0 };
-          npcUpdate.proficiency_triggered.forEach(function(prof) {
-            if (typeof npc.proficiency[prof] !== 'undefined') {
-              npc.proficiency[prof] += 15; // 每次觸發固定給 15 點經驗，由前端統一控制
-            }
-          });
-        }
-      }
-    });
+  if (u.companion_changes.length) {
+    applyCompanionChanges(u.companion_changes);
   }
 
-  // 【階段5新增】處理 AI 回報的熟練度增加
-  if (update.proficiency_triggered && Array.isArray(update.proficiency_triggered)) {
-    applyProficiencyGrowth(gameState.skillProficiency, update.proficiency_triggered);
-    // (如果未來需要，也可以讓 AI 回報 NPC 的觸發，目前先以主角為主)
+  // 接收 NPC 的獨立狀態變化（含背包與體格）
+  u.npc_status_updates.forEach(function (npcUpdate) {
+    if (!(gameState.npcStates && gameState.npcStates[npcUpdate.name])) return;
+    var npc = gameState.npcStates[npcUpdate.name];
+
+    // NPC 的體力與飽食度，與主角一樣正常接受 AI 的增減（劇情休息、進食皆可恢復）
+    npc.stamina = clamp(npc.stamina + npcUpdate.stamina_change, 0, 100);
+    npc.hunger = clamp(npc.hunger + npcUpdate.hunger_change, 0, 100);
+
+    // 傷勢降級邏輯（NPC 也適用階梯式恢復）
+    if (npcUpdate.injury_status) {
+      if (npc.injuryStatus === 'severe' && npcUpdate.injury_status === 'none') {
+        npc.injuryStatus = 'minor';
+      } else {
+        npc.injuryStatus = npcUpdate.injury_status;
+      }
+    }
+    if (npc.injuryStatus === 'none') {
+      npc.injuryDetail = '';
+    } else if (npcUpdate.injury_detail) {
+      npc.injuryDetail = npcUpdate.injury_detail;
+    }
+
+    // 處理 NPC 獨立背包的增減
+    if (npcUpdate.inventory_changes.length) {
+      npc.inventory = npc.inventory || [];
+      var npcAutoHunger = applyInventoryChangesTo(npc.inventory, npcUpdate.inventory_changes);
+      if (npcAutoHunger > 0) {
+        npc.hunger = Math.min(100, (npc.hunger || 0) + npcAutoHunger);
+      }
+      // 印出 NPC 獲得物品的日誌
+      if (typeof appendGMText === 'function') {
+        npcUpdate.inventory_changes.forEach(function (change) {
+          if (change.action === 'add' || change.action === 'add_weapon') {
+            appendGMText('[系統] 隨行隊員 ' + npcUpdate.name + ' 獲得了 ' + change.name + ' x' + change.quantity + '。');
+          }
+        });
+      }
+    }
+
+    // 處理 NPC 的體格成長
+    if (npcUpdate.proficiency_triggered.length) {
+      npc.proficiency = npc.proficiency || { combat: 0, shooting: 0, agility: 0, scouting: 0, medical: 0, negotiation: 0, searching: 0, mechanics: 0 };
+      npcUpdate.proficiency_triggered.forEach(function (prof) {
+        if (typeof npc.proficiency[prof] !== 'undefined') {
+          npc.proficiency[prof] += 15; // 每次觸發固定給 15 點經驗，由前端統一控制
+        }
+      });
+    }
+  });
+
+  // 處理 AI 回報的熟練度增加
+  if (u.proficiency_triggered.length) {
+    applyProficiencyGrowth(gameState.skillProficiency, u.proficiency_triggered);
   }
-  if (update.vehicle_update && update.vehicle_update.action) {
-    applyVehicleUpdate(update.vehicle_update);
+
+  if (u.vehicle_update) {
+    applyVehicleUpdate(u.vehicle_update);
   }
-  if (update.stash_update && update.stash_update.action) {
-    applyStashUpdate(update.stash_update);
+  if (u.stash_update) {
+    applyStashUpdate(u.stash_update);
   }
-  if (update.faction_trust_update) {
-    for (var rawFaction in update.faction_trust_update) {
-      if (Object.prototype.hasOwnProperty.call(update.faction_trust_update, rawFaction)) {
+
+  if (u.faction_trust_update) {
+    // VALID_FACTIONS 與 FACTION_ALIASES 已搬移至 config.js 統一管理
+    for (var rawFaction in u.faction_trust_update) {
+      if (Object.prototype.hasOwnProperty.call(u.faction_trust_update, rawFaction)) {
         var targetFaction = rawFaction;
-        var delta = update.faction_trust_update[rawFaction];
+        var delta = u.faction_trust_update[rawFaction];
 
         // 偵測到 AI 使用基地名稱時，自動校正為對應勢力
         if (FACTION_ALIASES[targetFaction]) {
@@ -184,8 +181,14 @@ function applyStatusUpdate(update) {
       }
     }
   }
-  if (update.special_event === 'awakening') gameState.awakeningLevel = Math.max(gameState.awakeningLevel, 1);
-  if (update.special_event === 'multi_awakening') gameState.awakeningLevel = Math.max(gameState.awakeningLevel, 1);
+
+  if (u.special_event === 'awakening') gameState.awakeningLevel = Math.max(gameState.awakeningLevel, 1);
+  if (u.special_event === 'multi_awakening') gameState.awakeningLevel = Math.max(gameState.awakeningLevel, 1);
+
+  // 回傳正規化後的 special_event，供 app-api.js 的 handleAIResponse()
+  // 使用同一份已驗證過的值判斷里程碑彈窗與死亡流程，避免兩處各自
+  // 讀取原始未正規化的 update.special_event 造成判斷標準不一致。
+  return u.special_event;
 }
 
 function applyCompanionChanges(changes) {
