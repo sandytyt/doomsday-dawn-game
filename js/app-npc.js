@@ -105,14 +105,28 @@ function processNpcMicroActions() {
         if (typeof appendGMText === 'function') {
            appendGMText('[系統] ' + npcName + ' 在附近搜刮，幸運地找到了 ' + lootName + ' x1。');
         }
-        
-      } else if (actionRoll > 0.9) { 
+      
+      } else if (actionRoll > 0.9) {
         // 10% 機率與小型喪屍交戰
         npc.stamina = Math.max(0, npc.stamina - 10);
-        if (typeof appendGMText === 'function') {
-           appendGMText('[系統] ' + npcName + ' 獨自處理了一隻落單的喪屍，消耗了少許體力。');
+
+        // 【修正 Bug #11】physique 越高，戰鬥中受傷機率越低。
+        // 基礎機率 15%，每點 physique 降低 2%（physique 0～5 對應 15%～5%）。
+        var physique = typeof npc.physique === 'number' ? npc.physique : 3;
+        var injuryChance = Math.max(0.05, 0.15 - physique * 0.02);
+
+        if (npc.injuryStatus === 'none' && Math.random() < injuryChance) {
+          npc.injuryStatus = 'minor';
+          npc.injuryDetail = '交戰時被抓傷';
+          if (typeof appendGMText === 'function') {
+            appendGMText('[系統] ' + npcName + ' 獨自處理了一隻落單的喪屍，過程中被抓傷，消耗了體力。');
+          }
+        } else {
+          if (typeof appendGMText === 'function') {
+            appendGMText('[系統] ' + npcName + ' 獨自處理了一隻落單的喪屍，消耗了少許體力。');
+          }
         }
-      }
+      }  
     }
   }
 }
