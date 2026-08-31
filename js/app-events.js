@@ -1,3 +1,5 @@
+'use strict';
+
 var statusExpanded = false;
 var optionsMiniMode = false;
 var inventoryExpanded = false;
@@ -7,8 +9,6 @@ var stashExpanded = false;
 
 /* ---------- 安全事件綁定工具 ---------- */
 
-// 統一的安全綁定入口：element 為 null/undefined 時只警告，不拋錯。
-// label 用於 console 訊息，方便直接定位是哪一個 dom.xxx 缺失。
 function bindSafe(element, eventType, handler, label) {
   if (!element) {
     console.warn('[UI警告] 找不到元素「' + (label || '(未命名)') + '」，已略過 ' + eventType + ' 事件綁定。請確認 index.html 對應的 id 是否存在。');
@@ -19,46 +19,46 @@ function bindSafe(element, eventType, handler, label) {
 }
 
 function bindEvents() {
-  bindSafe(dom.providerSelect, 'change', handleProviderChange, 'providerSelect');
-  bindSafe(dom.startBtn, 'click', handleStartGame, 'startBtn');
-  bindSafe(dom.testModeBtn, 'click', handleStartTestMode, 'testModeBtn');
-  bindSafe(dom.importSaveBtn, 'click', function () { dom.importSaveFile.click(); }, 'importSaveBtn');
-  bindSafe(dom.importSaveFile, 'change', handleImportFile, 'importSaveFile');
-  bindSafe(dom.charSetupToggle, 'click', function () { toggleCollapse(dom.charSetupToggle, dom.charSetupFields); }, 'charSetupToggle');
-  bindSafe(dom.statusExpandBtn, 'click', handleStatusExpandClick, 'statusExpandBtn');
-  bindSafe(dom.menuToggleBtn, 'click', handleMenuToggleClick, 'menuToggleBtn');
-  bindSafe(dom.sideMenuBackdrop, 'click', function () { toggleSideMenu(false); }, 'sideMenuBackdrop');
-  bindSafe(dom.menuCloseBtn, 'click', function () { toggleSideMenu(false); }, 'menuCloseBtn');
-  bindSafe(dom.menuExportBtn, 'click', handleExportSave, 'menuExportBtn');
-  bindSafe(dom.menuImportBtn, 'click', handleMenuImportClick, 'menuImportBtn');
-  bindSafe(dom.menuNamedSaveBtn, 'click', handleOpenNamedSave, 'menuNamedSaveBtn');
-  bindSafe(dom.menuSaveManagerBtn, 'click', handleOpenSaveManager, 'menuSaveManagerBtn');
-  bindSafe(dom.namedSaveClose, 'click', function () { dom.namedSaveModal.classList.add('hidden'); }, 'namedSaveClose');
-  bindSafe(dom.saveTabLocal, 'click', function () { switchSaveTab('local'); }, 'saveTabLocal');
-  bindSafe(dom.saveTabNotion, 'click', function () { switchSaveTab('notion'); }, 'saveTabNotion');
-  bindSafe(dom.menuRestartBtn, 'click', handleRestart, 'menuRestartBtn');
-  bindSafe(dom.menuApikeyBtn, 'click', handleChangeApiKey, 'menuApikeyBtn');
+  bindSafe(dom.setup.providerSelect, 'change', handleProviderChange, 'setup.providerSelect');
+  bindSafe(dom.setup.startBtn, 'click', handleStartGame, 'setup.startBtn');
+  bindSafe(dom.setup.testModeBtn, 'click', handleStartTestMode, 'setup.testModeBtn');
+  bindSafe(dom.setup.importSaveBtn, 'click', function () { dom.setup.importSaveFile.click(); }, 'setup.importSaveBtn');
+  bindSafe(dom.setup.importSaveFile, 'change', handleImportFile, 'setup.importSaveFile');
+  bindSafe(dom.setup.charSetupToggle, 'click', function () { toggleCollapse(dom.setup.charSetupToggle, dom.setup.charSetupFields); }, 'setup.charSetupToggle');
+  bindSafe(dom.status.expandBtn, 'click', handleStatusExpandClick, 'status.expandBtn');
+  bindSafe(dom.menu.toggleBtn, 'click', handleMenuToggleClick, 'menu.toggleBtn');
+  bindSafe(dom.menu.backdrop, 'click', function () { toggleSideMenu(false); }, 'menu.backdrop');
+  bindSafe(dom.menu.closeBtn, 'click', function () { toggleSideMenu(false); }, 'menu.closeBtn');
+  bindSafe(dom.menu.exportBtn, 'click', handleExportSave, 'menu.exportBtn');
+  bindSafe(dom.menu.importBtn, 'click', handleMenuImportClick, 'menu.importBtn');
+  bindSafe(dom.menu.namedSaveBtn, 'click', handleOpenNamedSave, 'menu.namedSaveBtn');
+  bindSafe(dom.menu.saveManagerBtn, 'click', handleOpenSaveManager, 'menu.saveManagerBtn');
+  bindSafe(dom.modal.namedSaveClose, 'click', function () { dom.modal.namedSave.classList.add('hidden'); }, 'modal.namedSaveClose');
+  bindSafe(dom.modal.saveTabLocal, 'click', function () { switchSaveTab('local'); }, 'modal.saveTabLocal');
+  bindSafe(dom.modal.saveTabNotion, 'click', function () { switchSaveTab('notion'); }, 'modal.saveTabNotion');
+  bindSafe(dom.menu.restartBtn, 'click', handleRestart, 'menu.restartBtn');
+  bindSafe(dom.menu.apikeyBtn, 'click', handleChangeApiKey, 'menu.apikeyBtn');
 
   // 【綁定開啟手冊】
-  bindSafe(dom.rulesLinkBtn, 'click', function () { toggleManualModal(true); }, 'rulesLinkBtn');
-  bindSafe(dom.menuRulesBtn, 'click', function () { toggleSideMenu(false); setTimeout(function () { toggleManualModal(true); }, 200); }, 'menuRulesBtn');
-  bindSafe(dom.manualCloseBtn, 'click', function () { toggleManualModal(false); }, 'manualCloseBtn');
+  bindSafe(dom.setup.rulesLinkBtn, 'click', function () { toggleManualModal(true); }, 'setup.rulesLinkBtn');
+  bindSafe(dom.menu.rulesBtn, 'click', function () { toggleSideMenu(false); setTimeout(function () { toggleManualModal(true); }, 200); }, 'menu.rulesBtn');
+  bindSafe(dom.modal.manualClose, 'click', function () { toggleManualModal(false); }, 'modal.manualClose');
 
-  bindSafe(dom.notionSetupToggle, 'click', function () { toggleCollapse(dom.notionSetupToggle, dom.notionSetupFields); }, 'notionSetupToggle');
-  bindSafe(dom.notionSaveBtn, 'click', handleSaveNotionConfig, 'notionSaveBtn');
-  bindSafe(dom.notionSyncNowBtn, 'click', handleNotionSyncNow, 'notionSyncNowBtn');
-  bindSafe(dom.optionsCollapseToggle, 'click', handleOptionsCollapseClick, 'optionsCollapseToggle');
-  bindSafe(dom.actionCollapsedBar, 'click', handleOptionsCollapseClick, 'actionCollapsedBar');
-  bindSafe(dom.freeInputToggle, 'click', handleFreeInputToggleClick, 'freeInputToggle');
-  bindSafe(dom.freeInputCancel, 'click', handleFreeInputCancelClick, 'freeInputCancel');
-  bindSafe(dom.freeInputSend, 'click', handleFreeInputSend, 'freeInputSend');
-  bindSafe(dom.freeInputText, 'keypress', handleFreeInputKeypress, 'freeInputText');
-  bindSafe(dom.eventModalClose, 'click', handleEventModalClose, 'eventModalClose');
+  bindSafe(dom.menu.notionSetupToggle, 'click', function () { toggleCollapse(dom.menu.notionSetupToggle, dom.menu.notionSetupFields); }, 'menu.notionSetupToggle');
+  bindSafe(dom.menu.notionSaveBtn, 'click', handleSaveNotionConfig, 'menu.notionSaveBtn');
+  bindSafe(dom.menu.notionSyncNowBtn, 'click', handleNotionSyncNow, 'menu.notionSyncNowBtn');
+  bindSafe(dom.narrative.optionsCollapseToggle, 'click', handleOptionsCollapseClick, 'narrative.optionsCollapseToggle');
+  bindSafe(dom.narrative.actionCollapsedBar, 'click', handleOptionsCollapseClick, 'narrative.actionCollapsedBar');
+  bindSafe(dom.narrative.freeInputToggle, 'click', handleFreeInputToggleClick, 'narrative.freeInputToggle');
+  bindSafe(dom.narrative.freeInputCancel, 'click', handleFreeInputCancelClick, 'narrative.freeInputCancel');
+  bindSafe(dom.narrative.freeInputSend, 'click', handleFreeInputSend, 'narrative.freeInputSend');
+  bindSafe(dom.narrative.freeInputText, 'keypress', handleFreeInputKeypress, 'narrative.freeInputText');
+  bindSafe(dom.modal.eventClose, 'click', handleEventModalClose, 'modal.eventClose');
 
   // 【終端機 UI 綁定】
-  bindSafe(dom.panelsToggleBtn, 'click', function () { toggleInfoPanel(true); }, 'panelsToggleBtn');
-  bindSafe(dom.infoPanelBackdrop, 'click', function () { toggleInfoPanel(false); }, 'infoPanelBackdrop');
-  bindSafe(dom.infoPanelClose, 'click', function () { toggleInfoPanel(false); }, 'infoPanelClose');
+  bindSafe(dom.infoPanelGroup.toggleBtn, 'click', function () { toggleInfoPanel(true); }, 'infoPanelGroup.toggleBtn');
+  bindSafe(dom.infoPanelGroup.backdrop, 'click', function () { toggleInfoPanel(false); }, 'infoPanelGroup.backdrop');
+  bindSafe(dom.infoPanelGroup.close, 'click', function () { toggleInfoPanel(false); }, 'infoPanelGroup.close');
 
   var infoTabBtns = document.querySelectorAll('.info-tab-btn');
   var infoPanes = document.querySelectorAll('.info-pane');
@@ -82,31 +82,31 @@ function bindEvents() {
   }
 
   // 【階段5新增：背景類型與自訂配點，含雙重警告】
-  bindSafe(dom.bgSelect, 'change', handleBackgroundTypeChange, 'bgSelect');
-  if (dom.generalistDiv) {
-    var pointInputs = dom.generalistDiv.querySelectorAll('.gen-point-input');
+  bindSafe(dom.setup.bgSelect, 'change', handleBackgroundTypeChange, 'setup.bgSelect');
+  if (dom.setup.generalistDiv) {
+    var pointInputs = dom.setup.generalistDiv.querySelectorAll('.gen-point-input');
     if (pointInputs.length === 0) {
-      console.warn('[UI警告] 在「generalistDiv」內找不到任何「.gen-point-input」元素，已略過自訂配點欄位的 input 事件綁定。請確認 index.html 對應結構是否存在。');
+      console.warn('[UI警告] 在「setup.generalistDiv」內找不到任何「.gen-point-input」元素，已略過自訂配點欄位的 input 事件綁定。請確認 index.html 對應結構是否存在。');
     }
     for (var j = 0; j < pointInputs.length; j++) {
       pointInputs[j].addEventListener('input', handleGeneralistPointChange);
     }
   } else {
-    console.warn('[UI警告] 找不到元素「generalistDiv」，已略過自訂配點欄位的 input 事件綁定。請確認 index.html 對應的 id 是否存在。');
+    console.warn('[UI警告] 找不到元素「setup.generalistDiv」，已略過自訂配點欄位的 input 事件綁定。請確認 index.html 對應的 id 是否存在。');
   }
 }
 
 function handleProviderChange() {
-  var provider = dom.providerSelect.value;
+  var provider = dom.setup.providerSelect.value;
   localStorage.setItem(PROVIDER_KEY, provider);
   var savedKey = localStorage.getItem(APIKEY_KEY_PREFIX + provider);
-  dom.apiKeyInput.value = savedKey || '';
+  dom.setup.apiKeyInput.value = savedKey || '';
 }
 
 function handleStatusExpandClick() {
   statusExpanded = !statusExpanded;
-  dom.statusPanelFull.classList.toggle('hidden', !statusExpanded);
-  dom.statusExpandBtn.classList.toggle('expanded', statusExpanded);
+  dom.status.panelFull.classList.toggle('hidden', !statusExpanded);
+  dom.status.expandBtn.classList.toggle('expanded', statusExpanded);
 }
 
 function handleMenuToggleClick(e) {
@@ -116,7 +116,7 @@ function handleMenuToggleClick(e) {
 
 function handleMenuImportClick() {
   toggleSideMenu(false);
-  setTimeout(function () { dom.importSaveFile.click(); }, 200);
+  setTimeout(function () { dom.setup.importSaveFile.click(); }, 200);
 }
 
 function handleOptionsCollapseClick() {
@@ -125,15 +125,15 @@ function handleOptionsCollapseClick() {
 }
 
 function handleFreeInputToggleClick() {
-  dom.freeInputRow.classList.remove('hidden');
-  dom.freeInputToggle.classList.add('hidden');
-  dom.freeInputText.focus();
+  dom.narrative.freeInputRow.classList.remove('hidden');
+  dom.narrative.freeInputToggle.classList.add('hidden');
+  dom.narrative.freeInputText.focus();
 }
 
 function handleFreeInputCancelClick() {
-  dom.freeInputRow.classList.add('hidden');
-  dom.freeInputToggle.classList.remove('hidden');
-  dom.freeInputText.value = '';
+  dom.narrative.freeInputRow.classList.add('hidden');
+  dom.narrative.freeInputToggle.classList.remove('hidden');
+  dom.narrative.freeInputText.value = '';
 }
 
 function handleFreeInputKeypress(e) {
@@ -141,7 +141,7 @@ function handleFreeInputKeypress(e) {
 }
 
 function handleFreeInputSend() {
-  var text = dom.freeInputText.value.trim();
+  var text = dom.narrative.freeInputText.value.trim();
   if (!text) return;
 
   // 開發者作弊指令攔截：若為合法指令且已處理，直接中斷，不送給 AI。
@@ -151,9 +151,9 @@ function handleFreeInputSend() {
   }
 
   // 原本正常的發送邏輯
-  dom.freeInputText.value = '';
-  dom.freeInputRow.classList.add('hidden');
-  dom.freeInputToggle.classList.remove('hidden');
+  dom.narrative.freeInputText.value = '';
+  dom.narrative.freeInputRow.classList.add('hidden');
+  dom.narrative.freeInputToggle.classList.remove('hidden');
   requestNextTurn(text);
 }
 
@@ -169,12 +169,12 @@ function toggleCollapse(btn, body) {
 }
 
 function toggleSideMenu(show) {
-  dom.sideMenu.classList.toggle('hidden', !show);
+  dom.menu.sideMenu.classList.toggle('hidden', !show);
 }
 
 function toggleInfoPanel(show) {
-  if (!dom.infoPanel) return;
-  dom.infoPanel.classList.toggle('hidden', !show);
+  if (!dom.infoPanelGroup.panel) return;
+  dom.infoPanelGroup.panel.classList.toggle('hidden', !show);
   // 打開終端機時，一次性渲染所有資料
   if (show) {
     renderCharProfile();
@@ -186,19 +186,19 @@ function toggleInfoPanel(show) {
 
 function toggleManualModal(show) {
   // 動態抓取確保不報錯
-  if (!dom.manualModal) {
-    dom.manualModal = document.getElementById('manual-modal');
-    dom.manualCloseBtn = document.getElementById('manual-close-btn');
-    if (dom.manualCloseBtn) dom.manualCloseBtn.addEventListener('click', function () { toggleManualModal(false); });
+  if (!dom.modal.manual) {
+    dom.modal.manual = document.getElementById('manual-modal');
+    dom.modal.manualClose = document.getElementById('manual-close-btn');
+    if (dom.modal.manualClose) dom.modal.manualClose.addEventListener('click', function () { toggleManualModal(false); });
   }
 
   // 真的抓不到就報錯警告
-  if (!dom.manualModal) {
+  if (!dom.modal.manual) {
     console.error("找不到手冊 UI！請確認 index.html 中是否有 id='manual-modal'");
     return;
   }
 
-  dom.manualModal.classList.toggle('hidden', !show);
+  dom.modal.manual.classList.toggle('hidden', !show);
 }
 
 function setupManualTabs() {
@@ -222,15 +222,15 @@ function setupManualTabs() {
 }
 
 function handleBackgroundTypeChange() {
-  if (dom.bgSelect.value === 'generalist') {
-    dom.generalistDiv.classList.remove('hidden');
+  if (dom.setup.bgSelect.value === 'generalist') {
+    dom.setup.generalistDiv.classList.remove('hidden');
   } else {
-    dom.generalistDiv.classList.add('hidden');
+    dom.setup.generalistDiv.classList.add('hidden');
   }
 }
 
 function handleGeneralistPointChange(e) {
-  var inputs = dom.generalistDiv.querySelectorAll('.gen-point-input');
+  var inputs = dom.setup.generalistDiv.querySelectorAll('.gen-point-input');
   var total = 0;
   for (var i = 0; i < inputs.length; i++) {
     total += parseInt(inputs[i].value, 10) || 0;
