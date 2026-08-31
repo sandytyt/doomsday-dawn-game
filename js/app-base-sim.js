@@ -173,16 +173,16 @@ function processSingleDayForZone(zone, stash) {
   var missing = foodNeeded + waterNeeded;
   if (missing > 0) {
     report.warnings.push('庫存枯竭！缺少 ' + missing + ' 份基本飲食。');
-    for (var k = 0; k < missing; k++) {
-      if (Math.random() < 0.3) {
-        report.starvationDeaths++;
-        zone.population = Math.max(0, zone.population - 1);
-      }
+    // 【修正 Bug #14】不論缺糧短少多少份，一天只整體擲一次 30% 死亡機率，
+    // 不再隨短缺份數疊加風險。
+    if (Math.random() < 0.3) {
+      report.starvationDeaths++;
+      zone.population = Math.max(0, zone.population - 1);
     }
     if (report.starvationDeaths > 0) {
       report.warnings.push('嚴重飢荒：失去了 ' + report.starvationDeaths + ' 名居民。');
       if (typeof appendGMText === 'function') {
-         appendGMText('[系統警告] ' + zone.name + ' 發生嚴重飢荒或襲擊，導致人口流失，請盡速返回處理！');
+        appendGMText('[系統警告] ' + zone.name + ' 發生嚴重飢荒或襲擊，導致人口流失，請盡速返回處理！');
       }
     }
   }
