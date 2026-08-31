@@ -82,3 +82,8 @@ function applyAbilityExpChange(delta) {
     needed = getAbilityExpNeeded(gameState.awakeningLevel);
   }
 }
+
+function getAbilityExpNeeded(level) {
+  if (level >= 10) return ABILITY_LEVEL_THRESHOLDS[9];
+  return ABILITY_LEVEL_THRESHOLDS[level];
+}
