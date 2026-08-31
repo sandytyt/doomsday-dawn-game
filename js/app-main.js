@@ -105,7 +105,7 @@ function cacheDom() {
   // ---------- 角色檔案面板 ----------
   dom.charProfileToggle = document.getElementById('char-profile-toggle');
   dom.charProfileBody = document.getElementById('char-profile-body');
-  dom.profileName = document.getElementById('profile-name');
+  // 【已刪除】dom.profileName（HTML 已無 profile-name 欄位，主角不顯示姓名）
   dom.profileGender = document.getElementById('profile-gender');
   dom.profileLocation = document.getElementById('profile-location');
   dom.profileOccupation = document.getElementById('profile-occupation');
@@ -120,8 +120,8 @@ function cacheDom() {
   dom.profileAwakeningExp = document.getElementById('profile-awakening-exp');
 
   // ============================================================
-  // 【新增】語意分組別名——指向與上方扁平版本完全相同的 DOM 元素，
-  // 現有程式碼不受影響，新程式碼可選擇使用以下語意化路徑。
+  // 【語意分組別名】指向與上方扁平版本完全相同的 DOM 元素，
+  // 現有程式碼可繼續使用扁平屬性，新程式碼可改用以下語意化路徑。
   // ============================================================
 
   dom.setup = {
@@ -233,10 +233,10 @@ function cacheDom() {
     manualClose: dom.manualCloseBtn
   };
 
+  // 【已移除 name 欄位】依使用者指示，dom.profileName 已刪除
   dom.profile = {
     toggle: dom.charProfileToggle,
     body: dom.charProfileBody,
-    name: dom.profileName,
     gender: dom.profileGender,
     location: dom.profileLocation,
     occupation: dom.profileOccupation,
