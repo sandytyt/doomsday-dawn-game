@@ -295,7 +295,6 @@ function renderCharProfile() {
 }
 
 function renderProfileProficiency() {
-  if (!dom.charProfileBody) return;
   var existing = document.getElementById('profile-proficiency-section');
   if (existing) existing.remove();
 
