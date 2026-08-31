@@ -7,58 +7,71 @@ var npcExpanded = false;
 var vehicleExpanded = false;
 var stashExpanded = false;
 
+/* ---------- 安全事件綁定工具 ---------- */
+
+// 統一的安全綁定入口：element 為 null/undefined 時只警告，不拋錯。
+// label 用於 console 訊息，方便直接定位是哪一個 dom.xxx 缺失。
+function bindSafe(element, eventType, handler, label) {
+  if (!element) {
+    console.warn('[UI警告] 找不到元素「' + (label || '(未命名)') + '」，已略過 ' + eventType + ' 事件綁定。請確認 index.html 對應的 id 是否存在。');
+    return false;
+  }
+  element.addEventListener(eventType, handler);
+  return true;
+}
+
 function bindEvents() {
-  dom.providerSelect.addEventListener('change', handleProviderChange);
-  dom.startBtn.addEventListener('click', handleStartGame);
-  if (dom.testModeBtn) dom.testModeBtn.addEventListener('click', handleStartTestMode);
-  dom.importSaveBtn.addEventListener('click', function () { dom.importSaveFile.click(); });
-  dom.importSaveFile.addEventListener('change', handleImportFile);
-  dom.charSetupToggle.addEventListener('click', function () { toggleCollapse(dom.charSetupToggle, dom.charSetupFields); });
-  dom.statusExpandBtn.addEventListener('click', handleStatusExpandClick);
-  dom.menuToggleBtn.addEventListener('click', handleMenuToggleClick);
-  dom.sideMenuBackdrop.addEventListener('click', function () { toggleSideMenu(false); });
-  dom.menuCloseBtn.addEventListener('click', function () { toggleSideMenu(false); });
-  dom.menuExportBtn.addEventListener('click', handleExportSave);
-  dom.menuImportBtn.addEventListener('click', handleMenuImportClick);
-  dom.menuNamedSaveBtn.addEventListener('click', handleOpenNamedSave);
-  dom.menuSaveManagerBtn.addEventListener('click', handleOpenSaveManager);
-  dom.namedSaveClose.addEventListener('click', function () { dom.namedSaveModal.classList.add('hidden'); });
-  dom.saveTabLocal.addEventListener('click', function () { switchSaveTab('local'); });
-  dom.saveTabNotion.addEventListener('click', function () { switchSaveTab('notion'); });
-  dom.menuRestartBtn.addEventListener('click', handleRestart);
-  dom.menuApikeyBtn.addEventListener('click', handleChangeApiKey);
-  
+  bindSafe(dom.providerSelect, 'change', handleProviderChange, 'providerSelect');
+  bindSafe(dom.startBtn, 'click', handleStartGame, 'startBtn');
+  bindSafe(dom.testModeBtn, 'click', handleStartTestMode, 'testModeBtn');
+  bindSafe(dom.importSaveBtn, 'click', function () { dom.importSaveFile.click(); }, 'importSaveBtn');
+  bindSafe(dom.importSaveFile, 'change', handleImportFile, 'importSaveFile');
+  bindSafe(dom.charSetupToggle, 'click', function () { toggleCollapse(dom.charSetupToggle, dom.charSetupFields); }, 'charSetupToggle');
+  bindSafe(dom.statusExpandBtn, 'click', handleStatusExpandClick, 'statusExpandBtn');
+  bindSafe(dom.menuToggleBtn, 'click', handleMenuToggleClick, 'menuToggleBtn');
+  bindSafe(dom.sideMenuBackdrop, 'click', function () { toggleSideMenu(false); }, 'sideMenuBackdrop');
+  bindSafe(dom.menuCloseBtn, 'click', function () { toggleSideMenu(false); }, 'menuCloseBtn');
+  bindSafe(dom.menuExportBtn, 'click', handleExportSave, 'menuExportBtn');
+  bindSafe(dom.menuImportBtn, 'click', handleMenuImportClick, 'menuImportBtn');
+  bindSafe(dom.menuNamedSaveBtn, 'click', handleOpenNamedSave, 'menuNamedSaveBtn');
+  bindSafe(dom.menuSaveManagerBtn, 'click', handleOpenSaveManager, 'menuSaveManagerBtn');
+  bindSafe(dom.namedSaveClose, 'click', function () { dom.namedSaveModal.classList.add('hidden'); }, 'namedSaveClose');
+  bindSafe(dom.saveTabLocal, 'click', function () { switchSaveTab('local'); }, 'saveTabLocal');
+  bindSafe(dom.saveTabNotion, 'click', function () { switchSaveTab('notion'); }, 'saveTabNotion');
+  bindSafe(dom.menuRestartBtn, 'click', handleRestart, 'menuRestartBtn');
+  bindSafe(dom.menuApikeyBtn, 'click', handleChangeApiKey, 'menuApikeyBtn');
+
   // 【綁定開啟手冊】
-  if (dom.rulesLinkBtn) dom.rulesLinkBtn.addEventListener('click', function () { toggleManualModal(true); });
-  if (dom.menuRulesBtn) dom.menuRulesBtn.addEventListener('click', function () { toggleSideMenu(false); setTimeout(function () { toggleManualModal(true); }, 200); });
-  if (dom.manualCloseBtn) dom.manualCloseBtn.addEventListener('click', function () { toggleManualModal(false); });
-  
-  dom.notionSetupToggle.addEventListener('click', function () { toggleCollapse(dom.notionSetupToggle, dom.notionSetupFields); });
-  dom.notionSaveBtn.addEventListener('click', handleSaveNotionConfig);
-  dom.notionSyncNowBtn.addEventListener('click', handleNotionSyncNow);
-  dom.optionsCollapseToggle.addEventListener('click', handleOptionsCollapseClick);
-  dom.actionCollapsedBar.addEventListener('click', handleOptionsCollapseClick);
-  dom.freeInputToggle.addEventListener('click', handleFreeInputToggleClick);
-  dom.freeInputCancel.addEventListener('click', handleFreeInputCancelClick);
-  dom.freeInputSend.addEventListener('click', handleFreeInputSend);
-  dom.freeInputText.addEventListener('keypress', handleFreeInputKeypress);
-  dom.eventModalClose.addEventListener('click', handleEventModalClose);
-  
+  bindSafe(dom.rulesLinkBtn, 'click', function () { toggleManualModal(true); }, 'rulesLinkBtn');
+  bindSafe(dom.menuRulesBtn, 'click', function () { toggleSideMenu(false); setTimeout(function () { toggleManualModal(true); }, 200); }, 'menuRulesBtn');
+  bindSafe(dom.manualCloseBtn, 'click', function () { toggleManualModal(false); }, 'manualCloseBtn');
+
+  bindSafe(dom.notionSetupToggle, 'click', function () { toggleCollapse(dom.notionSetupToggle, dom.notionSetupFields); }, 'notionSetupToggle');
+  bindSafe(dom.notionSaveBtn, 'click', handleSaveNotionConfig, 'notionSaveBtn');
+  bindSafe(dom.notionSyncNowBtn, 'click', handleNotionSyncNow, 'notionSyncNowBtn');
+  bindSafe(dom.optionsCollapseToggle, 'click', handleOptionsCollapseClick, 'optionsCollapseToggle');
+  bindSafe(dom.actionCollapsedBar, 'click', handleOptionsCollapseClick, 'actionCollapsedBar');
+  bindSafe(dom.freeInputToggle, 'click', handleFreeInputToggleClick, 'freeInputToggle');
+  bindSafe(dom.freeInputCancel, 'click', handleFreeInputCancelClick, 'freeInputCancel');
+  bindSafe(dom.freeInputSend, 'click', handleFreeInputSend, 'freeInputSend');
+  bindSafe(dom.freeInputText, 'keypress', handleFreeInputKeypress, 'freeInputText');
+  bindSafe(dom.eventModalClose, 'click', handleEventModalClose, 'eventModalClose');
+
   // 【終端機 UI 綁定】
-  if (dom.panelsToggleBtn) dom.panelsToggleBtn.addEventListener('click', function () { toggleInfoPanel(true); });
-  if (dom.infoPanelBackdrop) dom.infoPanelBackdrop.addEventListener('click', function () { toggleInfoPanel(false); });
-  if (dom.infoPanelClose) dom.infoPanelClose.addEventListener('click', function () { toggleInfoPanel(false); });
-  
+  bindSafe(dom.panelsToggleBtn, 'click', function () { toggleInfoPanel(true); }, 'panelsToggleBtn');
+  bindSafe(dom.infoPanelBackdrop, 'click', function () { toggleInfoPanel(false); }, 'infoPanelBackdrop');
+  bindSafe(dom.infoPanelClose, 'click', function () { toggleInfoPanel(false); }, 'infoPanelClose');
+
   var infoTabBtns = document.querySelectorAll('.info-tab-btn');
   var infoPanes = document.querySelectorAll('.info-pane');
 
   if (infoTabBtns.length > 0) {
-    infoTabBtns.forEach(function(btn) {
-      btn.addEventListener('click', function() {
+    infoTabBtns.forEach(function (btn) {
+      btn.addEventListener('click', function () {
         // 移除所有啟動狀態
-        infoTabBtns.forEach(function(b) { b.classList.remove('active'); });
-        infoPanes.forEach(function(p) { p.classList.add('hidden'); });
-        
+        infoTabBtns.forEach(function (b) { b.classList.remove('active'); });
+        infoPanes.forEach(function (p) { p.classList.add('hidden'); });
+
         // 啟動當前點擊的頁籤
         btn.classList.add('active');
         var targetId = btn.getAttribute('data-target');
@@ -71,7 +84,7 @@ function bindEvents() {
   }
 
   // 【階段5新增】
-  if (dom.bgSelect) dom.bgSelect.addEventListener('change', handleBackgroundTypeChange);
+  bindSafe(dom.bgSelect, 'change', handleBackgroundTypeChange, 'bgSelect');
   if (dom.generalistDiv) {
     var pointInputs = dom.generalistDiv.querySelectorAll('.gen-point-input');
     for (var j = 0; j < pointInputs.length; j++) {
@@ -181,21 +194,21 @@ function toggleManualModal(show) {
     console.error("找不到手冊 UI！請確認 index.html 中是否有 id='manual-modal'");
     return;
   }
-  
+
   dom.manualModal.classList.toggle('hidden', !show);
 }
 
 function setupManualTabs() {
   var tabBtns = document.querySelectorAll('.manual-tab-btn');
   if (tabBtns.length === 0) return;
-  
-  tabBtns.forEach(function(btn) {
-    btn.addEventListener('click', function() {
+
+  tabBtns.forEach(function (btn) {
+    btn.addEventListener('click', function () {
       // 移除所有按鈕的 active 狀態
-      tabBtns.forEach(function(b) { b.classList.remove('active'); });
+      tabBtns.forEach(function (b) { b.classList.remove('active'); });
       // 隱藏所有分頁內容
-      document.querySelectorAll('.manual-pane').forEach(function(pane) { pane.classList.add('hidden'); });
-      
+      document.querySelectorAll('.manual-pane').forEach(function (pane) { pane.classList.add('hidden'); });
+
       // 顯示被點擊的內容
       this.classList.add('active');
       var targetId = this.getAttribute('data-target');
@@ -219,13 +232,13 @@ function handleGeneralistPointChange(e) {
   for (var i = 0; i < inputs.length; i++) {
     total += parseInt(inputs[i].value, 10) || 0;
   }
-  
+
   if (total > 3) {
     e.target.value = parseInt(e.target.value, 10) - (total - 3);
     total = 3;
     alert('點數上限為 3 點'); // 提示用語精簡
   }
-  
+
   var leftSpan = document.getElementById('generalist-points-left');
   if (leftSpan) leftSpan.textContent = (3 - total);
 }
