@@ -24,11 +24,6 @@ function pad2(n) {
   return n < 10 ? '0' + n : String(n);
 }
 
-function getAbilityExpNeeded(level) {
-  if (level >= 10) return ABILITY_LEVEL_THRESHOLDS[9];
-  return ABILITY_LEVEL_THRESHOLDS[level];
-}
-
 function clamp(val, min, max) {
   return Math.max(min, Math.min(max, val));
 }
