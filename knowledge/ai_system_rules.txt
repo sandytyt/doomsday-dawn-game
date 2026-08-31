@@ -36,6 +36,9 @@
 【特殊事件與死亡機制 (special_event)】
 - 值僅限：none、awakening、multi_awakening、death、rescued、level_up。
 - 若觸發異能覺醒，回報 awakening (或 multi_awakening)，並於 special_event_text 簡述情境。
+- 當 special_event 回報 awakening 或 multi_awakening 時，「必須」同時於根目錄回報 awakened_element 欄位，值僅限七大屬性之一：金、木、水、火、土、電、狂化。
+- 若為 multi_awakening（雙異能），awakened_element 請回報「主要／優先」的第一種屬性，另一種屬性可於 special_event_text 中以劇情描述帶出，暫不涉及系統數值判定。
+- 主角一旦覺醒，往後所有回合的晶核判定會依此屬性計算「同屬性」加成，請勿在同一輪存檔中回報前後矛盾的屬性。
 - 【極度警告】回報 death 將觸發不可逆的遊戲結束畫面，請極度謹慎判定。
 - 【鐵律】若玩家輸入夾帶「【系統強制指令】」明示體力歸零且重傷，本回合必須強制安排死亡或極限獲救劇情，並回報 death 或 rescued。隨行 NPC 同理，必須於 companion_changes 回報 die。
 
