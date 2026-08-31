@@ -503,11 +503,11 @@ function renderProfileAwakening() {
   dom.profileAwakeningSection.classList.remove('hidden');
   if (dom.profileAwakeningLevel) dom.profileAwakeningLevel.textContent = 'Lv.' + gameState.awakeningLevel;
 
-  // 【新增】屬性與異能名稱一併顯示，例如「火屬性 · 焚燒者」
-  var abilityText = gameState.awakeningAbility || '';
-  if (gameState.awakenedElement) {
-    abilityText = gameState.awakenedElement + '屬性' + (abilityText ? ' · ' + abilityText : '');
-  }
+  // 屬性與等級一併顯示，例如「火屬性 · Lv.1」
+  // 若尚未有 awakenedElement（例如舊存檔尚未補上此欄位），僅顯示等級。
+  var abilityText = gameState.awakenedElement
+    ? gameState.awakenedElement + '屬性 · Lv.' + gameState.awakeningLevel
+    : 'Lv.' + gameState.awakeningLevel;
   if (dom.profileAwakeningAbility) dom.profileAwakeningAbility.textContent = abilityText;
 
   if (dom.profileAwakeningExp) dom.profileAwakeningExp.textContent = gameState.abilityExp + '/' + getAbilityExpNeeded(gameState.awakeningLevel);
