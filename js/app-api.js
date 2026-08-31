@@ -223,14 +223,17 @@ function handleAIResponse(response) {
   var options = response.options;
 
   appendGMText(narrative);
-  applyStatusUpdate(status_update);
+
+  // 【接線】applyStatusUpdate() 現在回傳正規化後的 special_event，
+  // 後續判斷一律使用這個值，不再讀取原始 status_update.special_event
+  var normalizedSpecialEvent = applyStatusUpdate(status_update);
 
   // 建立基地後，強制將主角位置移動到基地內部
   if (response.world_memory_update && response.world_memory_update.new_safe_zone) {
     var nz = response.world_memory_update.new_safe_zone;
     // 如果 AI 回傳的是陣列，就抓第一筆；如果是物件，就直接用
     var targetZone = Array.isArray(nz) ? nz[0] : nz;
-    
+
     if (targetZone && targetZone.name) {
       gameState.location = targetZone.name; // 主角自動進入新建的基地
       if (gameState.exploredLocations.indexOf(targetZone.name) === -1) {
@@ -264,44 +267,44 @@ function handleAIResponse(response) {
     gameState.worldMemory = WorldMemory.applyRelationshipUpdate(gameState.worldMemory, response.relationship_update, gameState.time.day);
   }
 
-  if (status_update.special_event === 'death') {
+  if (normalizedSpecialEvent === 'death') {
     gameState.isDead = true;
     showDeathScreen(status_update.special_event_text || '你的旅程在此結束。');
     saveStateToLocal();
     maybeSyncToNotion();
     return;
-  } else if (status_update.special_event === 'rescued') {
+  } else if (normalizedSpecialEvent === 'rescued') {
     pendingMilestoneModals.unshift({ icon: '🩹', title: '瀕死獲救', text: status_update.special_event_text || '有人在最後一刻拉住了你。' });
-  } else if (status_update.special_event === 'awakening') {
+  } else if (normalizedSpecialEvent === 'awakening') {
     pendingMilestoneModals.unshift({ icon: '⚡', title: '異能覺醒', text: status_update.special_event_text || '你感覺到體內有某種力量正在覺醒' });
-  } else if (status_update.special_event === 'multi_awakening') {
+  } else if (normalizedSpecialEvent === 'multi_awakening') {
     pendingMilestoneModals.unshift({ icon: '⚡⚡', title: '多重覺醒', text: status_update.special_event_text || '不只一種力量在你體內同時甦醒' });
-  } else if (status_update.special_event === 'level_up') {
+  } else if (normalizedSpecialEvent === 'level_up') {
     pendingMilestoneModals.unshift({ icon: '🔺', title: '能力進化', text: status_update.special_event_text || '你的能力形態出現了變化' });
-  } else if (status_update.special_event && status_update.special_event !== 'none') {
+  } else if (normalizedSpecialEvent && normalizedSpecialEvent !== 'none') {
     pendingMilestoneModals.unshift({ icon: '❗', title: '重要事件', text: status_update.special_event_text || '發生了重要的事情' });
   }
 
-  // 【階段2新增】處理 NPC 覺醒狀態寫入
+  // 處理 NPC 覺醒狀態寫入
   if (response.world_memory_update && response.world_memory_update.npc_major_event) {
     var ne = response.world_memory_update.npc_major_event;
     if (ne.ability && gameState.npcStates && gameState.npcStates[ne.name]) {
-       gameState.npcStates[ne.name].awakeningLevel = Math.max(gameState.npcStates[ne.name].awakeningLevel, 1);
+      gameState.npcStates[ne.name].awakeningLevel = Math.max(gameState.npcStates[ne.name].awakeningLevel, 1);
     }
   }
   if (response.background_evolution && Array.isArray(response.background_evolution.npc_updates)) {
-    response.background_evolution.npc_updates.forEach(function(nu) {
+    response.background_evolution.npc_updates.forEach(function (nu) {
       if (nu.ability && gameState.npcStates && gameState.npcStates[nu.name]) {
         gameState.npcStates[nu.name].awakeningLevel = Math.max(gameState.npcStates[nu.name].awakeningLevel, 1);
       }
     });
   }
 
-  // 【階段2新增】觸發 NPC 微行動 (例如：自動進食)
+  // 觸發 NPC 微行動（例如：自動進食）
   if (typeof processNpcMicroActions === 'function') {
     processNpcMicroActions();
   }
-  
+
   renderOptions(options);
   renderAll();
   saveStateToLocal();
