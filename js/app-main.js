@@ -270,6 +270,8 @@ function cacheDom() {
 }
 
 function init() {
+  if (typeof initTransferUI === 'function') initTransferUI();
+  
   cacheDom();
   populateProviderSelect();
   bindEvents();
