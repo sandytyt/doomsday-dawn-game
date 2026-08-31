@@ -102,8 +102,14 @@ function applyProgressionUpdate(u) {
     applyProficiencyGrowth(gameState.skillProficiency, u.proficiency_triggered);
   }
 
-  if (u.special_event === 'awakening') gameState.awakeningLevel = Math.max(gameState.awakeningLevel, 1);
-  if (u.special_event === 'multi_awakening') gameState.awakeningLevel = Math.max(gameState.awakeningLevel, 1);
+  if (u.special_event === 'awakening' || u.special_event === 'multi_awakening') {
+    gameState.awakeningLevel = Math.max(gameState.awakeningLevel, 1);
+    // 【新增】記錄覺醒屬性，供晶核同屬性加成判定使用（僅在首次覺醒時寫入，
+    // 避免後續其他 status_update 誤帶入 awakened_element 導致屬性被覆蓋）
+    if (u.awakened_element && !gameState.awakenedElement) {
+      gameState.awakenedElement = u.awakened_element;
+    }
+  }
 }
 
 /* ---------- 子函式 4：NPC 巢狀狀態更新 ---------- */
