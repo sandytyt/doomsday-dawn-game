@@ -25,28 +25,60 @@ window.runDailyBaseSimulation = function(daysPassed) {
   var worldMemory = gameState.worldMemory || {};
   var safeZones = worldMemory.safeZones || [];
   gameState.stashes = gameState.stashes || [];
-  
   if (safeZones.length === 0) return;
 
-  var allReports = [];
+  // 【修正 Bug #13】改用「基地名稱」為 key 累加彙總，確保同一個基地
+  // 不論經過幾天、中途發生多少次事件，最終都只產出一份彙總報表。
+  var summaryByZone = {};
 
   for (var d = 0; d < daysPassed; d++) {
-    safeZones.forEach(function(zone) {
+    safeZones.forEach(function (zone) {
       if (!zone.population || zone.population <= 0) return;
-      
-      var stash = gameState.stashes.find(function(s) { return s.locationName === zone.name; });
+      var stash = gameState.stashes.find(function (s) { return s.locationName === zone.name; });
       if (!stash) {
-        stash = { id: 'base_' + Date.now() + '_' + Math.floor(Math.random()*1000), locationName: zone.name, items: [] };
+        stash = { id: 'base_' + Date.now() + '_' + Math.floor(Math.random() * 1000), locationName: zone.name, items: [] };
         gameState.stashes.push(stash);
       }
 
-      var report = processSingleDayForZone(zone, stash);
-      
-      if (d === daysPassed - 1 || report.starvationDeaths > 0 || report.raidEvent) {
-        allReports.push(report);
+      var dayReport = processSingleDayForZone(zone, stash);
+
+      if (!summaryByZone[zone.name]) {
+        summaryByZone[zone.name] = {
+          name: zone.name,
+          population: zone.population,
+          produced: {},
+          consumed: {},
+          warnings: [],
+          starvationDeaths: 0,
+          raidEvent: false
+        };
       }
+      var summary = summaryByZone[zone.name];
+
+      // 累加生產/消耗數量（同一物品名稱跨天加總）
+      Object.keys(dayReport.produced).forEach(function (k) {
+        summary.produced[k] = (summary.produced[k] || 0) + dayReport.produced[k];
+      });
+      Object.keys(dayReport.consumed).forEach(function (k) {
+        summary.consumed[k] = (summary.consumed[k] || 0) + dayReport.consumed[k];
+      });
+
+      // 警告訊息合併（去重，避免同樣的警告重複出現太多次）
+      dayReport.warnings.forEach(function (w) {
+        if (summary.warnings.indexOf(w) === -1) summary.warnings.push(w);
+      });
+
+      summary.starvationDeaths += dayReport.starvationDeaths;
+      if (dayReport.raidEvent) summary.raidEvent = true;
+
+      // 最終人口數以模擬結束當下的實際數值為準
+      summary.population = zone.population;
     });
   }
+
+  var allReports = Object.keys(summaryByZone).map(function (name) {
+    return summaryByZone[name];
+  });
 
   if (allReports.length > 0) {
     renderDailyReportModal(allReports, daysPassed);
@@ -205,49 +237,48 @@ function renderDailyReportModal(reports, daysPassed) {
   var modal = document.getElementById('daily-report-modal');
   var content = document.getElementById('daily-report-content');
   if (!modal || !content) return;
-
   var html = '';
-  if (daysPassed > 1) {
-    html += '<div style="color: #888; margin-bottom: 15px;">(歷經 ' + daysPassed + ' 天的時間流逝，以下為最終日結算狀態)</div>';
-  }
 
-  reports.forEach(function(r) {
-    html += '<div style="margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px dashed #444;">';
-    html += '<div class="report-log-title">📍 ' + r.name + ' (目前人口: ' + r.population + ')</div>';
-    
+  // 【修正 Bug #13】不論經過 1 天或多天，標題文字都明確同步實際天數，
+  // 用詞更一致，避免「只過 1 天」與「過了好幾天」的措辭不對稱。
+  var dayLabel = daysPassed === 1 ? '（經過 1 天，以下為當日結算狀態）' : '（經過 ' + daysPassed + ' 天，以下為彙總後的最終結算狀態）';
+  html += '<div style="color:#888;margin-bottom:15px;">' + dayLabel + '</div>';
+
+  reports.forEach(function (r) {
+    html += '<div style="margin-bottom:20px;padding-bottom:10px;border-bottom:1px dashed #444;">';
+    html += '<div class="report-log-title">' + r.name + '（目前人口：' + r.population + '）</div>';
+
     var prodKeys = Object.keys(r.produced);
     if (prodKeys.length > 0) {
-      html += '<div class="report-log-positive">🟩 今日產出：';
-      var pStr = prodKeys.map(function(k) { return k + ' x' + r.produced[k]; }).join(', ');
-      html += pStr + '</div>';
+      html += '<div class="report-log-positive">';
+      var pStr = prodKeys.map(function (k) { return k + ' x' + r.produced[k]; }).join(', ');
+      html += '今日產出：' + pStr + '</div>';
     } else {
-      html += '<div class="report-log-neutral">🟩 今日產出：無</div>';
+      html += '<div class="report-log-neutral">今日產出：無</div>';
     }
 
     var consKeys = Object.keys(r.consumed);
     if (consKeys.length > 0) {
-      // 根據是否有襲擊改變用詞
-      var consumeLabel = r.raidEvent ? '🔻 消耗與被劫物資：' : '🔻 居民消耗：';
-      html += '<div class="' + (r.raidEvent ? 'report-log-negative' : 'report-log-neutral') + '">' + consumeLabel;
-      var cStr = consKeys.map(function(k) { return k + ' x' + r.consumed[k]; }).join(', ');
-      html += cStr + '</div>';
+      var consumeLabel = r.raidEvent ? '損失物資：' : '消耗物資：';
+      html += '<div class="' + (r.raidEvent ? 'report-log-negative' : 'report-log-neutral') + '">';
+      var cStr = consKeys.map(function (k) { return k + ' x' + r.consumed[k]; }).join(', ');
+      html += consumeLabel + cStr + '</div>';
     }
 
     if (r.warnings.length > 0) {
-      r.warnings.forEach(function(w) {
-        var warnClass = (w.indexOf('飢荒') !== -1 || w.indexOf('掠奪') !== -1) ? 'report-log-negative' : 'report-log-warning';
-        html += '<div class="' + warnClass + '">⚠️ ' + w + '</div>';
+      r.warnings.forEach(function (w) {
+        var warnClass = (w.indexOf('🔴') !== -1 || w.indexOf('嚴重') !== -1) ? 'report-log-negative' : 'report-log-warning';
+        html += '<div class="' + warnClass + '">' + w + '</div>';
       });
     }
+
     html += '</div>';
   });
 
   content.innerHTML = html;
-  
-  document.getElementById('daily-report-close-btn').onclick = function() {
+  document.getElementById('daily-report-close-btn').onclick = function () {
     modal.classList.add('hidden');
-    if (typeof renderAll === 'function') renderAll(); 
+    if (typeof renderAll === 'function') renderAll();
   };
-
   modal.classList.remove('hidden');
 }
