@@ -1,5 +1,3 @@
-'use strict';
-
 var statusExpanded = false;
 var optionsMiniMode = false;
 var inventoryExpanded = false;
@@ -83,13 +81,18 @@ function bindEvents() {
     });
   }
 
-  // 【階段5新增】
+  // 【階段5新增：背景類型與自訂配點，含雙重警告】
   bindSafe(dom.bgSelect, 'change', handleBackgroundTypeChange, 'bgSelect');
   if (dom.generalistDiv) {
     var pointInputs = dom.generalistDiv.querySelectorAll('.gen-point-input');
+    if (pointInputs.length === 0) {
+      console.warn('[UI警告] 在「generalistDiv」內找不到任何「.gen-point-input」元素，已略過自訂配點欄位的 input 事件綁定。請確認 index.html 對應結構是否存在。');
+    }
     for (var j = 0; j < pointInputs.length; j++) {
       pointInputs[j].addEventListener('input', handleGeneralistPointChange);
     }
+  } else {
+    console.warn('[UI警告] 找不到元素「generalistDiv」，已略過自訂配點欄位的 input 事件綁定。請確認 index.html 對應的 id 是否存在。');
   }
 }
 
