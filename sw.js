@@ -23,6 +23,7 @@ const CACHE_ASSETS = [
 
   // --- JS 模組（依 index.html 內 <script> 標籤實際載入順序）---
   './js/config.js',
+  './js/app-schema.js',
   './js/world_memory.js',
   './js/test_script.js',
   './js/app-state.js',
