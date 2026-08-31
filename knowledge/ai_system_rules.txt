@@ -25,7 +25,9 @@
 - 角色數值：hunger_change、stamina_change (一般消耗已由系統處理，僅在特殊勞動、戰鬥或非進食事件時才填寫)、humanity_change、resonance_change、ability_exp_change。
 - 陣營信任 (faction_trust_update)：物件格式。注意：鐵幕守望者與荒原拾骸者立場對立，提升一方須同步降低另一方。
 - 物品與背包 (inventory_changes)：陣列，每項需含 name、quantity、action (僅可為 add 或 remove)。
-- 載具 (vehicle_update)：僅能回報單一 action，優先回報最主要的變化。
+- 載具 (vehicle_update)：僅能回報單一 action，優先回報最主要的變化。子欄位固定為 action、vehicle_name、vehicle_tier、durability_change、fuel_change。【鐵律】當劇情描述玩家「取得、發現、搶到、修復啟動」一輛可駕駛的載具時，必須同步回報 vehicle_update，action 填 acquire，並且一併填入：
+- vehicle_name：為這輛車取一個具體名稱（例如「銹蝕皮卡」「軍用悍馬」），不可留空，否則系統無法建立這輛車的紀錄。
+- vehicle_tier：僅可為以下五種等級之一，依劇情合理性挑選：light_two_wheel（輕型二輪，機車/腳踏車類）、light_four_wheel（輕型四輪，房車/轎車類）、medium（中型車輛，廂型車/皮卡類）、heavy（重型車輛，卡車/裝甲車類）、special_military（特種/軍規車輛，悍馬/軍用車類）。若僅是描述「看到一輛車」但玩家尚未實際取得駕駛權，不可回報 acquire，避免玩家誤以為已擁有載具。其餘 action（repair 修復、refuel 加油、damage 損壞、lose 報廢、set_active 切換使用中載具）僅在對應事件發生時回報，並搭配durability_change 或 fuel_change 數值（皆為正數，系統會自動判斷加減方向）。
 - 暫存點 (stash_update)：若留下物資不隨身攜帶，回報 store 並同步於 inventory_changes 進行 remove；若取回，回報 retrieve 並同步 add。暫存點名稱必須固定且一致。
 - 主角傷勢 (injury_status / injury_detail)：injury_status 僅可為 none、minor、severe。injury_detail (15字內) 僅在傷勢發生「變化」時填寫，無變化時必須留空字串；若 status 為 none，detail 必須留空或填「傷勢已痊癒」。
 - 體格判定 (proficiency_triggered)：陣列。若本次敘事用到特定技能，回報用到的 key (僅限 combat/shooting/agility/scouting/medical/negotiation/searching/mechanics)。
