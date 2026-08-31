@@ -15,6 +15,7 @@ var gameState = {
   factionTrust: {},
   awakeningLevel: 0,
   awakeningAbility: null,
+  awakenedElement: null,   // 【新增】主角覺醒後的屬性（金/木/水/火/土/電/狂化），由 AI 於 awakening 事件回報
   abilityExp: 0,
   resonanceValue: 0,
   dangerLevel: 'safe',
