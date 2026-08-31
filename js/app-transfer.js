@@ -5,46 +5,63 @@ var transferState = {
   currentSource: null // { type, id, name, max }
 };
 
-document.addEventListener('DOMContentLoaded', function() {
-  var toggle = document.getElementById('transfer-mode-toggle');
+document.addEventListener('DOMContentLoaded', function () {
+  var toggle = dom.infoPanelGroup && dom.infoPanelGroup.transferModeToggle;
   if (toggle) {
-    toggle.addEventListener('change', function(e) {
+    toggle.addEventListener('change', function (e) {
       transferState.isTransferMode = e.target.checked;
       // 刷新所有面板以切換可點擊狀態
       if (typeof renderItemsAccordion === 'function') renderItemsAccordion();
       if (typeof renderVehiclePanel === 'function') renderVehiclePanel();
       if (typeof renderNpcPanel === 'function') renderNpcPanel();
     });
+  } else {
+    console.warn('[UI警告] 找不到元素「infoPanelGroup.transferModeToggle」，已略過物資轉移模式開關事件綁定。請確認 index.html 是否有 id="transfer-mode-toggle"。');
   }
 
-  var cancelBtn = document.getElementById('transfer-cancel-btn');
-  if (cancelBtn) {
-    cancelBtn.addEventListener('click', function() {
-      document.getElementById('transfer-modal').classList.add('hidden');
+  var transferModal = dom.modal && dom.modal.transfer;
+  if (!transferModal) {
+    console.warn('[UI警告] 找不到「modal.transfer」分組，已略過物資轉移彈窗按鈕事件綁定。請確認 cacheDom() 是否已新增轉移彈窗快取。');
+    return;
+  }
+
+  if (transferModal.cancelBtn) {
+    transferModal.cancelBtn.addEventListener('click', function () {
+      transferModal.root.classList.add('hidden');
     });
+  } else {
+    console.warn('[UI警告] 找不到元素「modal.transfer.cancelBtn」，無法綁定轉移彈窗取消按鈕。');
   }
 
-  var confirmBtn = document.getElementById('transfer-confirm-btn');
-  if (confirmBtn) {
-    confirmBtn.addEventListener('click', executeTransferFromModal);
+  if (transferModal.confirmBtn) {
+    transferModal.confirmBtn.addEventListener('click', executeTransferFromModal);
+  } else {
+    console.warn('[UI警告] 找不到元素「modal.transfer.confirmBtn」，無法綁定轉移彈窗確認按鈕。');
   }
 });
 
 function openTransferModal(sourceType, sourceId, itemName, maxQty) {
   if (!transferState.isTransferMode) return;
   transferState.currentSource = { type: sourceType, id: sourceId, name: itemName, max: maxQty };
-  
-  var modal = document.getElementById('transfer-modal');
-  var nameEl = document.getElementById('transfer-item-name');
-  var selectEl = document.getElementById('transfer-target-select');
-  var qtyInput = document.getElementById('transfer-qty-input');
-  
+
+  var transferModal = dom.modal && dom.modal.transfer;
+  if (!transferModal || !transferModal.root || !transferModal.itemName || !transferModal.targetSelect || !transferModal.quantityInput) {
+    console.warn('[UI警告] 物資轉移彈窗快取不完整，無法開啟。請確認 cacheDom() 的 dom.modal.transfer 分組包含 root、itemName、targetSelect、quantityInput。');
+    return;
+  }
+
+  var modal = transferModal.root;
+  var nameEl = transferModal.itemName;
+  var selectEl = transferModal.targetSelect;
+  var qtyInput = transferModal.quantityInput;
+
   nameEl.textContent = '物品：' + itemName + ' (最多 ' + maxQty + ' 個)';
   qtyInput.value = 1;
   qtyInput.max = maxQty;
 
-  selectEl.innerHTML = ''; // 清空選單
-  
+  // 【既有 Bug 修復保留】每次打開彈窗前，先清空舊選項，避免重複累積。
+  selectEl.innerHTML = '';
+
   // 建立轉移目標清單
   //
   // 【物資來源類型設計說明，供未來擴充參考】
@@ -58,13 +75,8 @@ function openTransferModal(sourceType, sourceId, itemName, maxQty) {
   //        是以名字為 key 的物件，不是陣列，故用名字取代生成的 id）
   //
   // 若未來新增物資來源類型，請先判斷該類型在 gameState 中是否可能同時
-  // 存在多筆：
-  //   - 若「是」（例如未來若載具拆分成「駕駛座」「後車廂」兩個獨立儲存
-  //     格），必須設計唯一 id 傳入 addOption 第二參數，並在
-  //     getInventoryRef() 對應分支中使用該 id 查找。
-  //   - 若「否」（例如未來若新增「主角個人保險箱」這種全域單例儲存），
-  //     可比照 backpack 的作法傳入空字串佔位，並在 getInventoryRef()
-  //     對應分支中直接回傳該全域物件，不使用 id 參數。
+  // 存在多筆：多筆類型須有唯一 id 並於 getInventoryRef() 內用 id 查找；
+  // 單例類型可比照 backpack 傳入空字串佔位，並直接回傳全域物件。
   function addOption(val, text) {
     if (val === sourceType + '_' + sourceId) return; // 排除來源自己
     var opt = document.createElement('option');
@@ -81,12 +93,12 @@ function openTransferModal(sourceType, sourceId, itemName, maxQty) {
   gameState.vehicles.forEach(function (v) { if (v.status !== 'lost') addOption('vehicle_' + v.id, '載具：' + v.name); });
   // 【多例類型】NPC：npcStates 以名字為 key，故用名字本身作為 id
   gameState.companions.forEach(function (npcName) { addOption('npc_' + npcName, '隊員背包：' + npcName); });
-  
+
   if (selectEl.options.length === 0) {
     alert('沒有其他可轉移的目標！');
     return;
   }
-  
+
   modal.classList.remove('hidden');
 }
 
@@ -110,37 +122,44 @@ function getInventoryRef(type, id) {
 
 function executeTransferFromModal() {
   if (!transferState.currentSource) return;
-  var qty = parseInt(document.getElementById('transfer-qty-input').value, 10);
+
+  var transferModal = dom.modal && dom.modal.transfer;
+  if (!transferModal || !transferModal.root || !transferModal.targetSelect || !transferModal.quantityInput) {
+    console.warn('[UI警告] 物資轉移彈窗快取不完整，無法確認轉移。');
+    return;
+  }
+
+  var qty = parseInt(transferModal.quantityInput.value, 10);
   if (isNaN(qty) || qty <= 0 || qty > transferState.currentSource.max) {
     alert('無效的數量');
     return;
   }
-  
-  var targetVal = document.getElementById('transfer-target-select').value;
+
+  var targetVal = transferModal.targetSelect.value;
   if (!targetVal) return;
-  
+
   var parts = targetVal.split('_');
   var targetType = parts[0];
   var targetId = parts.slice(1).join('_');
-  
+
   var sourceInv = getInventoryRef(transferState.currentSource.type, transferState.currentSource.id);
   var targetInv = getInventoryRef(targetType, targetId);
-  
+
   if (!sourceInv || !targetInv) {
     alert('找不到來源或目標背包，轉移失敗。');
     return;
   }
-  
-  // 執行轉移（使用第一階段寫好的共用函式）
+
+  // 執行轉移（使用共用物資處理函式）
   applyInventoryChangesTo(sourceInv, [{ name: transferState.currentSource.name, quantity: qty, action: 'remove' }]);
   applyInventoryChangesTo(targetInv, [{ name: transferState.currentSource.name, quantity: qty, action: 'add' }]);
-  
-  document.getElementById('transfer-modal').classList.add('hidden');
-  
+
+  transferModal.root.classList.add('hidden');
+
   // 轉移後刷新所有 UI
   if (typeof renderItemsAccordion === 'function') renderItemsAccordion();
   if (typeof renderVehiclePanel === 'function') renderVehiclePanel();
   if (typeof renderNpcPanel === 'function') renderNpcPanel();
-  
+
   console.log('[物資轉移] 成功將 ' + qty + ' 個 ' + transferState.currentSource.name + ' 從 ' + transferState.currentSource.type + ' 轉移至 ' + targetType);
 }
