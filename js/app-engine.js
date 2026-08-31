@@ -28,38 +28,11 @@ function requestNextTurn(playerAction) {
   });
 }
 
-function applyStatusUpdate(update) {
-  if (!update) return null;
+/* ---------- 子函式 1：體力／飢餓／傷勢 ---------- */
 
-  // 【接線】所有欄位型別與列舉值防呆，統一交給 AppSchema 處理
-  var u = AppSchema.normalizeStatusUpdate(update);
-
-  if (u.time_advance_minutes) advanceTime(u.time_advance_minutes);
-
+function applyVitalsUpdate(u) {
   gameState.stamina = clamp(gameState.stamina + u.stamina_change, 0, gameState.maxStamina);
   gameState.hunger = clamp(gameState.hunger + u.hunger_change, 0, 100);
-
-  if (u.current_location) {
-    gameState.location = u.current_location;
-    // 記錄已探索地點（排除「未知地點」且不重複記錄）
-    if (u.current_location !== '未知地點' && gameState.exploredLocations.indexOf(u.current_location) === -1) {
-      gameState.exploredLocations.push(u.current_location);
-    }
-  }
-
-  if (u.danger_level) {
-    gameState.dangerLevel = u.danger_level;
-    trackDangerLevel(u.danger_level);
-  }
-
-  if (u.weather) gameState.weather = u.weather;
-
-  gameState.humanity = clamp(gameState.humanity + u.humanity_change, 0, 100);
-  gameState.resonanceValue = clamp(gameState.resonanceValue + u.resonance_change, 0, 999);
-
-  if (u.ability_exp_change !== 0) {
-    applyAbilityExpChange(u.ability_exp_change);
-  }
 
   if (u.injury_status) {
     // 防呆：如果沒有狀態，預設為 none（健康）
@@ -92,7 +65,50 @@ function applyStatusUpdate(update) {
       });
     }
   }
+}
 
+/* ---------- 子函式 2：時間／位置／危險等級／天氣 ---------- */
+
+function applyEnvironmentUpdate(u) {
+  if (u.time_advance_minutes) advanceTime(u.time_advance_minutes);
+
+  if (u.current_location) {
+    gameState.location = u.current_location;
+    // 記錄已探索地點（排除「未知地點」且不重複記錄）
+    if (u.current_location !== '未知地點' && gameState.exploredLocations.indexOf(u.current_location) === -1) {
+      gameState.exploredLocations.push(u.current_location);
+    }
+  }
+
+  if (u.danger_level) {
+    gameState.dangerLevel = u.danger_level;
+    trackDangerLevel(u.danger_level);
+  }
+
+  if (u.weather) gameState.weather = u.weather;
+}
+
+/* ---------- 子函式 3：人性／共鳴／熟練度／覺醒 ---------- */
+
+function applyProgressionUpdate(u) {
+  gameState.humanity = clamp(gameState.humanity + u.humanity_change, 0, 100);
+  gameState.resonanceValue = clamp(gameState.resonanceValue + u.resonance_change, 0, 999);
+
+  if (u.ability_exp_change !== 0) {
+    applyAbilityExpChange(u.ability_exp_change);
+  }
+
+  if (u.proficiency_triggered.length) {
+    applyProficiencyGrowth(gameState.skillProficiency, u.proficiency_triggered);
+  }
+
+  if (u.special_event === 'awakening') gameState.awakeningLevel = Math.max(gameState.awakeningLevel, 1);
+  if (u.special_event === 'multi_awakening') gameState.awakeningLevel = Math.max(gameState.awakeningLevel, 1);
+}
+
+/* ---------- 子函式 4：NPC 巢狀狀態更新 ---------- */
+
+function applyCompanionStatusUpdate(u) {
   if (u.companion_changes.length) {
     applyCompanionChanges(u.companion_changes);
   }
@@ -147,11 +163,46 @@ function applyStatusUpdate(update) {
       });
     }
   });
+}
 
-  // 處理 AI 回報的熟練度增加
-  if (u.proficiency_triggered.length) {
-    applyProficiencyGrowth(gameState.skillProficiency, u.proficiency_triggered);
+/* ---------- 子函式 5：陣營信任度 ---------- */
+
+function applyFactionTrustUpdate(u) {
+  if (!u.faction_trust_update) return;
+
+  // VALID_FACTIONS 與 FACTION_ALIASES 定義於 config.js 統一管理
+  for (var rawFaction in u.faction_trust_update) {
+    if (Object.prototype.hasOwnProperty.call(u.faction_trust_update, rawFaction)) {
+      var targetFaction = rawFaction;
+      var delta = u.faction_trust_update[rawFaction];
+
+      // 偵測到 AI 使用基地名稱時，自動校正為對應勢力
+      if (FACTION_ALIASES[targetFaction]) {
+        targetFaction = FACTION_ALIASES[targetFaction];
+      }
+
+      // 嚴格攔截：只有在白名單內的勢力，才允許寫入系統
+      if (VALID_FACTIONS.indexOf(targetFaction) !== -1) {
+        gameState.factionTrust[targetFaction] = (gameState.factionTrust[targetFaction] || 0) + delta;
+      } else {
+        console.warn('[系統警告] 攔截到 AI 虛構的勢力名稱並已捨棄：' + targetFaction);
+      }
+    }
   }
+}
+
+/* ---------- 主入口（orchestrator）---------- */
+
+function applyStatusUpdate(update) {
+  if (!update) return null;
+
+  // 所有欄位型別與列舉值防呆，統一交給 AppSchema 處理
+  var u = AppSchema.normalizeStatusUpdate(update);
+
+  applyEnvironmentUpdate(u);
+  applyVitalsUpdate(u);
+  applyProgressionUpdate(u);
+  applyCompanionStatusUpdate(u);
 
   if (u.vehicle_update) {
     applyVehicleUpdate(u.vehicle_update);
@@ -160,36 +211,14 @@ function applyStatusUpdate(update) {
     applyStashUpdate(u.stash_update);
   }
 
-  if (u.faction_trust_update) {
-    // VALID_FACTIONS 與 FACTION_ALIASES 已搬移至 config.js 統一管理
-    for (var rawFaction in u.faction_trust_update) {
-      if (Object.prototype.hasOwnProperty.call(u.faction_trust_update, rawFaction)) {
-        var targetFaction = rawFaction;
-        var delta = u.faction_trust_update[rawFaction];
+  applyFactionTrustUpdate(u);
 
-        // 偵測到 AI 使用基地名稱時，自動校正為對應勢力
-        if (FACTION_ALIASES[targetFaction]) {
-          targetFaction = FACTION_ALIASES[targetFaction];
-        }
-
-        // 嚴格攔截：只有在白名單內的勢力，才允許寫入系統
-        if (VALID_FACTIONS.indexOf(targetFaction) !== -1) {
-          gameState.factionTrust[targetFaction] = (gameState.factionTrust[targetFaction] || 0) + delta;
-        } else {
-          console.warn('[系統警告] 攔截到 AI 虛構的勢力名稱並已捨棄：' + targetFaction);
-        }
-      }
-    }
-  }
-
-  if (u.special_event === 'awakening') gameState.awakeningLevel = Math.max(gameState.awakeningLevel, 1);
-  if (u.special_event === 'multi_awakening') gameState.awakeningLevel = Math.max(gameState.awakeningLevel, 1);
-
-  // 回傳正規化後的 special_event，供 app-api.js 的 handleAIResponse()
-  // 使用同一份已驗證過的值判斷里程碑彈窗與死亡流程，避免兩處各自
-  // 讀取原始未正規化的 update.special_event 造成判斷標準不一致。
+  // 回傳正規化後的 special_event，供 app-response-handler.js 的
+  // handleAIResponse() 使用同一份已驗證過的值判斷里程碑彈窗與死亡流程。
   return u.special_event;
 }
+
+/* ---------- 其餘既有函式（維持不變）---------- */
 
 function applyCompanionChanges(changes) {
   for (var i = 0; i < changes.length; i++) {
@@ -198,18 +227,18 @@ function applyCompanionChanges(changes) {
       if (gameState.companions.indexOf(change.name) === -1 && gameState.companions.length < 2) {
         gameState.companions.push(change.name);
       }
-      // 【階段2新增】初始化 NPC 與復隊校正
+      // 初始化 NPC 與復隊校正
       createNpcStateSkeleton(change.name);
       correctNpcStateOnRejoin(change.name, gameState.turnCount);
     } else if (change.action === 'leave') {
       gameState.companions = gameState.companions.filter(function (n) { return n !== change.name; });
-      // 【階段2新增】記錄離隊回合
+      // 記錄離隊回合
       if (gameState.npcStates && gameState.npcStates[change.name]) {
         gameState.npcStates[change.name].lastLeftTurn = gameState.turnCount;
       }
     } else if (change.action === 'die') {
       gameState.companions = gameState.companions.filter(function (n) { return n !== change.name; });
-      // 【階段2新增】死亡清除
+      // 死亡清除
       clearNpcStateOnDeath(change.name);
     }
   }
@@ -229,7 +258,7 @@ function advanceTime(minutes) {
 
   // 只有「當前隨行」的 NPC 才會隨時間自然消耗飢餓度
   if (gameState.npcStates && gameState.companions && gameState.companions.length > 0) {
-    gameState.companions.forEach(function(npcName) {
+    gameState.companions.forEach(function (npcName) {
       var npc = gameState.npcStates[npcName];
       if (npc && typeof npc.hunger === 'number') {
         npc.hunger = clamp(npc.hunger - hungerDecay, 0, 100);
@@ -237,7 +266,7 @@ function advanceTime(minutes) {
     });
   }
 
-  // 【最關鍵的新增】：如果跨越了天數，觸發基地日結算引擎
+  // 如果跨越了天數，觸發基地日結算引擎
   if (daysToAdd > 0 && typeof runDailyBaseSimulation === 'function') {
     runDailyBaseSimulation(daysToAdd);
   }
@@ -277,19 +306,19 @@ function handleEventModalClose() {
 function requestTravelTo(targetLocation) {
   if (isWaitingForAI || gameState.isDead) return;
   if (gameState.location === targetLocation) {
-    showEventModal('📍', '無法移動', '你已經在【' + targetLocation + '】了。'); 
+    showEventModal('📍', '無法移動', '你已經在【' + targetLocation + '】了。');
     return;
   }
-  
+
   var currentCoords = getLocationCoords(gameState.location);
   var targetCoords = getLocationCoords(targetLocation);
   var dx = currentCoords.x - targetCoords.x;
   var dy = currentCoords.y - targetCoords.y;
-  var dist = Math.max(1, Math.round(Math.sqrt(dx * dx + dy * dy))); 
-  
-  var activeVehicle = gameState.vehicles.find(function(v) { return v.status === 'active'; });
+  var dist = Math.max(1, Math.round(Math.sqrt(dx * dx + dy * dy)));
+
+  var activeVehicle = gameState.vehicles.find(function (v) { return v.status === 'active'; });
   var costType, costValue, timeCost, canTravel = true, errorMsg = '';
-  
+
   if (activeVehicle) {
     costType = 'fuel';
     costValue = parseFloat(((dist / 10) * 5).toFixed(1));
@@ -307,8 +336,8 @@ function requestTravelTo(targetLocation) {
       errorMsg = '體力不足以應付這段旅程。徒步前往等同自殺，請準備載具或規劃中繼點。';
     }
   }
-  
-  // 開啟出發確認視窗 (UI 函數定義在 app-ui.js)
+
+  // 開啟出發確認視窗（UI 函數定義在 app-ui.js）
   if (typeof openTravelConfirmModal === 'function') {
     openTravelConfirmModal(targetLocation, dist, costType, costValue, timeCost, canTravel, errorMsg, activeVehicle);
   }
@@ -322,33 +351,33 @@ function executeTravel(targetLocation, dist, costType, costValue, timeCost, acti
   } else {
     gameState.stamina = Math.max(0, gameState.stamina - costValue);
     if (gameState.companions && gameState.npcStates) {
-      gameState.companions.forEach(function(npc) {
-        if(gameState.npcStates[npc]) gameState.npcStates[npc].stamina = Math.max(0, gameState.npcStates[npc].stamina - costValue);
+      gameState.companions.forEach(function (npc) {
+        if (gameState.npcStates[npc]) gameState.npcStates[npc].stamina = Math.max(0, gameState.npcStates[npc].stamina - costValue);
       });
     }
   }
-  
+
   advanceTime(timeCost);
   gameState.location = targetLocation;
   if (gameState.exploredLocations.indexOf(targetLocation) === -1) gameState.exploredLocations.push(targetLocation);
-  
+
   if (typeof toggleInfoPanel === 'function') toggleInfoPanel(false);
   if (typeof renderAll === 'function') renderAll();
-  
+
   var promptText = (costType === 'fuel' ? "你驅車抵達了【" : "你徒步跋涉抵達了【") + targetLocation + "】（總路程 " + dist + " 公里）。";
   requestNextTurn(promptText);
 }
 
 function getLocationCoords(locName) {
-  // 1. 先查玩家的基地記憶 (抓取預先分配好的 GPS 座標)
+  // 1. 先查玩家的基地記憶（抓取預先分配好的 GPS 座標）
   if (gameState.worldMemory && gameState.worldMemory.safeZones) {
-    var safeZone = gameState.worldMemory.safeZones.find(function(z) { return z.name === locName; });
+    var safeZone = gameState.worldMemory.safeZones.find(function (z) { return z.name === locName; });
     if (safeZone && typeof safeZone.x === 'number') {
       return { x: safeZone.x, y: safeZone.y };
     }
   }
 
-  // 2. 再查系統預設大地圖 (MAP_PRESETS)
+  // 2. 再查系統預設大地圖（MAP_PRESETS）
   for (var poolId in MAP_PRESETS) {
     var pool = MAP_PRESETS[poolId];
     if (pool.name === locName) return { x: pool.x, y: pool.y };
@@ -356,7 +385,7 @@ function getLocationCoords(locName) {
       if (pool.locations[i].name === locName) return { x: pool.locations[i].x, y: pool.locations[i].y };
     }
   }
-  
+
   // 3. 都查不到，回傳當前大區中心點
   if (gameState.currentMapPresetId && MAP_PRESETS[gameState.currentMapPresetId]) {
     return { x: MAP_PRESETS[gameState.currentMapPresetId].x, y: MAP_PRESETS[gameState.currentMapPresetId].y };
