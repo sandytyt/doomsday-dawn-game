@@ -152,9 +152,20 @@ function tryRestoreSavedGame() {
       rebuildNarrativeFromHistory();
       renderOptions(gameState.lastOptions);
       renderAll();
+    } else {
+      // 【修正 Bug #8】偵測到存檔，但目前供應商缺少金鑰：
+      // 不靜默放棄，改為在開局畫面提示玩家，並自動切換下拉選單
+      // 到存檔記錄的供應商，方便玩家直接補填金鑰。
+      if (dom.providerSelect) dom.providerSelect.value = provider;
+      var day = (savedState.time && savedState.time.day) || '未知';
+      if (dom.apiKeyInput) {
+        dom.apiKeyInput.placeholder = '偵測到第' + day + '天的存檔，請輸入「' + (CONFIG.PROVIDERS[provider] ? CONFIG.PROVIDERS[provider].label : provider) + '」的 API 金鑰以繼續';
+      }
+      console.warn('[存檔系統] 偵測到本機存檔（第' + day + '天），但供應商「' + provider + '」缺少 API 金鑰，需要玩家手動補填。');
     }
   } catch (e) {
     console.error('存檔讀取失敗', e);
+    alert('存檔讀取失敗，資料可能已損毀。若持續發生，建議使用「匯出/匯入存檔檔案」功能作為備份。');
   }
 }
 
