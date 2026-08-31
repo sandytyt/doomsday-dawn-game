@@ -103,129 +103,111 @@ var WorldMemory = (function () {
     worldMemory = ensureShape(worldMemory);
     if (!update) return worldMemory;
 
-    // 【終極防呆】：如果傳進來的 update 其實被包在 world_memory_update 屬性裡，就解開它
-    if (update.world_memory_update) {
-      update = update.world_memory_update;
-    }
+    // 【接線】巢狀解包、陣列/物件正規化，統一交給 AppSchema 處理
+    var normalized = AppSchema.normalizeWorldMemoryUpdate(update);
+    if (!normalized) return worldMemory;
 
-    // 【終極防呆】：有些 AI 會把 new_safe_zone 回傳成陣列
-    var safeZonesToAdd = [];
-    if (Array.isArray(update.new_safe_zone)) {
-      safeZonesToAdd = update.new_safe_zone;
-    } else if (update.new_safe_zone && update.new_safe_zone.name) {
-      safeZonesToAdd.push(update.new_safe_zone);
-    }
+    // 10 個預先設定好的黃金基地座標（廣泛散佈於地圖各處）
+    var PREDEFINED_COORDS = [
+      { x: -30, y: 20 }, { x: 40, y: -20 }, { x: 10, y: 60 }, { x: -50, y: -30 }, { x: 25, y: 25 },
+      { x: -20, y: -50 }, { x: 55, y: 40 }, { x: -10, y: -10 }, { x: -60, y: 30 }, { x: 60, y: -40 }
+    ];
 
-    // 1. 建立新基地
-    if (update.new_safe_zone && update.new_safe_zone.name) {
-      var nz = update.new_safe_zone;
-      if (!findByName(worldMemory.safeZones, nz.name)) {
-        
-        // 【新增】：10個預先設定好的黃金基地座標 (廣泛散佈於地圖各處)
-        var PREDEFINED_COORDS = [
-          {x: -30, y: 20}, {x: 40, y: -20}, {x: 10, y: 60}, {x: -50, y: -30}, {x: 25, y: 25},
-          {x: -20, y: -50}, {x: 55, y: 40}, {x: -10, y: -10}, {x: -60, y: 30}, {x: 60, y: -40}
-        ];
-        // 依照目前建立的基地數量，依序分配座標 (超過10個就從頭循環)
-        var coordIdx = worldMemory.safeZones.length % PREDEFINED_COORDS.length;
+    // 1. 建立新基地（【修正 Bug #17】走訪整個陣列，支援單回合建立多個基地）
+    normalized.newSafeZones.forEach(function (nz) {
+      if (findByName(worldMemory.safeZones, nz.name)) return;
 
-        worldMemory.safeZones.push({
-          name: nz.name,
-          location: nz.location || '',
-          x: PREDEFINED_COORDS[coordIdx].x,
-          y: PREDEFINED_COORDS[coordIdx].y,
-          population: typeof nz.population === 'number' ? nz.population : 0,
-          facilities: Array.isArray(nz.facilities) ? nz.facilities.slice() : [],
-          factionRelations: {}
-        });
-        capList(worldMemory.safeZones, MAX_SAFE_ZONES);
-        
-        // 【機制一：自動建立同名暫存點 (倉庫)】
-        if (typeof gameState !== 'undefined') {
-          gameState.stashes = gameState.stashes || [];
-          var existingStash = gameState.stashes.find(function(s) { return s.locationName === nz.name; });
-          if (!existingStash) {
-            gameState.stashes.push({
-              id: 'base_' + Date.now(), 
-              locationName: nz.name,
-              items: [] 
-            });
-          }
+      // 依照目前建立的基地數量，依序分配座標（超過 10 個就從頭循環）
+      var coordIdx = worldMemory.safeZones.length % PREDEFINED_COORDS.length;
+
+      worldMemory.safeZones.push({
+        name: nz.name,
+        location: nz.location || '',
+        x: PREDEFINED_COORDS[coordIdx].x,
+        y: PREDEFINED_COORDS[coordIdx].y,
+        population: typeof nz.population === 'number' ? nz.population : 0,
+        facilities: Array.isArray(nz.facilities) ? nz.facilities.slice() : [],
+        factionRelations: {}
+      });
+      capList(worldMemory.safeZones, MAX_SAFE_ZONES);
+
+      // 【機制一：自動建立同名暫存點（倉庫）】
+      if (typeof gameState !== 'undefined') {
+        gameState.stashes = gameState.stashes || [];
+        var existingStash = gameState.stashes.find(function (s) { return s.locationName === nz.name; });
+        if (!existingStash) {
+          gameState.stashes.push({
+            id: 'base_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+            locationName: nz.name,
+            items: []
+          });
         }
       }
-    }
+    });
 
-    // 【終極防呆】：有些 AI 會把 safe_zone_update 回傳成陣列
-    var safeZonesToUpdate = [];
-    if (Array.isArray(update.safe_zone_update)) {
-      safeZonesToUpdate = update.safe_zone_update;
-    } else if (update.safe_zone_update && update.safe_zone_update.name) {
-      safeZonesToUpdate.push(update.safe_zone_update);
-    }
-
-    // 2. 更新基地 (藍圖與建材攔截)
-    if (update.safe_zone_update && update.safe_zone_update.name) {
-      var su = update.safe_zone_update;
+    // 2. 更新基地（【修正 Bug #17】走訪整個陣列，支援單回合更新多個基地）
+    normalized.safeZoneUpdates.forEach(function (su) {
       var zone = findByName(worldMemory.safeZones, su.name);
-      
-      if (zone) {
-        if (typeof su.population === 'number') zone.population = su.population;
-        
-        // 【機制二：藍圖建造成本攔截機制】
-        if (Array.isArray(su.facilities_add)) {
-          for (var i = 0; i < su.facilities_add.length; i++) {
-            var fName = su.facilities_add[i];
-            
-            if (zone.facilities.indexOf(fName) === -1) {
-              var canBuild = true;
-              
-              if (window.FACILITY_BLUEPRINTS && window.FACILITY_BLUEPRINTS[fName]) {
-                var bp = window.FACILITY_BLUEPRINTS[fName];
-                var stash = gameState.stashes.find(function(s) { return s.locationName === zone.name; });
-                
-                if (bp.cost && Object.keys(bp.cost).length > 0) {
-                  if (!stash || !stash.items) {
-                    canBuild = false; 
-                    if (typeof appendGMText === 'function') appendGMText('[系統警告] 缺乏基地倉庫，無法建設「' + fName + '」。');
+      if (!zone) return;
+
+      if (typeof su.population === 'number') zone.population = su.population;
+
+      // 【機制二：藍圖建造成本攔截機制】
+      if (Array.isArray(su.facilities_add)) {
+        for (var i = 0; i < su.facilities_add.length; i++) {
+          var fName = su.facilities_add[i];
+
+          if (zone.facilities.indexOf(fName) === -1) {
+            var canBuild = true;
+
+            if (window.FACILITY_BLUEPRINTS && window.FACILITY_BLUEPRINTS[fName]) {
+              var bp = window.FACILITY_BLUEPRINTS[fName];
+              var stash = gameState.stashes.find(function (s) { return s.locationName === zone.name; });
+
+              if (bp.cost && Object.keys(bp.cost).length > 0) {
+                if (!stash || !stash.items) {
+                  canBuild = false;
+                  if (typeof appendGMText === 'function') appendGMText('[系統警告] 缺乏基地倉庫，無法建設「' + fName + '」。');
+                } else {
+                  var missing = [];
+                  for (var mat in bp.cost) {
+                    var requiredQty = bp.cost[mat];
+                    var matItem = stash.items.find(function (item) { return item.name === mat; });
+                    var currentQty = matItem ? matItem.quantity : 0;
+                    if (currentQty < requiredQty) missing.push(mat + ' x' + (requiredQty - currentQty));
+                  }
+                  if (missing.length > 0) {
+                    canBuild = false;
+                    if (typeof appendGMText === 'function') appendGMText('[系統警告] 倉庫建材不足（缺少 ' + missing.join(', ') + '），「' + fName + '」建設失敗。');
                   } else {
-                    var missing = [];
-                    for (var mat in bp.cost) {
-                      var requiredQty = bp.cost[mat];
-                      var matItem = stash.items.find(function(item) { return item.name === mat; });
-                      var currentQty = matItem ? matItem.quantity : 0;
-                      if (currentQty < requiredQty) missing.push(mat + ' x' + (requiredQty - currentQty));
-                    }
-                    
-                    if (missing.length > 0) {
-                      canBuild = false;
-                      if (typeof appendGMText === 'function') appendGMText('[系統警告] 倉庫建材不足 (缺少 ' + missing.join(', ') + ')，「' + fName + '」建設失敗。');
-                    } else {
-                      var changes = [];
-                      for (var matCost in bp.cost) changes.push({ name: matCost, quantity: bp.cost[matCost], action: 'remove' });
-                      if (typeof applyInventoryChangesTo === 'function') applyInventoryChangesTo(stash.items, changes);
-                      if (typeof appendGMText === 'function') appendGMText('[基地建設] 消耗了建材，成功在 ' + zone.name + ' 建造了「' + fName + '」！');
-                    }
+                    var changes = [];
+                    for (var matCost in bp.cost) changes.push({ name: matCost, quantity: bp.cost[matCost], action: 'remove' });
+                    if (typeof applyInventoryChangesTo === 'function') applyInventoryChangesTo(stash.items, changes);
+                    if (typeof appendGMText === 'function') appendGMText('[基地建設] 消耗了建材，成功在 ' + zone.name + ' 建造了「' + fName + '」！');
                   }
                 }
               }
-              if (canBuild) zone.facilities.push(fName);
             }
+
+            if (canBuild) zone.facilities.push(fName);
           }
         }
-        
-        if (Array.isArray(su.facilities_remove)) {
-          zone.facilities = zone.facilities.filter(function (f) {
-            return su.facilities_remove.indexOf(f) === -1;
-          });
-        }
-        if (su.faction_relation_note) {
-          zone.factionRelations.note = truncateText(su.faction_relation_note);
-        }
       }
-    }
 
-    if (update.npc_major_event && update.npc_major_event.name) {
-      var ne = update.npc_major_event;
+      if (Array.isArray(su.facilities_remove)) {
+        zone.facilities = zone.facilities.filter(function (f) {
+          return su.facilities_remove.indexOf(f) === -1;
+        });
+      }
+
+      if (su.faction_relation_note) {
+        zone.factionRelations.note = truncateText(su.faction_relation_note);
+      }
+    });
+
+    // 3. NPC 重大事件
+    if (normalized.npcMajorEvent) {
+      var ne = normalized.npcMajorEvent;
       var npc = findByName(worldMemory.keyNpcs, ne.name);
       if (!npc) {
         npc = { name: ne.name, gender: ne.gender || '', ability: ne.ability || '', relationshipNotes: '', status: ne.status || 'alive', lastKnownLocation: '' };
@@ -241,18 +223,20 @@ var WorldMemory = (function () {
       syncNpcStatusToRelationship(worldMemory, ne.name, ne.status, turnCount);
     }
 
-    if (update.faction_shift && update.faction_shift.faction) {
+    // 4. 勢力歷史事件
+    if (normalized.factionShift) {
       worldMemory.factionHistory.push({
-        faction: update.faction_shift.faction,
-        eventText: truncateText(update.faction_shift.eventText || ''),
+        faction: normalized.factionShift.faction,
+        eventText: truncateText(normalized.factionShift.eventText || ''),
         turnRecorded: turnCount
       });
       capList(worldMemory.factionHistory, MAX_FACTION_HISTORY);
     }
 
-    if (update.world_landmark && update.world_landmark.eventText) {
+    // 5. 世界重大地標事件
+    if (normalized.worldLandmark) {
       worldMemory.majorEvents.push({
-        eventText: truncateText(update.world_landmark.eventText),
+        eventText: truncateText(normalized.worldLandmark.eventText),
         turnRecorded: turnCount
       });
       capList(worldMemory.majorEvents, MAX_MAJOR_EVENTS);
@@ -269,50 +253,41 @@ var WorldMemory = (function () {
       return worldMemory;
     }
 
-    if (Array.isArray(evolution.npc_updates)) {
-      for (var i = 0; i < evolution.npc_updates.length; i++) {
-        var nu = evolution.npc_updates[i];
-        if (!nu.name) continue;
-        var npc = findByName(worldMemory.keyNpcs, nu.name);
-        if (!npc) {
-          npc = { name: nu.name, gender: nu.gender || '', ability: nu.ability || '', relationshipNotes: '', status: nu.status || 'alive', lastKnownLocation: '' };
-          worldMemory.keyNpcs.push(npc);
-          capList(worldMemory.keyNpcs, MAX_NPCS);
-        }
-        if (nu.gender) npc.gender = nu.gender;
-        if (nu.ability) npc.ability = nu.ability;
-        if (nu.status) npc.status = nu.status;
-        if (nu.note) {
-          npc.relationshipNotes = truncateText((npc.relationshipNotes ? npc.relationshipNotes + ' ' : '') + '[背景] ' + nu.note);
-        }
-        syncNpcStatusToRelationship(worldMemory, nu.name, nu.status, turnCount);
-      }
-    }
+    // 【接線】陣列防呆統一交給 AppSchema 處理
+    var normalized = AppSchema.normalizeBackgroundEvolution(evolution);
 
-    if (Array.isArray(evolution.safe_zone_updates)) {
-      for (var j = 0; j < evolution.safe_zone_updates.length; j++) {
-        var su2 = evolution.safe_zone_updates[j];
-        if (!su2.name) continue;
-        var zone = findByName(worldMemory.safeZones, su2.name);
-        if (zone && su2.note) {
-          zone.factionRelations = zone.factionRelations || {};
-          zone.factionRelations.backgroundNote = truncateText(su2.note);
-        }
+    normalized.npcUpdates.forEach(function (nu) {
+      var npc = findByName(worldMemory.keyNpcs, nu.name);
+      if (!npc) {
+        npc = { name: nu.name, gender: nu.gender || '', ability: nu.ability || '', relationshipNotes: '', status: nu.status || 'alive', lastKnownLocation: '' };
+        worldMemory.keyNpcs.push(npc);
+        capList(worldMemory.keyNpcs, MAX_NPCS);
       }
-    }
+      if (nu.gender) npc.gender = nu.gender;
+      if (nu.ability) npc.ability = nu.ability;
+      if (nu.status) npc.status = nu.status;
+      if (nu.note) {
+        npc.relationshipNotes = truncateText((npc.relationshipNotes ? npc.relationshipNotes + ' ' : '') + '[背景] ' + nu.note);
+      }
+      syncNpcStatusToRelationship(worldMemory, nu.name, nu.status, turnCount);
+    });
 
-    if (Array.isArray(evolution.faction_updates)) {
-      for (var k = 0; k < evolution.faction_updates.length; k++) {
-        var fu = evolution.faction_updates[k];
-        if (!fu.faction) continue;
-        worldMemory.factionHistory.push({
-          faction: fu.faction,
-          eventText: '[背景] ' + truncateText(fu.eventText || ''),
-          turnRecorded: turnCount
-        });
-        capList(worldMemory.factionHistory, MAX_FACTION_HISTORY);
+    normalized.safeZoneUpdates.forEach(function (su2) {
+      var zone = findByName(worldMemory.safeZones, su2.name);
+      if (zone && su2.note) {
+        zone.factionRelations = zone.factionRelations || {};
+        zone.factionRelations.backgroundNote = truncateText(su2.note);
       }
-    }
+    });
+
+    normalized.factionUpdates.forEach(function (fu) {
+      worldMemory.factionHistory.push({
+        faction: fu.faction,
+        eventText: '[背景] ' + truncateText(fu.eventText || ''),
+        turnRecorded: turnCount
+      });
+      capList(worldMemory.factionHistory, MAX_FACTION_HISTORY);
+    });
 
     worldMemory.lastBackgroundEvolutionTurn = turnCount;
     return worldMemory;
@@ -329,10 +304,13 @@ var WorldMemory = (function () {
   function applyAspirationUpdate(worldMemory, update, currentDay) {
     worldMemory = ensureShape(worldMemory);
     var triggeredMilestones = [];
-    if (!update) return { worldMemory: worldMemory, milestones: triggeredMilestones };
+
+    // 【接線】key 白名單過濾統一交給 AppSchema 處理
+    var normalized = AppSchema.normalizeAspirationUpdate(update);
+    if (!normalized) return { worldMemory: worldMemory, milestones: triggeredMilestones };
 
     ASPIRATION_KEYS.forEach(function (key) {
-      var entry = update[key];
+      var entry = normalized[key];
       if (!entry) return;
       var asp = worldMemory.aspirations[key];
       if (typeof entry.progress_delta === 'number') {
@@ -349,6 +327,7 @@ var WorldMemory = (function () {
 
     return { worldMemory: worldMemory, milestones: triggeredMilestones };
   }
+
 
   /* ---------- 關係系統：六階段含天數硬性驗證 ---------- */
   function getOrCreateRelationship(worldMemory, npcName, currentDay) {
@@ -379,53 +358,55 @@ var WorldMemory = (function () {
     return (currentDay - stageEnteredDay) >= STAGE_MIN_DAYS;
   }
 
-  function applyRelationshipUpdate(worldMemory, update, currentDay) {
-    worldMemory = ensureShape(worldMemory);
-    if (!update || !update.npc_name) return worldMemory;
+function applyRelationshipUpdate(worldMemory, update, currentDay) {
+  worldMemory = ensureShape(worldMemory);
 
-    var rel = getOrCreateRelationship(worldMemory, update.npc_name, currentDay);
+  // 【接線】npc_name 必填檢查與 stage_transition 白名單驗證交給 AppSchema 處理
+  var normalized = AppSchema.normalizeRelationshipUpdate(update);
+  if (!normalized) return worldMemory;
 
-    if (rel.frozen) {
-      if (update.background_note) {
-        rel.background.push({ text: truncateText(update.background_note), day: currentDay });
-        if (rel.background.length > 30) rel.background.splice(0, rel.background.length - 30);
-      }
-      return worldMemory;
-    }
+  var rel = getOrCreateRelationship(worldMemory, normalized.npc_name, currentDay);
 
-    if (update.gender) rel.gender = update.gender;
-
-    if (typeof update.trust_delta === 'number') {
-      rel.trust = clampNum(rel.trust + update.trust_delta, 0, 100);
-    }
-    if (typeof update.closeness_delta === 'number') {
-      rel.closeness = clampNum(rel.closeness + update.closeness_delta, 0, 100);
-    }
-    if (typeof update.romantic_tension_delta === 'number') {
-      rel.romanticTension = clampNum(rel.romanticTension + update.romantic_tension_delta, 0, 100);
-    }
-
-    if (update.background_note) {
-      rel.background.push({ text: truncateText(update.background_note), day: currentDay });
+  if (rel.frozen) {
+    if (normalized.background_note) {
+      rel.background.push({ text: truncateText(normalized.background_note), day: currentDay });
       if (rel.background.length > 30) rel.background.splice(0, rel.background.length - 30);
     }
-
-    if (update.stage_transition && STAGE_ORDER.indexOf(update.stage_transition) !== -1) {
-      if (isTransitionAllowed(rel.stage, update.stage_transition, currentDay, rel.stageEnteredDay)) {
-        rel.stage = update.stage_transition;
-        rel.stageEnteredDay = currentDay;
-        if (update.note) {
-          rel.milestones.push({ text: truncateText(update.note), day: currentDay, stage: update.stage_transition });
-          if (rel.milestones.length > 15) rel.milestones.splice(0, rel.milestones.length - 15);
-        }
-      }
-    } else if (update.note) {
-      rel.milestones.push({ text: truncateText(update.note), day: currentDay, stage: rel.stage });
-      if (rel.milestones.length > 15) rel.milestones.splice(0, rel.milestones.length - 15);
-    }
-
     return worldMemory;
   }
+
+  if (normalized.gender) rel.gender = normalized.gender;
+
+  if (normalized.trust_delta) {
+    rel.trust = clampNum(rel.trust + normalized.trust_delta, 0, 100);
+  }
+  if (normalized.closeness_delta) {
+    rel.closeness = clampNum(rel.closeness + normalized.closeness_delta, 0, 100);
+  }
+  if (normalized.romantic_tension_delta) {
+    rel.romanticTension = clampNum(rel.romanticTension + normalized.romantic_tension_delta, 0, 100);
+  }
+  if (normalized.background_note) {
+    rel.background.push({ text: truncateText(normalized.background_note), day: currentDay });
+    if (rel.background.length > 30) rel.background.splice(0, rel.background.length - 30);
+  }
+
+  if (normalized.stage_transition) {
+    if (isTransitionAllowed(rel.stage, normalized.stage_transition, currentDay, rel.stageEnteredDay)) {
+      rel.stage = normalized.stage_transition;
+      rel.stageEnteredDay = currentDay;
+      if (normalized.note) {
+        rel.milestones.push({ text: truncateText(normalized.note), day: currentDay, stage: normalized.stage_transition });
+        if (rel.milestones.length > 15) rel.milestones.splice(0, rel.milestones.length - 15);
+      }
+    }
+  } else if (normalized.note) {
+    rel.milestones.push({ text: truncateText(normalized.note), day: currentDay, stage: rel.stage });
+    if (rel.milestones.length > 15) rel.milestones.splice(0, rel.milestones.length - 15);
+  }
+
+  return worldMemory;
+}
 
   /* ---------- 組裝要塞進AI提示詞的文字段落 ---------- */
   function buildWorldMemoryPrompt(worldMemory, currentDay) {
