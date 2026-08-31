@@ -7,8 +7,8 @@ var PROVIDER_KEY = 'doomsday_dawn_provider';
 var NOTION_KEY = 'doomsday_dawn_notion_config';
 var NOTION_SYNC_INTERVAL = 10;
 var NOTION_CHUNK_SIZE = 2000;
-var currentSaveTab = 'local';     // 存檔面板的分頁狀態
-var notionSavesCache = [];        // 暫存 Notion 讀取回來的存檔清單
+var currentSaveTab = 'local'; // 存檔面板的分頁狀態
+var notionSavesCache = []; // 暫存 Notion 讀取回來的存檔清單
 
 function handleExportSave() {
   var saveData = { version: 1, exportedAt: new Date().toISOString(), gameState: gameState };
@@ -55,12 +55,11 @@ function handleLoadNamedSave(name) {
     renderOptions(gameState.lastOptions);
     renderAll();
     saveStateToLocal();
-    dom.namedSaveModal.classList.add('hidden');
+    dom.modal.namedSave.classList.add('hidden');
   } else {
     alert('請先在開局畫面輸入 API 金鑰');
   }
 }
-
 
 function handleDeleteNamedSave(name) {
   if (!confirm('刪除命名存檔「' + name + '」？')) return;
@@ -78,7 +77,7 @@ function handleImportFile(e) {
     try {
       var saveData = JSON.parse(event.target.result);
       restoreState(saveData.gameState);
-      var key = dom.apiKeyInput.value.trim() || localStorage.getItem(APIKEY_KEY_PREFIX + gameState.provider);
+      var key = dom.setup.apiKeyInput.value.trim() || localStorage.getItem(APIKEY_KEY_PREFIX + gameState.provider);
       if (gameState.isTestMode || key) {
         gameState.apiKey = key || '';
         if (key) localStorage.setItem(APIKEY_KEY_PREFIX + gameState.provider, key);
@@ -105,7 +104,7 @@ function handleOpenSaveManager() {
   currentSaveTab = 'local';
   updateSaveTabUI();
   renderLocalSaveList();
-  dom.namedSaveModal.classList.remove('hidden');
+  dom.modal.namedSave.classList.remove('hidden');
 }
 
 function switchSaveTab(tab) {
@@ -119,21 +118,22 @@ function switchSaveTab(tab) {
 }
 
 function updateSaveTabUI() {
-  dom.saveTabLocal.classList.toggle('active', currentSaveTab === 'local');
-  dom.saveTabNotion.classList.toggle('active', currentSaveTab === 'notion');
+  dom.modal.saveTabLocal.classList.toggle('active', currentSaveTab === 'local');
+  dom.modal.saveTabNotion.classList.toggle('active', currentSaveTab === 'notion');
 }
 
 function renderLocalSaveList() {
   var saves = getNamedSaves();
   var names = Object.keys(saves);
-  dom.namedSaveList.innerHTML = '';
+  dom.modal.namedSaveList.innerHTML = '';
   if (names.length === 0) {
     var emptyEl = document.createElement('div');
     emptyEl.className = 'named-save-empty';
     emptyEl.textContent = '目前沒有任何命名存檔';
-    dom.namedSaveList.appendChild(emptyEl);
+    dom.modal.namedSaveList.appendChild(emptyEl);
     return;
   }
+
   names.forEach(function (name) {
     var row = document.createElement('div');
     row.className = 'named-save-row';
@@ -153,24 +153,24 @@ function renderLocalSaveList() {
     row.appendChild(info);
     row.appendChild(loadBtn);
     row.appendChild(delBtn);
-    dom.namedSaveList.appendChild(row);
+    dom.modal.namedSaveList.appendChild(row);
   });
 }
 
 function renderNotionSaveList() {
-  dom.namedSaveList.innerHTML = '';
+  dom.modal.namedSaveList.innerHTML = '';
   if (!CONFIG.NOTION_ENABLED || !CONFIG.NOTION_PROXY_URL || !CONFIG.NOTION_DATABASE_ID) {
     var noConfigEl = document.createElement('div');
     noConfigEl.className = 'named-save-empty';
     noConfigEl.textContent = '尚未設定 Notion 雲端同步，請先於選單中儲存轉發網址與 Database ID';
-    dom.namedSaveList.appendChild(noConfigEl);
+    dom.modal.namedSaveList.appendChild(noConfigEl);
     return;
   }
 
   var loadingEl = document.createElement('div');
   loadingEl.className = 'named-save-empty';
   loadingEl.textContent = '讀取中…';
-  dom.namedSaveList.appendChild(loadingEl);
+  dom.modal.namedSaveList.appendChild(loadingEl);
 
   var queryUrl = CONFIG.NOTION_PROXY_URL.replace(/\/$/, '') + '/query';
 
@@ -184,22 +184,24 @@ function renderNotionSaveList() {
     });
   }).then(function (result) {
     if (currentSaveTab !== 'notion') return;
-    dom.namedSaveList.innerHTML = '';
+    dom.modal.namedSaveList.innerHTML = '';
     if (!result.ok || !result.data.results) {
       var errEl = document.createElement('div');
       errEl.className = 'named-save-empty';
       errEl.textContent = '讀取失敗：' + JSON.stringify(result.data).slice(0, 200);
-      dom.namedSaveList.appendChild(errEl);
+      dom.modal.namedSaveList.appendChild(errEl);
       return;
     }
+
     notionSavesCache = result.data.results;
     if (notionSavesCache.length === 0) {
       var emptyEl = document.createElement('div');
       emptyEl.className = 'named-save-empty';
       emptyEl.textContent = 'Notion資料庫中尚無同步記錄';
-      dom.namedSaveList.appendChild(emptyEl);
+      dom.modal.namedSaveList.appendChild(emptyEl);
       return;
     }
+
     notionSavesCache.forEach(function (page, idx) {
       var props = page.properties || {};
       var titleArr = props['存檔名稱'] && props['存檔名稱'].title;
@@ -221,15 +223,15 @@ function renderNotionSaveList() {
       loadBtn.addEventListener('click', function () { handleLoadNotionSave(idx); });
       row.appendChild(info);
       row.appendChild(loadBtn);
-      dom.namedSaveList.appendChild(row);
+      dom.modal.namedSaveList.appendChild(row);
     });
   }).catch(function (e) {
     if (currentSaveTab !== 'notion') return;
-    dom.namedSaveList.innerHTML = '';
+    dom.modal.namedSaveList.innerHTML = '';
     var errEl = document.createElement('div');
     errEl.className = 'named-save-empty';
     errEl.textContent = '讀取請求失敗：' + e.message;
-    dom.namedSaveList.appendChild(errEl);
+    dom.modal.namedSaveList.appendChild(errEl);
   });
 }
 
@@ -243,6 +245,7 @@ function handleLoadNotionSave(idx) {
     alert('這筆記錄沒有可讀取的存檔內容');
     return;
   }
+
   try {
     var parsedState = JSON.parse(jsonText);
     if (!confirm('讀取這筆Notion存檔將覆蓋目前進度，確定繼續嗎？')) return;
@@ -255,7 +258,7 @@ function handleLoadNotionSave(idx) {
       renderOptions(gameState.lastOptions);
       renderAll();
       saveStateToLocal();
-      dom.namedSaveModal.classList.add('hidden');
+      dom.modal.namedSave.classList.add('hidden');
     } else {
       alert('請先在開局畫面輸入 API 金鑰');
     }
@@ -280,22 +283,21 @@ function safeRichText(str, maxLen) {
 }
 
 function buildNotionSyncBody(gameState) {
-  // 1. 保留原本的重要變數與 JSON 存檔 (這是讀取進度的命脈)
+  // 1. 保留原本的重要變數與 JSON 存檔（這是讀取進度的命脈）
   var injuryOption = gameState.injuryStatus || 'none';
   var lastNarrative = gameState.recentTurns && gameState.recentTurns.length ? gameState.recentTurns[gameState.recentTurns.length - 1].narrative : '';
   var briefSummary = lastNarrative.length > 450 ? lastNarrative.slice(0, 450) + '…' : lastNarrative;
   var fullStateJson = JSON.stringify(gameState);
 
-  // 2. 新增的載具判斷
-  var activeVehicle = gameState.vehicles ? gameState.vehicles.find(function(v) { return v.status === 'active'; }) : null;
+  // 2. 載具判斷
+  var activeVehicle = gameState.vehicles ? gameState.vehicles.find(function (v) { return v.status === 'active'; }) : null;
   var vehicleText = activeVehicle ? activeVehicle.name : '無代步工具';
 
   return {
     parent: { database_id: CONFIG.NOTION_DATABASE_ID },
     properties: {
-      // ===== 保留你原本的所有欄位 (確保 Notion 不報錯) =====
       '存檔名稱': { title: [{ text: { content: '同步-第' + gameState.time.day + '天-' + new Date().toLocaleTimeString() } }] },
-      '角色姓名': { rich_text: safeRichText('無名倖存者', 1900) }, // 配合第二人稱，固定傳送字眼，不用刪除 Notion 欄位
+      '角色姓名': { rich_text: safeRichText('無名倖存者', 1900) },
       '遊戲天數': { number: gameState.time.day },
       '體力': { number: Math.round(gameState.stamina) },
       '當前地點': { rich_text: safeRichText(gameState.location, 1900) },
@@ -310,8 +312,6 @@ function buildNotionSyncBody(gameState) {
       '前文提要': { rich_text: safeRichText(briefSummary || '無', 1900) },
       '更新時間': { date: { start: new Date().toISOString() } },
       '存檔JSON': { rich_text: chunkText(fullStateJson, NOTION_CHUNK_SIZE) },
-
-      // ===== 階段 A 新增的 3 個專屬欄位 =====
       '地圖池': { select: { name: gameState.currentMapPresetId || "未知" } },
       '已探索地點數': { number: gameState.exploredLocations ? gameState.exploredLocations.length : 0 },
       '當前載具': { rich_text: safeRichText(vehicleText, 1900) }
@@ -326,7 +326,7 @@ function syncToNotion(silent) {
   }
   if (gameState.isTestMode && silent) return;
 
-  var body = buildNotionSyncBody();
+  var body = buildNotionSyncBody(gameState);
 
   fetch(CONFIG.NOTION_PROXY_URL, {
     method: 'POST',
@@ -371,8 +371,8 @@ function restoreState(saved) {
   gameState = Object.assign({}, gameState, saved);
   gameState.worldMemory = WorldMemory.ensureShape(gameState.worldMemory);
 
-  // 【修正 Bug #20】僅在完全沒有 charSetup 時才重建（真正的舊版兼容情境），
-  // 且重建時補齊 backgroundType 與 generalistPicks，避免背景技能加成遺失。
+  // 【修正 Bug #20】僅在完全沒有 charSetup 時才重建，
+  // 且重建時補齊 backgroundType 與 generalistPicks
   if (!gameState.charSetup) {
     gameState.charSetup = {
       name: (saved.charSetup && saved.charSetup.name) || '',
@@ -383,9 +383,6 @@ function restoreState(saved) {
       generalistPicks: (saved.charSetup && saved.charSetup.generalistPicks) || {}
     };
   } else {
-    // 即使 charSetup 存在，仍個別補上可能缺漏的欄位（例如非常舊的存檔
-    // 只有 name/gender/location/occupation，沒有 backgroundType），
-    // 避免後續讀取 undefined 造成錯誤。
     if (typeof gameState.charSetup.backgroundType === 'undefined') {
       gameState.charSetup.backgroundType = (saved.charSetup && saved.charSetup.backgroundType) || null;
     }
@@ -396,22 +393,22 @@ function restoreState(saved) {
 }
 
 function rebuildNarrativeFromHistory() {
-  dom.narrativeContent.innerHTML = '';
+  dom.narrative.content.innerHTML = '';
   for (var i = 0; i < gameState.recentTurns.length; i++) {
     var t = gameState.recentTurns[i];
     if (t.action && t.action !== '(開局)') {
       var actionEl = document.createElement('div');
       actionEl.className = 'narrative-entry player-action';
       actionEl.textContent = '▸ ' + t.action;
-      dom.narrativeContent.appendChild(actionEl);
+      dom.narrative.content.appendChild(actionEl);
     }
     var gmEl = document.createElement('div');
     gmEl.className = 'narrative-entry gm-text';
     gmEl.textContent = t.narrative;
-    dom.narrativeContent.appendChild(gmEl);
+    dom.narrative.content.appendChild(gmEl);
   }
   if (gameState.isDead) {
-    dom.deathScreen.classList.remove('hidden');
+    dom.modal.deathScreen.classList.remove('hidden');
   }
   scrollToBottom();
 }
@@ -437,8 +434,8 @@ function handleChangeApiKey() {
 }
 
 function handleSaveNotionConfig() {
-  var proxyUrl = dom.notionProxyInput.value.trim();
-  var dbId = dom.notionDbInput.value.trim();
+  var proxyUrl = dom.menu.notionProxyInput.value.trim();
+  var dbId = dom.menu.notionDbInput.value.trim();
   localStorage.setItem(NOTION_KEY, JSON.stringify({ proxyUrl: proxyUrl, dbId: dbId }));
   CONFIG.NOTION_ENABLED = !!(proxyUrl && dbId);
   CONFIG.NOTION_PROXY_URL = proxyUrl;
