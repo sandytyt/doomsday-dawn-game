@@ -42,6 +42,8 @@ function openTransferModal(sourceType, sourceId, itemName, maxQty) {
   nameEl.textContent = '物品：' + itemName + ' (最多 ' + maxQty + ' 個)';
   qtyInput.value = 1;
   qtyInput.max = maxQty;
+
+  selectEl.innerHTML = ''; // 清空選單
   
   // 建立轉移目標清單
   //
