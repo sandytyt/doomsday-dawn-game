@@ -305,7 +305,7 @@ function showNextPendingModal() {
 }
 
 function handleEventModalClose() {
-  dom.eventModal.classList.add('hidden');
+  dom.modal.event.classList.add('hidden');
   showNextPendingModal();
 }
 
