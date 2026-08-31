@@ -181,7 +181,7 @@ function renameOrMergeNpc(oldName, newName) {
 }
 
 function renderNpcPanel() {
-  if (!dom.npcList) return;
+  if (!dom.infoPanelGroup.npcList) return;
   var worldMemory = WorldMemory.ensureShape(gameState.worldMemory);
   
   // 【修復】合併 relationships 與 npcStates 的名單，避免漏掉尚未有關係紀錄的隊員
@@ -195,18 +195,18 @@ function renderNpcPanel() {
   var names = Object.keys(namesSet);
   
   // 【修復】在這裡同步更新標題數字
-  if (dom.npcSectionToggle) {
-    var npcSpan = dom.npcSectionToggle.querySelector('span');
+  if (dom.infoPanelGroup.npcSectionToggle) {
+    var npcSpan = dom.infoPanelGroup.npcSectionToggle.querySelector('span');
     if (npcSpan) npcSpan.textContent = '📇 人物檔案（' + names.length + '）';
   }
 
-  dom.npcList.innerHTML = '';
+  dom.infoPanelGroup.npcList.innerHTML = '';
 
   if (names.length === 0) {
     var emptyEl = document.createElement('div');
     emptyEl.className = 'npc-empty';
     emptyEl.textContent = '尚未與任何人物建立深入接觸';
-    dom.npcList.appendChild(emptyEl);
+    dom.infoPanelGroup.npcList.appendChild(emptyEl);
     return;
   }
 
@@ -371,6 +371,6 @@ function renderNpcPanel() {
 
     card.appendChild(header);
     card.appendChild(body);
-    dom.npcList.appendChild(card);
+    dom.infoPanelGroup.npcList.appendChild(card);
   });
 }
