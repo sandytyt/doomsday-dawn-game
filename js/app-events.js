@@ -128,94 +128,11 @@ function handleFreeInputSend() {
   var text = dom.freeInputText.value.trim();
   if (!text) return;
 
-  // ─── 開發者專屬作弊系統攔截 ───
-  if (text.startsWith('#give ')) {
-    var parts = text.split(' ');
-    if (parts.length >= 2) {
-      var cheatItemName = parts[1];
-      var cheatQty = parts.length > 2 ? parseInt(parts[2], 10) : 1;
-      if (isNaN(cheatQty)) cheatQty = 1;
-      
-      // 呼叫新增物品
-      if (typeof applyInventoryChangesTo === 'function') {
-        applyInventoryChangesTo(gameState.inventory, [{ name: cheatItemName, quantity: cheatQty, action: 'add' }]);
-        
-        if (typeof appendGMText === 'function') {
-          appendGMText('[開發者權限] 虛空扭曲，已將 ' + cheatItemName + ' x' + cheatQty + ' 加入背包。');
-        }
-        if (typeof renderAll === 'function') renderAll();
-        
-        console.log('作弊成功：已獲得 ' + cheatItemName + ' x' + cheatQty);
-      }
-      
-      // 恢復 UI 狀態並中斷，不把這句話傳給 AI
-      dom.freeInputText.value = '';
-      dom.freeInputRow.classList.add('hidden');
-      dom.freeInputToggle.classList.remove('hidden');
-      return; 
-    }
-  }
-  // 【新增】：刪除錯誤勢力的作弊指令
-  if (text.startsWith('#delfaction ')) {
-    var factionToDel = text.replace('#delfaction ', '').trim();
-
-    // 【修正】改用 config.js 統一定義的白名單驗證，避免刪除合法陣營或造成資料不一致
-    if (VALID_FACTIONS.indexOf(factionToDel) === -1) {
-      if (typeof appendGMText === 'function') {
-        appendGMText('[系統] 「' + factionToDel + '」不是合法的五大陣營名稱，拒絕刪除。合法陣營：' + VALID_FACTIONS.join('、'));
-      }
-    } else if (gameState.factionTrust && typeof gameState.factionTrust[factionToDel] !== 'undefined') {
-      delete gameState.factionTrust[factionToDel]; // 刪除該勢力
-
-      if (typeof appendGMText === 'function') {
-        appendGMText('[開發者權限] 虛空扭曲，已將錯誤勢力「' + factionToDel + '」從系統記憶中徹底抹除。');
-      }
-      if (typeof renderAll === 'function') renderAll();
-    } else {
-      if (typeof appendGMText === 'function') {
-        appendGMText('[系統] 找不到名為「' + factionToDel + '」的勢力紀錄。');
-      }
-    }
-
-    // 恢復 UI 狀態並中斷，不把這句話傳給 AI
-    dom.freeInputText.value = '';
-    dom.freeInputRow.classList.add('hidden');
-    dom.freeInputToggle.classList.remove('hidden');
+  // 開發者作弊指令攔截：若為合法指令且已處理，直接中斷，不送給 AI。
+  // 指令定義集中於 app-devtools.js，並受 CONFIG.DEV_MODE 開關保護。
+  if (typeof tryHandleDevCommand === 'function' && tryHandleDevCommand(text)) {
     return;
   }
-
-  // 手動建立基地與專屬暫存點
-  if (text.startsWith('#makesafe ')) {
-    var zoneName = text.replace('#makesafe ', '').trim();
-    if (!zoneName) zoneName = '銅礦基地';
-
-    // 【修正】改為呼叫 WorldMemory 正規入口，統一走座標分配（PREDEFINED_COORDS）、
-    // 數量上限（capList）與自動建倉庫邏輯，避免與 world_memory.js 的正規流程產生
-    // 兩套不同步的實作（原本手動 push 時缺少 x/y 座標，導致移動距離計算錯誤）。
-    gameState.worldMemory = WorldMemory.applyWorldMemoryUpdate(
-      gameState.worldMemory,
-      {
-        new_safe_zone: {
-          name: zoneName,
-          location: gameState.location || '未知地點',
-          population: 2,
-          facilities: ['基礎防禦', '物資儲藏櫃']
-        }
-      },
-      gameState.turnCount
-    );
-
-    if (typeof appendGMText === 'function') {
-      appendGMText('[開發者權限] 虛空扭曲，已強制將此地註冊為基地「' + zoneName + '」，並開闢專屬物資庫。');
-    }
-
-    dom.freeInputText.value = '';
-    dom.freeInputRow.classList.add('hidden');
-    dom.freeInputToggle.classList.remove('hidden');
-    if (typeof renderAll === 'function') renderAll();
-    return;
-  }
-  // ────────────────────────────────
 
   // 原本正常的發送邏輯
   dom.freeInputText.value = '';
