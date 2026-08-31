@@ -43,7 +43,26 @@ function openTransferModal(sourceType, sourceId, itemName, maxQty) {
   qtyInput.value = 1;
   qtyInput.max = maxQty;
   
-  selectEl.innerHTML = '';
+  // 建立轉移目標清單
+  //
+  // 【物資來源類型設計說明，供未來擴充參考】
+  // 目前系統有兩種來源類型：
+  //   1. 單例類型（全域只有一份，不需要 id 區分）：
+  //      - backpack（主角背包）→ 固定傳入空字串作為 id 佔位
+  //   2. 多例類型（陣列中可能有多筆，必須用 id 精確定位）：
+  //      - stash（暫存點）→ 使用 stash.id
+  //      - vehicle（載具）→ 使用 vehicle.id
+  //      - npc（隨行隊員）→ 使用 npcName 本身作為 id（因為 npcStates
+  //        是以名字為 key 的物件，不是陣列，故用名字取代生成的 id）
+  //
+  // 若未來新增物資來源類型，請先判斷該類型在 gameState 中是否可能同時
+  // 存在多筆：
+  //   - 若「是」（例如未來若載具拆分成「駕駛座」「後車廂」兩個獨立儲存
+  //     格），必須設計唯一 id 傳入 addOption 第二參數，並在
+  //     getInventoryRef() 對應分支中使用該 id 查找。
+  //   - 若「否」（例如未來若新增「主角個人保險箱」這種全域單例儲存），
+  //     可比照 backpack 的作法傳入空字串佔位，並在 getInventoryRef()
+  //     對應分支中直接回傳該全域物件，不使用 id 參數。
   function addOption(val, text) {
     if (val === sourceType + '_' + sourceId) return; // 排除來源自己
     var opt = document.createElement('option');
@@ -51,12 +70,15 @@ function openTransferModal(sourceType, sourceId, itemName, maxQty) {
     opt.textContent = text;
     selectEl.appendChild(opt);
   }
-  
-  // 建立轉移目標清單
+
+  // 【單例類型】背包：id 固定留空，getInventoryRef('backpack', id) 不使用 id 參數
   addOption('backpack_', '隨身背包');
-  gameState.stashes.forEach(function(s) { addOption('stash_' + s.id, '暫存點：' + s.locationName); });
-  gameState.vehicles.forEach(function(v) { if (v.status !== 'lost') addOption('vehicle_' + v.id, '載具：' + v.name); });
-  gameState.companions.forEach(function(npcName) { addOption('npc_' + npcName, '隊員背包：' + npcName); });
+  // 【多例類型】暫存點：使用 stash.id 精確定位
+  gameState.stashes.forEach(function (s) { addOption('stash_' + s.id, '暫存點：' + s.locationName); });
+  // 【多例類型】載具：使用 vehicle.id 精確定位
+  gameState.vehicles.forEach(function (v) { if (v.status !== 'lost') addOption('vehicle_' + v.id, '載具：' + v.name); });
+  // 【多例類型】NPC：npcStates 以名字為 key，故用名字本身作為 id
+  gameState.companions.forEach(function (npcName) { addOption('npc_' + npcName, '隊員背包：' + npcName); });
   
   if (selectEl.options.length === 0) {
     alert('沒有其他可轉移的目標！');
