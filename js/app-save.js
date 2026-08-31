@@ -370,13 +370,28 @@ function saveStateToLocal() {
 function restoreState(saved) {
   gameState = Object.assign({}, gameState, saved);
   gameState.worldMemory = WorldMemory.ensureShape(gameState.worldMemory);
-  if (!gameState.charSetup || gameState.charSetup.background !== undefined) {
+
+  // 【修正 Bug #20】僅在完全沒有 charSetup 時才重建（真正的舊版兼容情境），
+  // 且重建時補齊 backgroundType 與 generalistPicks，避免背景技能加成遺失。
+  if (!gameState.charSetup) {
     gameState.charSetup = {
       name: (saved.charSetup && saved.charSetup.name) || '',
       gender: (saved.charSetup && saved.charSetup.gender) || '',
       location: (saved.charSetup && saved.charSetup.location) || '',
-      occupation: (saved.charSetup && saved.charSetup.occupation) || ''
+      occupation: (saved.charSetup && saved.charSetup.occupation) || '',
+      backgroundType: (saved.charSetup && saved.charSetup.backgroundType) || null,
+      generalistPicks: (saved.charSetup && saved.charSetup.generalistPicks) || {}
     };
+  } else {
+    // 即使 charSetup 存在，仍個別補上可能缺漏的欄位（例如非常舊的存檔
+    // 只有 name/gender/location/occupation，沒有 backgroundType），
+    // 避免後續讀取 undefined 造成錯誤。
+    if (typeof gameState.charSetup.backgroundType === 'undefined') {
+      gameState.charSetup.backgroundType = (saved.charSetup && saved.charSetup.backgroundType) || null;
+    }
+    if (typeof gameState.charSetup.generalistPicks === 'undefined') {
+      gameState.charSetup.generalistPicks = (saved.charSetup && saved.charSetup.generalistPicks) || {};
+    }
   }
 }
 
