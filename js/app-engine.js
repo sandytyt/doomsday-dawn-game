@@ -165,18 +165,6 @@ function applyStatusUpdate(update) {
     applyStashUpdate(update.stash_update);
   }
   if (update.faction_trust_update) {
-    // 1. 定義合法的五大勢力白名單
-    var VALID_FACTIONS = ['鐵幕守望者', '方舟商會', '荒原拾骸者', '靜默之子', '深層獵手'];
-    
-    // 2. 建立「基地」自動對應「勢力」的轉換表
-    var FACTION_ALIASES = {
-      '灰堡': '鐵幕守望者',
-      '方舟海上堡壘': '方舟商會',
-      '荒原鎮群': '荒原拾骸者',
-      '靜默聖所': '靜默之子',
-      '深谷中繼站': '深層獵手'
-    };
-
     for (var rawFaction in update.faction_trust_update) {
       if (Object.prototype.hasOwnProperty.call(update.faction_trust_update, rawFaction)) {
         var targetFaction = rawFaction;
