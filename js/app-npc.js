@@ -56,11 +56,7 @@ function processNpcMicroActions() {
     var npc = gameState.npcStates[npcName];
     if (!npc) continue;
 
-    // 1. 自動消耗體力與飽食度
-    npc.stamina = Math.max(0, npc.stamina - 2); 
-    npc.hunger = Math.max(0, npc.hunger - 1);
-
-    // 2. 自動進食邏輯
+    // 1. 自動進食邏輯
     if (npc.hunger < 50 && npc.inventory && npc.inventory.length > 0) {
       for (var j = 0; j < npc.inventory.length; j++) {
         var item = npc.inventory[j];
@@ -80,7 +76,7 @@ function processNpcMicroActions() {
       }
     }
 
-    // 3. 自動搜尋物資/打怪模擬
+    // 2. 自動搜尋物資/打怪模擬
     if (npc.stamina > 30 && npc.injuryStatus !== 'severe') {
       var actionRoll = Math.random();
       
