@@ -115,20 +115,17 @@ var CORE_EXP_CONFIG = {
 };
 
 function getCoreExpGained(coreName) {
-  // 1. 如果是透明晶核，直接回傳基礎值 10
+  // 1. 透明晶核，直接回傳基礎值
   if (coreName.indexOf('透明') !== -1) {
     return CORE_EXP_CONFIG.transparent;
   }
 
-  // 2. 判斷是否為同屬性
-  // ⚠️ 這裡的 `gameState.charSetup.element` 請替換成你遊戲中實際紀錄「主角屬性」的變數名稱
-  // （例如：如果你紀錄在 gameState.playerAttribute，就改為 gameState.playerAttribute）
-  var playerElement = '';
-  if (gameState.charSetup && gameState.charSetup.element) {
-    playerElement = gameState.charSetup.element; 
-  }
+  // 2. 判斷是否為同屬性（【修正 Bug #6】改讀 gameState.awakenedElement，
+  //    這個欄位由 app-engine.js 在偵測到 awakening/multi_awakening 事件時寫入，
+  //    原本讀取的 gameState.charSetup.element 從未被任何流程賦值，
+  //    導致同屬性加成永遠無法觸發）
+  var playerElement = gameState.awakenedElement || '';
 
-  // 如果主角有屬性，而且這個晶核的名稱剛好包含主角的屬性字眼（例如：主角是"火"，吃到"火系晶核"）
   if (playerElement && coreName.indexOf(playerElement) !== -1) {
     return CORE_EXP_CONFIG.same_attr; // 吸收 20
   }
