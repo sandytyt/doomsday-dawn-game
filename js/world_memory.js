@@ -344,11 +344,17 @@ var WorldMemory = (function () {
   function syncNpcStatusToRelationship(worldMemory, npcName, status, turnCount) {
     if (!status || !worldMemory.relationships[npcName]) return;
     var rel = worldMemory.relationships[npcName];
+    var wasFrozen = rel.frozen;
     rel.npcStatus = status;
     if (status === 'dead' || status === 'missing') {
       rel.frozen = true;
     } else if (status === 'alive') {
       rel.frozen = false;
+      // 【修正 Bug #4】若是從凍結狀態解除（重新歸隊），將關係階段的
+      // 起算日重置為「當前遊戲天數」，避免離隊空窗期被誤算入關係階段天數。
+      if (wasFrozen && typeof gameState !== 'undefined' && gameState.time) {
+        rel.stageEnteredDay = gameState.time.day;
+      }
     }
   }
 
