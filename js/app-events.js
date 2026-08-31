@@ -158,20 +158,25 @@ function handleFreeInputSend() {
   // 【新增】：刪除錯誤勢力的作弊指令
   if (text.startsWith('#delfaction ')) {
     var factionToDel = text.replace('#delfaction ', '').trim();
-    
-    if (gameState.factionTrust && typeof gameState.factionTrust[factionToDel] !== 'undefined') {
-      delete gameState.factionTrust[factionToDel]; // 刪除該勢力
-      
+
+    // 【修正】改用 config.js 統一定義的白名單驗證，避免刪除合法陣營或造成資料不一致
+    if (VALID_FACTIONS.indexOf(factionToDel) === -1) {
       if (typeof appendGMText === 'function') {
-         appendGMText('[開發者權限] 虛空扭曲，已將錯誤勢力「' + factionToDel + '」從系統記憶中徹底抹除。');
+        appendGMText('[系統] 「' + factionToDel + '」不是合法的五大陣營名稱，拒絕刪除。合法陣營：' + VALID_FACTIONS.join('、'));
+      }
+    } else if (gameState.factionTrust && typeof gameState.factionTrust[factionToDel] !== 'undefined') {
+      delete gameState.factionTrust[factionToDel]; // 刪除該勢力
+
+      if (typeof appendGMText === 'function') {
+        appendGMText('[開發者權限] 虛空扭曲，已將錯誤勢力「' + factionToDel + '」從系統記憶中徹底抹除。');
       }
       if (typeof renderAll === 'function') renderAll();
     } else {
       if (typeof appendGMText === 'function') {
-         appendGMText('[系統] 找不到名為「' + factionToDel + '」的勢力紀錄。');
+        appendGMText('[系統] 找不到名為「' + factionToDel + '」的勢力紀錄。');
       }
     }
-    
+
     // 恢復 UI 狀態並中斷，不把這句話傳給 AI
     dom.freeInputText.value = '';
     dom.freeInputRow.classList.add('hidden');
@@ -182,37 +187,28 @@ function handleFreeInputSend() {
   // 手動建立基地與專屬暫存點
   if (text.startsWith('#makesafe ')) {
     var zoneName = text.replace('#makesafe ', '').trim();
-    if (!zoneName) zoneName = '銅礦基地'; 
-    
-    // 1. 建立基地紀錄 (修正為 Array 格式)
-    gameState.worldMemory = gameState.worldMemory || {};
-    gameState.worldMemory.safeZones = gameState.worldMemory.safeZones || [];
-    
-    var existingZone = gameState.worldMemory.safeZones.find(function(z) { return z.name === zoneName; });
-    if (!existingZone) {
-      gameState.worldMemory.safeZones.push({
-        name: zoneName,
-        location: gameState.currentLocation || '未知地點',
-        population: 2,
-        facilities: ['基礎防禦', '物資儲藏櫃']
-      });
-    }
-    
-    // 2. 建立符合系統格式的暫存點 (Array 格式)
-    gameState.stashes = gameState.stashes || [];
-    var existingStash = gameState.stashes.find(function(s) { return s.locationName === zoneName; });
-    if (!existingStash) {
-      gameState.stashes.push({
-        id: 'base_' + Date.now(), 
-        locationName: zoneName,
-        items: [] 
-      });
-    }
-    
+    if (!zoneName) zoneName = '銅礦基地';
+
+    // 【修正】改為呼叫 WorldMemory 正規入口，統一走座標分配（PREDEFINED_COORDS）、
+    // 數量上限（capList）與自動建倉庫邏輯，避免與 world_memory.js 的正規流程產生
+    // 兩套不同步的實作（原本手動 push 時缺少 x/y 座標，導致移動距離計算錯誤）。
+    gameState.worldMemory = WorldMemory.applyWorldMemoryUpdate(
+      gameState.worldMemory,
+      {
+        new_safe_zone: {
+          name: zoneName,
+          location: gameState.location || '未知地點',
+          population: 2,
+          facilities: ['基礎防禦', '物資儲藏櫃']
+        }
+      },
+      gameState.turnCount
+    );
+
     if (typeof appendGMText === 'function') {
-       appendGMText('[開發者權限] 虛空扭曲，已強制將此地註冊為基地「' + zoneName + '」，並開闢專屬物資庫。');
+      appendGMText('[開發者權限] 虛空扭曲，已強制將此地註冊為基地「' + zoneName + '」，並開闢專屬物資庫。');
     }
-    
+
     dom.freeInputText.value = '';
     dom.freeInputRow.classList.add('hidden');
     dom.freeInputToggle.classList.remove('hidden');
