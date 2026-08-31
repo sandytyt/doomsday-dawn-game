@@ -88,7 +88,7 @@ function handleMakeSafeCommand(text) {
 
 // 共用的輸入框重置邏輯（原本每個作弊指令都各自重複這三行）
 function resetFreeInputUI() {
-  dom.freeInputText.value = '';
-  dom.freeInputRow.classList.add('hidden');
-  dom.freeInputToggle.classList.remove('hidden');
+  dom.narrative.freeInputText.value = '';
+  dom.narrative.freeInputRow.classList.add('hidden');
+  dom.narrative.freeInputToggle.classList.remove('hidden');
 }
