@@ -501,15 +501,16 @@ function renderProfileAwakening() {
     return;
   }
   dom.profileAwakeningSection.classList.remove('hidden');
-  if (dom.profileAwakeningLevel) {
-    dom.profileAwakeningLevel.textContent = 'Lv.' + gameState.awakeningLevel;
+  if (dom.profileAwakeningLevel) dom.profileAwakeningLevel.textContent = 'Lv.' + gameState.awakeningLevel;
+
+  // 【新增】屬性與異能名稱一併顯示，例如「火屬性 · 焚燒者」
+  var abilityText = gameState.awakeningAbility || '';
+  if (gameState.awakenedElement) {
+    abilityText = gameState.awakenedElement + '屬性' + (abilityText ? ' · ' + abilityText : '');
   }
-  if (dom.profileAwakeningAbility) {
-    dom.profileAwakeningAbility.textContent = gameState.awakeningAbility || '尚未顯現';
-  }
-  if (dom.profileAwakeningExp) {
-    dom.profileAwakeningExp.textContent = gameState.abilityExp + ' / ' + getAbilityExpNeeded(gameState.awakeningLevel);
-  }
+  if (dom.profileAwakeningAbility) dom.profileAwakeningAbility.textContent = abilityText;
+
+  if (dom.profileAwakeningExp) dom.profileAwakeningExp.textContent = gameState.abilityExp + '/' + getAbilityExpNeeded(gameState.awakeningLevel);
 }
 
 function renderProfileSafezones() {
