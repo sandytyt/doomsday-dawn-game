@@ -481,6 +481,15 @@
     </div>
   </div>
 
+  <div id="event-modal" class="event-modal hidden">
+    <div class="event-modal-content">
+      <div id="event-modal-icon" class="event-modal-icon"></div>
+      <h2 id="event-modal-title"></h2>
+      <p id="event-modal-text"></p>
+      <button id="event-modal-close" class="btn-primary" type="button">確認</button>
+    </div>
+  </div>
+
   <div id="death-screen" class="death-screen hidden">
     <div class="death-screen-content">
       <div class="death-icon">☠</div>
@@ -506,22 +515,6 @@
       <div style="display: flex; gap: 10px; margin-top: 20px;">
         <button id="transfer-confirm-btn" class="btn-primary" type="button" style="flex: 1;">確認轉移</button>
         <button id="transfer-cancel-btn" class="btn-secondary" type="button" style="flex: 1;">取消</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 【階段4新增】使用物品彈窗 -->
-  <div id="use-modal" class="event-modal hidden">
-    <div class="event-modal-content" style="text-align: left;">
-      <h2 style="margin-top: 0;">使用物品</h2>
-      <p id="use-item-name" style="font-weight: bold; margin-bottom: 15px; color: #e0e0e0;"></p>
-      <div class="setup-field">
-        <label>使用對象：</label>
-        <select id="use-target-select"></select>
-      </div>
-      <div style="display: flex; gap: 10px; margin-top: 20px;">
-        <button id="use-confirm-btn" class="btn-primary" type="button" style="flex: 1;">確認使用</button>
-        <button id="use-cancel-btn" class="btn-secondary" type="button" style="flex: 1;">取消</button>
       </div>
     </div>
   </div>
