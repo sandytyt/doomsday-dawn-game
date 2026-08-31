@@ -296,25 +296,30 @@ function renderCharProfile() {
 
 function renderProfileProficiency() {
   if (!dom.charProfileBody) return;
-  // 檢查是否已存在，避免重複建立
   var existing = document.getElementById('profile-proficiency-section');
   if (existing) existing.remove();
 
+  var anchor = document.getElementById('profile-proficiency-anchor');
+  if (!anchor) {
+    console.warn('[UI警告] 找不到 #profile-proficiency-anchor，請確認 index.html 是否已新增此錨點元素。體格熟練度區塊將無法顯示。');
+    return;
+  }
+
   var container = document.createElement('div');
   container.id = 'profile-proficiency-section';
-  var html = '<div class="char-profile-section-title">體格熟練度</div><div class="profile-awakening-card" style="display:grid; grid-template-columns: 1fr 1fr; gap: 8px;">';
-  
+  var html = '<div class="char-profile-section-title">體格熟練度</div><div class="profile-awakening-card" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">';
   if (gameState.skillProficiency) {
     for (var k in PROFICIENCY_LABELS) {
       var exp = gameState.skillProficiency[k] || 0;
       var lv = getProficiencyLevel(exp);
-      html += '<div style="font-size: 0.9em; color: ' + (lv > 1 ? '#4a90e2' : '#888') + ';">' + PROFICIENCY_LABELS[k] + ' Lv.' + lv + '</div>';
+      html += '<div style="font-size:0.9em;color:' + (lv > 1 ? '#4a90e2' : '#888') + ';">' + PROFICIENCY_LABELS[k] + ' Lv.' + lv + '</div>';
     }
   }
   html += '</div>';
   container.innerHTML = html;
-  
-  dom.charProfileBody.insertBefore(container, dom.profileSafezoneList.previousElementSibling);
+
+  // 固定插入在錨點之後，不再依賴其他區塊的相對位置
+  anchor.insertAdjacentElement('afterend', container);
 }
 
 function renderProfileInjury() {
