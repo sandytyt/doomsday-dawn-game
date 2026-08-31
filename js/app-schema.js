@@ -84,6 +84,8 @@ var AppSchema = (function () {
     return fallback;
   }
 
+  var VALID_ELEMENTS = ['金', '木', '水', '火', '土', '電', '狂化'];
+
   /* ---------- status_update 正規化 ---------- */
 
   // 【對應原邏輯】app-engine.js 的 applyStatusUpdate() 開頭一連串
@@ -121,7 +123,8 @@ var AppSchema = (function () {
       stash_update: (u.stash_update && u.stash_update.action) ? u.stash_update : null,
 
       special_event: u.special_event ? coerceEnum(u.special_event, VALID_SPECIAL_EVENTS, 'none', 'special_event') : 'none',
-      special_event_text: typeof u.special_event_text === 'string' ? u.special_event_text : ''
+      special_event_text: typeof u.special_event_text === 'string' ? u.special_event_text : '',
+      awakened_element: u.awakened_element ? coerceEnum(u.awakened_element, VALID_ELEMENTS, null, 'awakened_element') : null
     };
   }
 
