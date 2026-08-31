@@ -1,6 +1,7 @@
 'use strict';
 
 function cacheDom() {
+  // ---------- 開局設定畫面 ----------
   dom.setupScreen = document.getElementById('setup-screen');
   dom.gameScreen = document.getElementById('game-screen');
   dom.providerSelect = document.getElementById('provider-select');
@@ -15,6 +16,10 @@ function cacheDom() {
   dom.charGenderInput = document.getElementById('char-gender-input');
   dom.charLocationInput = document.getElementById('char-location-input');
   dom.charOccupationInput = document.getElementById('char-occupation-input');
+  dom.bgSelect = document.getElementById('char-background-type-select');
+  dom.generalistDiv = document.getElementById('generalist-picks-container');
+
+  // ---------- 頂部狀態列 ----------
   dom.statusTime = document.getElementById('status-time');
   dom.statusLocation = document.getElementById('status-location');
   dom.statusExpandBtn = document.getElementById('status-expand-btn');
@@ -22,7 +27,6 @@ function cacheDom() {
   dom.staminaValue = document.getElementById('stamina-value');
   dom.statusDanger = document.getElementById('status-danger');
   dom.injuryTag = document.getElementById('injury-tag');
-  dom.menuToggleBtn = document.getElementById('menu-toggle-btn');
   dom.statusPanelFull = document.getElementById('status-panel-full');
   dom.statHumanity = document.getElementById('stat-humanity');
   dom.statFaction = document.getElementById('stat-faction');
@@ -30,6 +34,10 @@ function cacheDom() {
   dom.statWeather = document.getElementById('stat-weather');
   dom.statHunger = document.getElementById('stat-hunger');
   dom.statCompanions = document.getElementById('stat-companions');
+  dom.hungerFill = document.getElementById('hunger-bar-fill');
+  dom.hungerValue = document.getElementById('hunger-value');
+
+  // ---------- 敘事區與行動列 ----------
   dom.narrativeLog = document.getElementById('narrative-log');
   dom.narrativeContent = document.getElementById('narrative-content');
   dom.typingIndicator = document.getElementById('typing-indicator');
@@ -41,10 +49,8 @@ function cacheDom() {
   dom.freeInputCancel = document.getElementById('free-input-cancel');
   dom.freeInputToggle = document.getElementById('free-input-toggle');
   dom.actionCollapsedBar = document.getElementById('action-collapsed-bar');
-  dom.inventoryList = document.getElementById('inventory-list');
-  dom.inventoryLoadTag = document.getElementById('inventory-load-tag');
-  dom.npcList = document.getElementById('npc-list');
-  dom.vehicleList = document.getElementById('vehicle-list');
+
+  // ---------- 終端機／資訊面板（物品、NPC、載具） ----------
   dom.panelsToggleBtn = document.getElementById('panels-toggle-btn');
   dom.infoPanel = document.getElementById('info-panel');
   dom.infoPanelBackdrop = document.getElementById('info-panel-backdrop');
@@ -52,12 +58,19 @@ function cacheDom() {
   dom.itemsSectionToggle = document.getElementById('items-section-toggle');
   dom.itemsSectionBody = document.getElementById('items-section-body');
   dom.itemsAccordion = document.getElementById('items-accordion');
+  dom.inventoryList = document.getElementById('inventory-list');
+  dom.inventoryLoadTag = document.getElementById('inventory-load-tag');
   dom.npcSectionToggle = document.getElementById('npc-section-toggle');
   dom.npcSectionBody = document.getElementById('npc-section-body');
+  dom.npcList = document.getElementById('npc-list');
   dom.vehicleSectionToggle = document.getElementById('vehicle-section-toggle');
   dom.vehicleSectionBody = document.getElementById('vehicle-section-body');
+  dom.vehicleList = document.getElementById('vehicle-list');
+
+  // ---------- 側邊選單 ----------
   dom.sideMenu = document.getElementById('side-menu');
   dom.sideMenuBackdrop = document.getElementById('side-menu-backdrop');
+  dom.menuToggleBtn = document.getElementById('menu-toggle-btn');
   dom.menuExportBtn = document.getElementById('menu-export-btn');
   dom.menuImportBtn = document.getElementById('menu-import-btn');
   dom.menuNamedSaveBtn = document.getElementById('menu-named-save-btn');
@@ -72,6 +85,8 @@ function cacheDom() {
   dom.notionDbInput = document.getElementById('notion-db-input');
   dom.notionSaveBtn = document.getElementById('notion-save-btn');
   dom.notionSyncNowBtn = document.getElementById('notion-sync-now-btn');
+
+  // ---------- 各種彈窗 ----------
   dom.eventModal = document.getElementById('event-modal');
   dom.eventModalIcon = document.getElementById('event-modal-icon');
   dom.eventModalTitle = document.getElementById('event-modal-title');
@@ -84,8 +99,10 @@ function cacheDom() {
   dom.namedSaveClose = document.getElementById('named-save-close');
   dom.saveTabLocal = document.getElementById('save-tab-local');
   dom.saveTabNotion = document.getElementById('save-tab-notion');
-  dom.hungerFill = document.getElementById('hunger-bar-fill');
-  dom.hungerValue = document.getElementById('hunger-value');
+  dom.manualModal = document.getElementById('manual-modal');
+  dom.manualCloseBtn = document.getElementById('manual-close-btn');
+
+  // ---------- 角色檔案面板 ----------
   dom.charProfileToggle = document.getElementById('char-profile-toggle');
   dom.charProfileBody = document.getElementById('char-profile-body');
   dom.profileName = document.getElementById('profile-name');
@@ -101,11 +118,138 @@ function cacheDom() {
   dom.profileAwakeningLevel = document.getElementById('profile-awakening-level');
   dom.profileAwakeningAbility = document.getElementById('profile-awakening-ability');
   dom.profileAwakeningExp = document.getElementById('profile-awakening-exp');
-  dom.bgSelect = document.getElementById('char-background-type-select');
-  dom.generalistDiv = document.getElementById('generalist-picks-container');
-    // 【遊戲手冊快取】
-  dom.manualModal = document.getElementById('manual-modal');
-  dom.manualCloseBtn = document.getElementById('manual-close-btn');
+
+  // ============================================================
+  // 【新增】語意分組別名——指向與上方扁平版本完全相同的 DOM 元素，
+  // 現有程式碼不受影響，新程式碼可選擇使用以下語意化路徑。
+  // ============================================================
+
+  dom.setup = {
+    screen: dom.setupScreen,
+    gameScreen: dom.gameScreen,
+    providerSelect: dom.providerSelect,
+    apiKeyInput: dom.apiKeyInput,
+    startBtn: dom.startBtn,
+    testModeBtn: dom.testModeBtn,
+    importSaveBtn: dom.importSaveBtn,
+    importSaveFile: dom.importSaveFile,
+    rulesLinkBtn: dom.rulesLinkBtn,
+    charSetupToggle: dom.charSetupToggle,
+    charSetupFields: dom.charSetupFields,
+    charGenderInput: dom.charGenderInput,
+    charLocationInput: dom.charLocationInput,
+    charOccupationInput: dom.charOccupationInput,
+    bgSelect: dom.bgSelect,
+    generalistDiv: dom.generalistDiv
+  };
+
+  dom.status = {
+    time: dom.statusTime,
+    location: dom.statusLocation,
+    expandBtn: dom.statusExpandBtn,
+    staminaFill: dom.staminaFill,
+    staminaValue: dom.staminaValue,
+    danger: dom.statusDanger,
+    injuryTag: dom.injuryTag,
+    panelFull: dom.statusPanelFull,
+    humanity: dom.statHumanity,
+    faction: dom.statFaction,
+    awakening: dom.statAwakening,
+    weather: dom.statWeather,
+    hunger: dom.statHunger,
+    companions: dom.statCompanions,
+    hungerFill: dom.hungerFill,
+    hungerValue: dom.hungerValue
+  };
+
+  dom.narrative = {
+    log: dom.narrativeLog,
+    content: dom.narrativeContent,
+    typingIndicator: dom.typingIndicator,
+    optionsCollapseToggle: dom.optionsCollapseToggle,
+    optionsContainer: dom.optionsContainer,
+    freeInputRow: dom.freeInputRow,
+    freeInputText: dom.freeInputText,
+    freeInputSend: dom.freeInputSend,
+    freeInputCancel: dom.freeInputCancel,
+    freeInputToggle: dom.freeInputToggle,
+    actionCollapsedBar: dom.actionCollapsedBar
+  };
+
+  // 【備註】dom.infoPanel（面板容器本身）維持原扁平屬性不變，
+  // 分組別名另外命名為 dom.infoPanelGroup 避免與其衝突。
+  dom.infoPanelGroup = {
+    toggleBtn: dom.panelsToggleBtn,
+    panel: dom.infoPanel,
+    backdrop: dom.infoPanelBackdrop,
+    close: dom.infoPanelClose,
+    itemsSectionToggle: dom.itemsSectionToggle,
+    itemsSectionBody: dom.itemsSectionBody,
+    itemsAccordion: dom.itemsAccordion,
+    inventoryList: dom.inventoryList,
+    inventoryLoadTag: dom.inventoryLoadTag,
+    npcSectionToggle: dom.npcSectionToggle,
+    npcSectionBody: dom.npcSectionBody,
+    npcList: dom.npcList,
+    vehicleSectionToggle: dom.vehicleSectionToggle,
+    vehicleSectionBody: dom.vehicleSectionBody,
+    vehicleList: dom.vehicleList
+  };
+
+  dom.menu = {
+    sideMenu: dom.sideMenu,
+    backdrop: dom.sideMenuBackdrop,
+    toggleBtn: dom.menuToggleBtn,
+    exportBtn: dom.menuExportBtn,
+    importBtn: dom.menuImportBtn,
+    namedSaveBtn: dom.menuNamedSaveBtn,
+    saveManagerBtn: dom.menuSaveManagerBtn,
+    restartBtn: dom.menuRestartBtn,
+    apikeyBtn: dom.menuApikeyBtn,
+    rulesBtn: dom.menuRulesBtn,
+    closeBtn: dom.menuCloseBtn,
+    notionSetupToggle: dom.notionSetupToggle,
+    notionSetupFields: dom.notionSetupFields,
+    notionProxyInput: dom.notionProxyInput,
+    notionDbInput: dom.notionDbInput,
+    notionSaveBtn: dom.notionSaveBtn,
+    notionSyncNowBtn: dom.notionSyncNowBtn
+  };
+
+  dom.modal = {
+    event: dom.eventModal,
+    eventIcon: dom.eventModalIcon,
+    eventTitle: dom.eventModalTitle,
+    eventText: dom.eventModalText,
+    eventClose: dom.eventModalClose,
+    loadingOverlay: dom.loadingOverlay,
+    deathScreen: dom.deathScreen,
+    namedSave: dom.namedSaveModal,
+    namedSaveList: dom.namedSaveList,
+    namedSaveClose: dom.namedSaveClose,
+    saveTabLocal: dom.saveTabLocal,
+    saveTabNotion: dom.saveTabNotion,
+    manual: dom.manualModal,
+    manualClose: dom.manualCloseBtn
+  };
+
+  dom.profile = {
+    toggle: dom.charProfileToggle,
+    body: dom.charProfileBody,
+    name: dom.profileName,
+    gender: dom.profileGender,
+    location: dom.profileLocation,
+    occupation: dom.profileOccupation,
+    safezoneList: dom.profileSafezoneList,
+    factionList: dom.profileFactionList,
+    injurySection: dom.profileInjurySection,
+    injuryLevel: dom.profileInjuryLevel,
+    injuryDetail: dom.profileInjuryDetail,
+    awakeningSection: dom.profileAwakeningSection,
+    awakeningLevel: dom.profileAwakeningLevel,
+    awakeningAbility: dom.profileAwakeningAbility,
+    awakeningExp: dom.profileAwakeningExp
+  };
 }
 
 function init() {
