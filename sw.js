@@ -10,35 +10,50 @@ v2：修正快取清單與實際專案目錄結構不符的問題（原清單引
    導致離線模式下 15 個 js/ 模組與規則書大多讀取失敗）。
 v3：補上 app-manual.js、app-base-sim.js 兩個先前未被 index.html 載入、
    現已修復連結的模組，快取清單同步更新以保持一致。
+v4：因應 app-schema.js 新增與 app-api.js 拆分為 app-prompt.js／
+   app-api.js／app-response-handler.js 三個檔案，同步更新快取清單，
+   並依 index.html 最新的 <script> 載入順序重新排列列表順序。
 ============================================ */
 
-const CACHE_NAME = 'doomsday-dawn-cache-v3';
+const CACHE_NAME = 'doomsday-dawn-cache-v4';
 
-// 需要離線快取的核心檔案清單（已對齊 index.html 實際引用路徑）
+// 需要離線快取的核心檔案清單（已對齊 index.html 實際引用路徑與載入順序）
 const CACHE_ASSETS = [
   './',
   './index.html',
   './style.css',
   './manifest.json',
 
-  // --- JS 模組（依 index.html 內 <script> 標籤實際載入順序）---
+  // --- 1. 遊戲設定檔與世界記憶 ---
   './js/config.js',
   './js/app-schema.js',
   './js/world_memory.js',
   './js/test_script.js',
+
+  // --- 2. 全域狀態與基礎工具 ---
   './js/app-state.js',
   './js/app-utils.js',
+
+  // --- 3. 次系統 ---
   './js/app-proficiency.js',
   './js/app-inventory.js',
   './js/app-base-sim.js',
   './js/app-transfer.js',
   './js/app-save.js',
   './js/app-npc.js',
-  './js/app-api.js',
+
+  // --- 4. 遊戲核心大腦 ---
   './js/app-engine.js',
+
+  // --- 5. 畫面渲染與玩家互動 ---
   './js/app-ui.js',
-  './js/app-events.js',
   './js/app-manual.js',
+  './js/app-prompt.js',
+  './js/app-api.js',
+  './js/app-response-handler.js',
+  './js/app-events.js',
+
+  // --- 6. 主程式進入點 ---
   './js/app-main.js',
 
   // --- 遊戲規則書／知識庫（由 app-main.js loadRulesAndLore() 以 fetch() 動態讀取）---
