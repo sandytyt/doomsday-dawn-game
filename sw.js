@@ -5,17 +5,14 @@
 但已載入過的介面、已讀取的規則書與已存檔的進度可以正常顯示。
 
 【版本更新記錄】
-v2：修正快取清單與實際專案目錄結構不符的問題（原清單引用了不存在的
-   ./app.js、./config.js，且 knowledge/ 下 4 份規則文件僅快取 1 份，
-   導致離線模式下 15 個 js/ 模組與規則書大多讀取失敗）。
-v3：補上 app-manual.js、app-base-sim.js 兩個先前未被 index.html 載入、
-   現已修復連結的模組，快取清單同步更新以保持一致。
+v2：修正快取清單與實際專案目錄結構不符的問題。
+v3：補上 app-manual.js、app-base-sim.js 兩個先前未被載入的模組。
 v4：因應 app-schema.js 新增與 app-api.js 拆分為 app-prompt.js／
-   app-api.js／app-response-handler.js 三個檔案，同步更新快取清單，
-   並依 index.html 最新的 <script> 載入順序重新排列列表順序。
+   app-api.js／app-response-handler.js 三個檔案，同步更新快取清單。
+v5：新增 app-devtools.js（作弊指令集中管理檔案），快取清單同步更新。
 ============================================ */
 
-const CACHE_NAME = 'doomsday-dawn-cache-v4';
+const CACHE_NAME = 'doomsday-dawn-cache-v5';
 
 // 需要離線快取的核心檔案清單（已對齊 index.html 實際引用路徑與載入順序）
 const CACHE_ASSETS = [
@@ -51,6 +48,7 @@ const CACHE_ASSETS = [
   './js/app-prompt.js',
   './js/app-api.js',
   './js/app-response-handler.js',
+  './js/app-devtools.js',
   './js/app-events.js',
 
   // --- 6. 主程式進入點 ---
@@ -104,8 +102,6 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // AI 供應商 API 請求：一律直接連網，絕不快取（劇情必須即時生成）
-  // 涵蓋 Gemini、DeepSeek、Qwen、豆包等 config.js 中列出的所有供應商端點
   const AI_API_HOSTNAMES = [
     'generativelanguage.googleapis.com',
     'api.deepseek.com',
@@ -117,13 +113,10 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 其他非同源請求（例如 CDN 字型等）：直接放行，不做快取處理
   if (url.origin !== location.origin) {
     return;
   }
 
-  // 靜態資源：採用「快取優先，背景更新」策略
-  // 先回應快取內容確保開啟速度，同時嘗試向網路要求最新版本更新快取
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       const networkFetch = fetch(event.request)
