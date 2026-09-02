@@ -113,6 +113,9 @@ function cacheDom() {
   dom.useTargetSelect = document.getElementById('use-target-select');
   dom.useConfirmBtn = document.getElementById('use-confirm-btn');
   dom.useCancelBtn = document.getElementById('use-cancel-btn');
+  dom.dailyReportModal = document.getElementById('daily-report-modal');
+  dom.dailyReportContent = document.getElementById('daily-report-content');
+  dom.dailyReportCloseBtn = document.getElementById('daily-report-close-btn');
 
 
   // ---------- 角色檔案面板 ----------
@@ -258,7 +261,10 @@ function cacheDom() {
       targetSelect: dom.useTargetSelect,
       confirmBtn: dom.useConfirmBtn,
       cancelBtn: dom.useCancelBtn
-    }
+    },
+    root: dom.dailyReportModal,
+    content: dom.dailyReportContent,
+    closeBtn: dom.dailyReportCloseBtn
 
   };
 
@@ -543,7 +549,6 @@ function loadRulesAndLore() {
     return res.text();
   }).then(function (text) {
     gameState.rulesText = text;
-    if (dom.rulesModalContent) dom.rulesModalContent.innerHTML = simpleMarkdownToHtml(text);
   }).catch(function () {
     gameState.rulesText = '';
   });
