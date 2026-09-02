@@ -69,15 +69,34 @@ function applyVitalsUpdate(u) {
 
 /* ---------- 子函式 2：時間／位置／危險等級／天氣 ---------- */
 
+function unlockDiscoveredRegion(locationName) {
+  if (!locationName || locationName === '未知地點') {
+    return;
+  }
+
+  if (!Array.isArray(gameState.discoveredRegions)) {
+    gameState.discoveredRegions = [];
+  }
+
+  var resolved = resolveMapLocation(locationName);
+
+  if (!resolved || !resolved.regionKey) {
+    return;
+  }
+
+  if (gameState.discoveredRegions.indexOf(resolved.regionKey) === -1) {
+    gameState.discoveredRegions.push(resolved.regionKey);
+  }
+}
+
 function applyEnvironmentUpdate(u) {
-  if (u.time_advance_minutes) advanceTime(u.time_advance_minutes);
+  if (u.time_advance_minutes) {
+    advanceTime(u.time_advance_minutes);
+  }
 
   if (u.current_location) {
     gameState.location = u.current_location;
-    // 記錄已探索地點（排除「未知地點」且不重複記錄）
-    if (u.current_location !== '未知地點' && gameState.exploredLocations.indexOf(u.current_location) === -1) {
-      gameState.exploredLocations.push(u.current_location);
-    }
+    unlockDiscoveredRegion(u.current_location);
   }
 
   if (u.danger_level) {
@@ -85,7 +104,9 @@ function applyEnvironmentUpdate(u) {
     trackDangerLevel(u.danger_level);
   }
 
-  if (u.weather) gameState.weather = u.weather;
+  if (u.weather) {
+    gameState.weather = u.weather;
+  }
 }
 
 /* ---------- 子函式 3：人性／共鳴／熟練度／覺醒 ---------- */
@@ -198,6 +219,23 @@ function applyFactionTrustUpdate(u) {
 }
 
 /* ---------- 主入口（orchestrator）---------- */
+function unlockDiscoveredRegion(locationName) {
+  if (!Array.isArray(gameState.discoveredRegions)) {
+    gameState.discoveredRegions = [];
+  }
+
+  var resolved = resolveMapLocation(locationName);
+
+  if (
+    !resolved ||
+    !resolved.regionKey ||
+    gameState.discoveredRegions.indexOf(resolved.regionKey) !== -1
+  ) {
+    return;
+  }
+
+  gameState.discoveredRegions.push(resolved.regionKey);
+}
 
 function applyStatusUpdate(update) {
   if (!update) return null;
@@ -209,18 +247,13 @@ function applyStatusUpdate(update) {
   applyVitalsUpdate(u);
   applyProgressionUpdate(u);
   applyCompanionStatusUpdate(u);
-
   if (u.vehicle_update) {
     applyVehicleUpdate(u.vehicle_update);
   }
   if (u.stash_update) {
     applyStashUpdate(u.stash_update);
   }
-
   applyFactionTrustUpdate(u);
-
-  // 回傳正規化後的 special_event，供 app-response-handler.js 的
-  // handleAIResponse() 使用同一份已驗證過的值判斷里程碑彈窗與死亡流程。
   return u.special_event;
 }
 
@@ -365,7 +398,7 @@ function executeTravel(targetLocation, dist, costType, costValue, timeCost, acti
 
   advanceTime(timeCost);
   gameState.location = targetLocation;
-  if (gameState.exploredLocations.indexOf(targetLocation) === -1) gameState.exploredLocations.push(targetLocation);
+  unlockDiscoveredRegion(targetLocation);
 
   if (typeof toggleInfoPanel === 'function') toggleInfoPanel(false);
   if (typeof renderAll === 'function') renderAll();
