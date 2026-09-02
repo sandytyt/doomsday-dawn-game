@@ -329,199 +329,7 @@ function renderProfileInjury() {
   if (dom.profile.injuryDetail) dom.profile.injuryDetail.textContent = gameState.injuryDetail;
 }
 
-var expandedLocationGroups = {};
 var expandedFactionLocationGroups = {};
-
-function renderProfileExploredLocations() {
-  var container = dom.profile.exploredList;
-
-  if (!container) return;
-
-  container.innerHTML = '';
-
-  if (
-    !Array.isArray(gameState.exploredLocations) ||
-    gameState.exploredLocations.length === 0
-  ) {
-    var emptyEl = document.createElement('div');
-    emptyEl.className = 'profile-subentity-empty';
-    emptyEl.textContent = '尚未探索任何地點';
-    container.appendChild(emptyEl);
-    return;
-  }
-
-  var groups = {};
-
-  gameState.exploredLocations.forEach(function (loc) {
-    var resolved = resolveMapLocation(loc);
-
-    // 已知地圖地點／AI 變體：以所屬勢力區域 key 分組。
-    // 未知地點：保留原始名稱，獨立成一個可前往項目。
-    var groupName = resolved ? resolved.regionKey : loc;
-
-    if (!groups[groupName]) {
-      groups[groupName] = {
-        isRegion: !!resolved,
-        locations: []
-      };
-    }
-
-    if (groups[groupName].locations.indexOf(loc) === -1) {
-      groups[groupName].locations.push(loc);
-    }
-  });
-
-  container.style.maxHeight = '350px';
-  container.style.overflowY = 'auto';
-  container.style.paddingRight = '5px';
-
-  // 讓群組顯示順序穩定：
-  // 先依 MAP_PRESETS 的地圖順序，最後才放 AI 完全未知的獨立地點。
-  var orderedGroupNames = [];
-
-  for (var regionKey in MAP_PRESETS) {
-    if (
-      Object.prototype.hasOwnProperty.call(MAP_PRESETS, regionKey) &&
-      groups[regionKey]
-    ) {
-      orderedGroupNames.push(regionKey);
-    }
-  }
-
-  for (var groupName in groups) {
-    if (
-      Object.prototype.hasOwnProperty.call(groups, groupName) &&
-      orderedGroupNames.indexOf(groupName) === -1
-    ) {
-      orderedGroupNames.push(groupName);
-    }
-  }
-
-  orderedGroupNames.forEach(function (groupName) {
-    var group = groups[groupName];
-    var locs = group.locations;
-
-    var groupDiv = document.createElement('div');
-    groupDiv.style.marginBottom = '8px';
-
-    // 已識別的勢力／區域永遠顯示群組 header：
-    // 即使目前只有一個已探索地點，仍可「前往灰堡」等區域錨點。
-    if (group.isRegion) {
-      renderExploredRegionGroup(
-        groupDiv,
-        groupName,
-        locs
-      );
-    } else {
-      // 完全未知、無法對應地圖的 AI 地點，保留獨立可點擊旅行列。
-      locs.forEach(function (locationName) {
-        groupDiv.appendChild(createLocationButton(locationName));
-      });
-    }
-
-    container.appendChild(groupDiv);
-  });
-}
-
-function renderExploredRegionGroup(groupDiv, regionKey, locations) {
-  var header = document.createElement('div');
-  var isExpanded = expandedLocationGroups[regionKey] || false;
-
-  header.style.display = 'flex';
-  header.style.alignItems = 'center';
-  header.style.justifyContent = 'space-between';
-  header.style.gap = '8px';
-  header.style.padding = '8px 12px';
-  header.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
-  header.style.borderLeft = '3px solid #4a90e2';
-  header.style.borderRadius = '4px';
-  header.style.cursor = 'pointer';
-  header.style.color = '#e0e0e0';
-
-  var body = document.createElement('div');
-  body.style.display = isExpanded ? 'block' : 'none';
-  body.style.paddingLeft = '12px';
-  body.style.marginTop = '4px';
-
-  locations.forEach(function (locationName) {
-    body.appendChild(createLocationButton(locationName));
-  });
-
-  function renderHeader(expanded) {
-    header.innerHTML =
-      '<span style="font-weight: bold; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">' +
-      escapeHtml(regionKey) +
-      '</span>' +
-      '<span style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">' +
-        '<button type="button" class="region-travel-btn" ' +
-          'style="background: transparent; border: 1px solid rgba(74, 144, 226, 0.45); border-radius: 4px; color: #4a90e2; font-size: 11px; padding: 2px 6px; cursor: pointer;">' +
-          '➔ 前往' +
-        '</button>' +
-        '<span style="font-size: 0.8em; color: #888;">' +
-          locations.length +
-          (expanded ? ' ▲' : ' ▼') +
-        '</span>' +
-      '</span>';
-
-    var travelBtn = header.querySelector('.region-travel-btn');
-
-    if (travelBtn) {
-      travelBtn.addEventListener('click', function (event) {
-        event.stopPropagation();
-
-        if (typeof requestTravelTo === 'function') {
-          requestTravelTo(regionKey);
-        }
-      });
-    }
-  }
-
-  renderHeader(isExpanded);
-
-  header.addEventListener('click', function () {
-    var willExpand = body.style.display === 'none';
-
-    body.style.display = willExpand ? 'block' : 'none';
-    expandedLocationGroups[regionKey] = willExpand;
-
-    renderHeader(willExpand);
-  });
-
-  groupDiv.appendChild(header);
-  groupDiv.appendChild(body);
-}
-
-function createLocationButton(locName) {
-  var btn = document.createElement('div');
-  btn.style.display = 'flex';
-  btn.style.justifyContent = 'space-between';
-  btn.style.alignItems = 'center';
-  btn.style.padding = '10px 12px';
-  btn.style.margin = '4px 0';
-  btn.style.backgroundColor = 'rgba(255,255,255,0.03)';
-  btn.style.border = '1px solid rgba(255,255,255,0.1)';
-  btn.style.borderRadius = '6px';
-  btn.style.cursor = 'pointer';
-  btn.style.color = '#dcdcdc';
-  btn.style.transition = 'all 0.2s ease';
-  btn.innerHTML = '<span>' + escapeHtml(locName) + '</span><span style="color:#4a90e2;font-weight:bold;font-size:1.1em;opacity:0.8;">➔</span>';
-
-  btn.addEventListener('mouseenter', function () {
-    btn.style.backgroundColor = 'rgba(74, 144, 226, 0.15)';
-    btn.style.borderColor = 'rgba(74, 144, 226, 0.5)';
-    btn.style.color = '#ffffff';
-  });
-  btn.addEventListener('mouseleave', function () {
-    btn.style.backgroundColor = 'rgba(255,255,255,0.03)';
-    btn.style.borderColor = 'rgba(255,255,255,0.1)';
-    btn.style.color = '#dcdcdc';
-  });
-  btn.addEventListener('click', function () {
-    if (typeof requestTravelTo === 'function') requestTravelTo(locName);
-  });
-
-  return btn;
-}
 
 function renderProfileAwakening() {
   if (!dom.profile.awakeningSection) return;
@@ -596,47 +404,27 @@ function renderProfileSafezones() {
   });
 }
 
-// 地圖區域 key 對應到勢力關係中的正式陣營名稱。
-// 「維爾赫姆市」暫時沒有列入，因為目前 VALID_FACTIONS /
-// FACTION_ALIASES 沒有為它指定獨立勢力。
-var REGION_FACTION_MAP = {
-  '灰堡': '鐵幕守望者',
-  '方舟海上堡壘': '方舟商會',
-  '荒原鎮群': '荒原拾骸者',
-  '靜默聖所': '靜默之子',
-  '深谷中繼站': '深層獵手'
-};
-
-function getExploredLocationsByFaction() {
-  var result = {};
-  var locations = Array.isArray(gameState.exploredLocations)
-    ? gameState.exploredLocations
-    : [];
-
-  locations.forEach(function (locationName) {
-    var resolved = resolveMapLocation(locationName);
-
-    if (!resolved || !resolved.regionKey) {
-      return;
+function getRegionKeyForFaction(factionName) {
+  for (var regionKey in FACTION_ALIASES) {
+    if (
+      Object.prototype.hasOwnProperty.call(FACTION_ALIASES, regionKey) &&
+      FACTION_ALIASES[regionKey] === factionName
+    ) {
+      return regionKey;
     }
+  }
 
-    var factionName = REGION_FACTION_MAP[resolved.regionKey];
+  return null;
+}
 
-    // 維爾赫姆市或未有勢力映射的地區，暫不放進勢力關係面板。
-    if (!factionName) {
-      return;
-    }
+function isFactionRegionDiscovered(factionName) {
+  var regionKey = getRegionKeyForFaction(factionName);
 
-    if (!result[factionName]) {
-      result[factionName] = [];
-    }
+  if (!regionKey || !Array.isArray(gameState.discoveredRegions)) {
+    return false;
+  }
 
-    if (result[factionName].indexOf(locationName) === -1) {
-      result[factionName].push(locationName);
-    }
-  });
-
-  return result;
+  return gameState.discoveredRegions.indexOf(regionKey) !== -1;
 }
 
 function renderProfileFactions() {
@@ -644,7 +432,6 @@ function renderProfileFactions() {
 
   var worldMemory = WorldMemory.ensureShape(gameState.worldMemory);
   var factionList = dom.profile.factionList;
-  var exploredByFaction = getExploredLocationsByFaction();
 
   factionList.innerHTML = '';
 
@@ -675,8 +462,16 @@ function renderProfileFactions() {
       })
       .slice(-3);
 
-    var exploredLocations = exploredByFaction[factionName] || [];
-    var hasExploredLocations = exploredLocations.length > 0;
+    var regionKey = getRegionKeyForFaction(factionName);
+    var hasDiscoveredRegion = isFactionRegionDiscovered(factionName);
+
+    var regionLocations = (
+      regionKey &&
+      MAP_PRESETS[regionKey] &&
+      Array.isArray(MAP_PRESETS[regionKey].locations)
+    )
+      ? MAP_PRESETS[regionKey].locations
+      : [];
 
     var card = document.createElement('div');
     card.className = 'profile-faction-card';
@@ -702,7 +497,7 @@ function renderProfileFactions() {
     var locationsBody = null;
     var isExpanded = false;
 
-    if (hasExploredLocations) {
+    if (hasDiscoveredRegion) {
       isExpanded = !!expandedFactionLocationGroups[factionName];
 
       var arrowEl = document.createElement('span');
@@ -736,7 +531,7 @@ function renderProfileFactions() {
       });
     }
 
-    if (hasExploredLocations) {
+    if (hasDiscoveredRegion) {
       locationsBody = document.createElement('div');
       locationsBody.className = 'profile-faction-locations';
       locationsBody.style.display = isExpanded ? 'block' : 'none';
@@ -745,40 +540,42 @@ function renderProfileFactions() {
       locationsBody.style.borderTop =
         '1px dashed var(--border-color)';
 
-      exploredLocations.forEach(function (locationName) {
-        var locationRow = document.createElement('div');
+      regionLocations.forEach(function (location) {
+        (function (locationName) {
+          var locationRow = document.createElement('div');
 
-        locationRow.style.display = 'flex';
-        locationRow.style.alignItems = 'center';
-        locationRow.style.justifyContent = 'space-between';
-        locationRow.style.gap = '8px';
-        locationRow.style.padding = '6px 0';
+          locationRow.style.display = 'flex';
+          locationRow.style.alignItems = 'center';
+          locationRow.style.justifyContent = 'space-between';
+          locationRow.style.gap = '8px';
+          locationRow.style.padding = '6px 0';
 
-        var locationLabel = document.createElement('span');
-        locationLabel.textContent = locationName;
-        locationLabel.style.fontSize = '11.5px';
-        locationLabel.style.color = 'var(--text-secondary)';
-        locationLabel.style.minWidth = '0';
-        locationLabel.style.overflow = 'hidden';
-        locationLabel.style.textOverflow = 'ellipsis';
-        locationLabel.style.whiteSpace = 'nowrap';
+          var locationLabel = document.createElement('span');
+          locationLabel.textContent = locationName;
+          locationLabel.style.fontSize = '11.5px';
+          locationLabel.style.color = 'var(--text-secondary)';
+          locationLabel.style.minWidth = '0';
+          locationLabel.style.overflow = 'hidden';
+          locationLabel.style.textOverflow = 'ellipsis';
+          locationLabel.style.whiteSpace = 'nowrap';
 
-        var travelBtn = document.createElement('button');
-        travelBtn.type = 'button';
-        travelBtn.className = 'faction-location-travel-btn';
-        travelBtn.textContent = '➔ 前往';
+          var travelBtn = document.createElement('button');
+          travelBtn.type = 'button';
+          travelBtn.className = 'faction-location-travel-btn';
+          travelBtn.textContent = '➔ 前往';
 
-        travelBtn.addEventListener('click', function (event) {
-          event.stopPropagation();
+          travelBtn.addEventListener('click', function (event) {
+            event.stopPropagation();
 
-          if (typeof requestTravelTo === 'function') {
-            requestTravelTo(locationName);
-          }
-        });
+            if (typeof requestTravelTo === 'function') {
+              requestTravelTo(locationName);
+            }
+          });
 
-        locationRow.appendChild(locationLabel);
-        locationRow.appendChild(travelBtn);
-        locationsBody.appendChild(locationRow);
+          locationRow.appendChild(locationLabel);
+          locationRow.appendChild(travelBtn);
+          locationsBody.appendChild(locationRow);
+        })(location.name);
       });
 
       card.appendChild(locationsBody);
