@@ -40,7 +40,7 @@ var gameState = {
   stashes: [],
   recentDangerLevels: [],
   npcStates: {}, 
-  exploredLocations: [], 
+  discoveredRegions: [],
   currentMapPresetId: null 
 };
 
