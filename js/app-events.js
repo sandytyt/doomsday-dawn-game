@@ -184,16 +184,8 @@ function toggleInfoPanel(show) {
 }
 
 function toggleManualModal(show) {
-  // 動態抓取確保不報錯
-  if (!dom.modal.manual) {
-    dom.modal.manual = document.getElementById('manual-modal');
-    dom.modal.manualClose = document.getElementById('manual-close-btn');
-    if (dom.modal.manualClose) dom.modal.manualClose.addEventListener('click', function () { toggleManualModal(false); });
-  }
-
-  // 真的抓不到就報錯警告
-  if (!dom.modal.manual) {
-    console.error("找不到手冊 UI！請確認 index.html 中是否有 id='manual-modal'");
+  if (!dom.modal || !dom.modal.manual) {
+    console.warn('[UI警告] 找不到元素「modal.manual」，無法切換手冊彈窗。請確認 cacheDom() 是否已完成，以及 index.html 是否有 id="manual-modal"。');
     return;
   }
 
