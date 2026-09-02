@@ -158,8 +158,7 @@ function cacheDom() {
     awakeningLevel: document.getElementById('profile-awakening-level'),
     awakeningAbility: document.getElementById('profile-awakening-ability'),
     awakeningExp: document.getElementById('profile-awakening-exp'),
-    proficiencyAnchor: document.getElementById('profile-proficiency-anchor'),
-    exploredList: document.getElementById('profile-explored-list')
+    proficiencyAnchor: document.getElementById('profile-proficiency-anchor')
   };
 
   dom.app = {
@@ -381,7 +380,7 @@ function handleStartGame() {
   var mapIds = Object.keys(MAP_PRESETS);
 
   gameState.currentMapPresetId = pickRandom(mapIds);
-  gameState.exploredLocations = [];
+  gameState.discoveredRegions = [];
 
   showGameScreen();
   requestNextTurn('__START__');
@@ -397,7 +396,7 @@ function handleStartTestMode() {
   var mapIds = Object.keys(MAP_PRESETS);
 
   gameState.currentMapPresetId = pickRandom(mapIds);
-  gameState.exploredLocations = [];
+  gameState.discoveredRegions = [];
 
   showGameScreen();
   playNextTestScript('__START__');
