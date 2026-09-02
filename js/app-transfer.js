@@ -27,7 +27,9 @@ function initTransferUI() {
 
   if (transferModal.cancelBtn) {
     transferModal.cancelBtn.addEventListener('click', function () {
-      transferModal.root.classList.add('hidden');
+      if (transferModal.root) {
+        transferModal.root.classList.add('hidden');
+      }
     });
   } else {
     console.warn('[UI警告] 找不到元素「modal.transfer.cancelBtn」，無法綁定轉移彈窗取消按鈕。');
