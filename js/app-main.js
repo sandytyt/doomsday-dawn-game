@@ -18,6 +18,7 @@ function cacheDom() {
   dom.charOccupationInput = document.getElementById('char-occupation-input');
   dom.bgSelect = document.getElementById('char-background-type-select');
   dom.generalistDiv = document.getElementById('generalist-picks-container');
+  dom.generalistPointsLeft = document.getElementById('generalist-points-left');
 
   // ---------- 頂部狀態列 ----------
   dom.statusTime = document.getElementById('status-time');
@@ -162,7 +163,8 @@ function cacheDom() {
     charLocationInput: dom.charLocationInput,
     charOccupationInput: dom.charOccupationInput,
     bgSelect: dom.bgSelect,
-    generalistDiv: dom.generalistDiv
+    generalistDiv: dom.generalistDiv,
+    generalistPointsLeft: dom.generalistPointsLeft
   };
 
   dom.status = {
