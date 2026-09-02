@@ -651,9 +651,15 @@ function renderItemsAccordion() {
 function openUseModal(itemName, qty) {
   useItemState.itemName = itemName;
   useItemState.maxQty = qty;
-  var modal = document.getElementById('use-modal');
-  document.getElementById('use-item-name').textContent = itemName + '（可用 ' + qty + ' 份）';
-  var select = document.getElementById('use-target-select');
+
+  var useModal = dom.modal && dom.modal.use;
+  if (!useModal || !useModal.root || !useModal.itemName || !useModal.targetSelect) {
+    console.warn('[UI警告] 物品使用彈窗快取不完整，無法開啟。請確認 cacheDom() 的 dom.modal.use 分組。');
+    return;
+  }
+
+  useModal.itemName.textContent = itemName + '（可用 ' + qty + ' 份）';
+  var select = useModal.targetSelect;
   select.innerHTML = '';
   select.appendChild(new Option(gameState.charSetup.name || '你', 'player'));
   gameState.companions.forEach(function (npc) {
@@ -662,7 +668,7 @@ function openUseModal(itemName, qty) {
   if (gameState.companions.length > 0) {
     select.appendChild(new Option('全體人員', 'all'));
   }
-  modal.classList.remove('hidden');
+  useModal.root.classList.remove('hidden');
 }
 
 function openTravelConfirmModal(targetLocation, dist, costType, costValue, timeCost, canTravel, errorMsg, activeVehicle) {
