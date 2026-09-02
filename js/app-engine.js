@@ -383,14 +383,14 @@ function getLocationCoords(locName) {
     }
   }
 
-  // 2. 再查系統預設大地圖（MAP_PRESETS）
-  for (var poolId in MAP_PRESETS) {
-    var pool = MAP_PRESETS[poolId];
-    if (poolId === locName) {return {x: pool.x,y: pool.y};}
-    if (pool.name === locName) return { x: pool.x, y: pool.y };
-    for (var i = 0; i < pool.locations.length; i++) {
-      if (pool.locations[i].name === locName) return { x: pool.locations[i].x, y: pool.locations[i].y };
-    }
+  // 2. 查系統預設大地圖，並支援 AI 生成的地點名稱變體。
+  var resolvedMapLocation = resolveMapLocation(locName);
+
+  if (resolvedMapLocation) {
+    return {
+      x: resolvedMapLocation.x,
+      y: resolvedMapLocation.y
+    };
   }
 
   // 3. 都查不到，回傳當前大區中心點
