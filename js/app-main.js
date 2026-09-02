@@ -138,6 +138,8 @@ function cacheDom() {
   dom.profileAwakeningLevel = document.getElementById('profile-awakening-level');
   dom.profileAwakeningAbility = document.getElementById('profile-awakening-ability');
   dom.profileAwakeningExp = document.getElementById('profile-awakening-exp');
+  dom.profileProficiencyAnchor = document.getElementById('profile-proficiency-anchor');
+  dom.profileExploredList = document.getElementById('profile-explored-list');
 
   // ============================================================
   // 【語意分組別名】指向與上方扁平版本完全相同的 DOM 元素，
@@ -286,6 +288,7 @@ function cacheDom() {
       confirmBtn: dom.useConfirmBtn,
       cancelBtn: dom.useCancelBtn
     }
+    
   };
 
   // 【已移除 name 欄位】依使用者指示，dom.profileName 已刪除
@@ -302,8 +305,20 @@ function cacheDom() {
     awakeningSection: dom.profileAwakeningSection,
     awakeningLevel: dom.profileAwakeningLevel,
     awakeningAbility: dom.profileAwakeningAbility,
-    awakeningExp: dom.profileAwakeningExp
+    awakeningExp: dom.profileAwakeningExp,
+    proficiencyAnchor: dom.profileProficiencyAnchor,
+    exploredList: dom.profileExploredList
   };
+
+  dom.app = {
+    root: document.getElementById('app'),
+    playerAvatarBox: document.getElementById('player-avatar-box')
+  };
+
+  dom.template = {
+    safezoneCard: document.getElementById('safezone-card-template')
+  };
+
 }
 
 function init() {
