@@ -233,6 +233,6 @@ function handleGeneralistPointChange(e) {
     alert('點數上限為 3 點'); // 提示用語精簡
   }
 
-  var leftSpan = document.getElementById('generalist-points-left');
+  var leftSpan = dom.setup.generalistPointsLeft;
   if (leftSpan) leftSpan.textContent = (3 - total);
 }
