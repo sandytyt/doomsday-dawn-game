@@ -233,14 +233,42 @@ function updateDynamicVisuals() {
   }
 
   var avatarBox = dom.app.playerAvatarBox;
+
   if (avatarBox && gameState.charSetup) {
-    var gender = (gameState.charSetup.gender === '女性') ? 'female' : 'male';
-    var bgType = gameState.charSetup.backgroundType;
+    var genderValue = String(gameState.charSetup.gender || '').trim();
+
+    var gender = (
+      genderValue === '女' ||
+      genderValue === '女性' ||
+      genderValue === 'female'
+    )
+      ? 'female'
+      : 'male';
+
+    var bgType = String(gameState.charSetup.backgroundType || '').trim();
+
     if (!bgType || bgType === 'generalist') {
       bgType = 'survivor';
     }
+
     var avatarFileName = gender + '_' + bgType + '.jpg';
-    avatarBox.style.backgroundImage = "url('images/chars/" + avatarFileName + "')";
+    var fallbackFileName = gender + '_default.jpg';
+
+    var avatarUrl = 'images/chars/' + avatarFileName;
+    var fallbackUrl = 'images/chars/' + fallbackFileName;
+
+    var avatarImage = new Image();
+
+    avatarImage.onload = function () {
+      avatarBox.style.backgroundImage = 'url("' + avatarUrl + '")';
+    };
+
+    avatarImage.onerror = function () {
+      avatarBox.style.backgroundImage = 'url("' + fallbackUrl + '")';
+    };
+
+    avatarImage.src = avatarUrl;
+
     if (gameState.awakeningLevel && gameState.awakeningLevel > 0) {
       avatarBox.classList.add('awakened');
     } else {
@@ -251,8 +279,6 @@ function updateDynamicVisuals() {
 
 function renderCharProfile() {
   var c = gameState.charSetup;
-  // 【已刪除】dom.profileName 渲染——HTML 已無 profile-name 欄位，
-  // 且遊戲設計上主角本來就不顯示姓名，永遠用第二人稱「你」稱呼。
   if (dom.profile.gender) dom.profile.gender.textContent = c.gender || '未指定';
   if (dom.profile.occupation) dom.profile.occupation.textContent = c.occupation || '未知';
   renderProfileProficiency();
@@ -354,28 +380,65 @@ function renderProfileExploredLocations() {
         } else {
           var header = document.createElement('div');
           var isExpanded = expandedLocationGroups[gName] || false;
+
           header.style.display = 'flex';
-          header.style.justifyContent = 'space-between';
           header.style.alignItems = 'center';
+          header.style.justifyContent = 'space-between';
+          header.style.gap = '8px';
           header.style.padding = '8px 12px';
           header.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
           header.style.borderLeft = '3px solid #4a90e2';
           header.style.borderRadius = '4px';
           header.style.cursor = 'pointer';
           header.style.color = '#e0e0e0';
-          header.innerHTML = '<span style="font-weight:bold;">' + escapeHtml(gName) + '</span><span style="font-size:0.8em;color:#888;">' + locs.length + (isExpanded ? ' ▲' : ' ▼') + '</span>';
 
           var body = document.createElement('div');
           body.style.display = isExpanded ? 'block' : 'none';
           body.style.paddingLeft = '12px';
           body.style.marginTop = '4px';
-          locs.forEach(function (loc) { body.appendChild(createLocationButton(loc)); });
+
+          locs.forEach(function (loc) {
+            body.appendChild(createLocationButton(loc));
+          });
+
+          function renderGroupHeader(expanded) {
+            header.innerHTML =
+              '<span style="font-weight: bold; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">' +
+              escapeHtml(gName) +
+              '</span>' +
+              '<span style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">' +
+                '<button type="button" class="region-travel-btn" ' +
+                  'style="background: transparent; border: 1px solid rgba(74, 144, 226, 0.45); border-radius: 4px; color: #4a90e2; font-size: 11px; padding: 2px 6px; cursor: pointer;">' +
+                  '➔ 前往' +
+                '</button>' +
+                '<span style="font-size: 0.8em; color: #888;">' +
+                  locs.length +
+                  (expanded ? ' ▲' : ' ▼') +
+                '</span>' +
+              '</span>';
+
+            var travelBtn = header.querySelector('.region-travel-btn');
+
+            if (travelBtn) {
+              travelBtn.addEventListener('click', function (event) {
+                event.stopPropagation();
+
+                if (typeof requestTravelTo === 'function') {
+                  requestTravelTo(gName);
+                }
+              });
+            }
+          }
+
+          renderGroupHeader(isExpanded);
 
           header.addEventListener('click', function () {
             var willExpand = body.style.display === 'none';
+
             body.style.display = willExpand ? 'block' : 'none';
             expandedLocationGroups[gName] = willExpand;
-            header.innerHTML = '<span style="font-weight:bold;">' + escapeHtml(gName) + '</span><span style="font-size:0.8em;color:#888;">' + locs.length + (willExpand ? ' ▲' : ' ▼') + '</span>';
+
+            renderGroupHeader(willExpand);
           });
 
           groupDiv.appendChild(header);
