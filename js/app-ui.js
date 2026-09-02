@@ -286,7 +286,6 @@ function renderCharProfile() {
   renderProfileAwakening();
   renderProfileSafezones();
   renderProfileFactions();
-  renderProfileExploredLocations();
 }
 
 function renderProfileProficiency() {
@@ -331,6 +330,7 @@ function renderProfileInjury() {
 }
 
 var expandedLocationGroups = {};
+var expandedFactionLocationGroups = {};
 
 function renderProfileExploredLocations() {
   var container = dom.profile.exploredList;
@@ -596,31 +596,212 @@ function renderProfileSafezones() {
   });
 }
 
+// 地圖區域 key 對應到勢力關係中的正式陣營名稱。
+// 「維爾赫姆市」暫時沒有列入，因為目前 VALID_FACTIONS /
+// FACTION_ALIASES 沒有為它指定獨立勢力。
+var REGION_FACTION_MAP = {
+  '灰堡': '鐵幕守望者',
+  '方舟海上堡壘': '方舟商會',
+  '荒原鎮群': '荒原拾骸者',
+  '靜默聖所': '靜默之子',
+  '深谷中繼站': '深層獵手'
+};
+
+function getExploredLocationsByFaction() {
+  var result = {};
+  var locations = Array.isArray(gameState.exploredLocations)
+    ? gameState.exploredLocations
+    : [];
+
+  locations.forEach(function (locationName) {
+    var resolved = resolveMapLocation(locationName);
+
+    if (!resolved || !resolved.regionKey) {
+      return;
+    }
+
+    var factionName = REGION_FACTION_MAP[resolved.regionKey];
+
+    // 維爾赫姆市或未有勢力映射的地區，暫不放進勢力關係面板。
+    if (!factionName) {
+      return;
+    }
+
+    if (!result[factionName]) {
+      result[factionName] = [];
+    }
+
+    if (result[factionName].indexOf(locationName) === -1) {
+      result[factionName].push(locationName);
+    }
+  });
+
+  return result;
+}
+
 function renderProfileFactions() {
   if (!dom.profile.factionList) return;
+
   var worldMemory = WorldMemory.ensureShape(gameState.worldMemory);
-  dom.profile.factionList.innerHTML = '';
-  var factionNames = Object.keys(gameState.factionTrust);
+  var factionList = dom.profile.factionList;
+  var exploredByFaction = getExploredLocationsByFaction();
+
+  factionList.innerHTML = '';
+
+  var factionNames = Object.keys(gameState.factionTrust || {});
+
   if (factionNames.length === 0) {
     var emptyEl = document.createElement('div');
     emptyEl.className = 'profile-subentity-empty';
-    emptyEl.textContent = '尚未與任何陣營建立聯繫';
-    dom.profile.factionList.appendChild(emptyEl);
+    emptyEl.textContent = '尚未接觸任何勢力';
+    factionList.appendChild(emptyEl);
     return;
   }
 
   var recentHistory = (worldMemory.factionHistory || []).slice(-15);
-  factionNames.forEach(function (faction) {
-    var trust = gameState.factionTrust[faction] || 0;
-    var trustClass = trust > 0 ? 'trust-positive' : (trust < 0 ? 'trust-negative' : 'trust-neutral');
-    var relatedEvents = recentHistory.filter(function (f) { return f.faction === faction; }).slice(-3);
-    var eventsHtml = relatedEvents.map(function (e) {
-      return '<div class="profile-faction-history">第' + e.turnRecorded + '回合：' + escapeHtml(e.eventText) + '</div>';
-    }).join('');
+
+  factionNames.forEach(function (factionName) {
+    var trust = gameState.factionTrust[factionName] || 0;
+
+    var trustClass = trust > 0
+      ? 'trust-positive'
+      : trust < 0
+        ? 'trust-negative'
+        : 'trust-neutral';
+
+    var relatedEvents = recentHistory
+      .filter(function (entry) {
+        return entry.faction === factionName;
+      })
+      .slice(-3);
+
+    var exploredLocations = exploredByFaction[factionName] || [];
+    var hasExploredLocations = exploredLocations.length > 0;
+
     var card = document.createElement('div');
     card.className = 'profile-faction-card';
-    card.innerHTML = '<div class="profile-faction-header"><span class="profile-faction-name">' + escapeHtml(faction) + '</span><span class="profile-faction-trust ' + trustClass + '">' + trust + '</span></div>' + eventsHtml;
-    dom.profile.factionList.appendChild(card);
+
+    var header = document.createElement('div');
+    header.className = 'profile-faction-header';
+
+    var nameEl = document.createElement('span');
+    nameEl.className = 'profile-faction-name';
+    nameEl.textContent = factionName;
+
+    var rightSide = document.createElement('span');
+    rightSide.style.display = 'flex';
+    rightSide.style.alignItems = 'center';
+    rightSide.style.gap = '8px';
+
+    var trustEl = document.createElement('span');
+    trustEl.className = 'profile-faction-trust ' + trustClass;
+    trustEl.textContent = trust;
+
+    rightSide.appendChild(trustEl);
+
+    var locationsBody = null;
+    var isExpanded = false;
+
+    if (hasExploredLocations) {
+      isExpanded = !!expandedFactionLocationGroups[factionName];
+
+      var arrowEl = document.createElement('span');
+      arrowEl.className = 'profile-faction-location-arrow';
+      arrowEl.textContent = isExpanded ? '▲' : '▼';
+      arrowEl.style.fontSize = '11px';
+      arrowEl.style.color = 'var(--text-dim)';
+
+      rightSide.appendChild(arrowEl);
+
+      header.style.cursor = 'pointer';
+      header.setAttribute('role', 'button');
+      header.setAttribute('aria-expanded', String(isExpanded));
+    }
+
+    header.appendChild(nameEl);
+    header.appendChild(rightSide);
+    card.appendChild(header);
+
+    if (relatedEvents.length > 0) {
+      relatedEvents.forEach(function (entry) {
+        var eventEl = document.createElement('div');
+        eventEl.className = 'profile-faction-history';
+        eventEl.textContent =
+          '第' +
+          entry.turnRecorded +
+          '回合：' +
+          entry.eventText;
+
+        card.appendChild(eventEl);
+      });
+    }
+
+    if (hasExploredLocations) {
+      locationsBody = document.createElement('div');
+      locationsBody.className = 'profile-faction-locations';
+      locationsBody.style.display = isExpanded ? 'block' : 'none';
+      locationsBody.style.marginTop = '8px';
+      locationsBody.style.paddingTop = '8px';
+      locationsBody.style.borderTop =
+        '1px dashed var(--border-color)';
+
+      exploredLocations.forEach(function (locationName) {
+        var locationRow = document.createElement('div');
+
+        locationRow.style.display = 'flex';
+        locationRow.style.alignItems = 'center';
+        locationRow.style.justifyContent = 'space-between';
+        locationRow.style.gap = '8px';
+        locationRow.style.padding = '6px 0';
+
+        var locationLabel = document.createElement('span');
+        locationLabel.textContent = locationName;
+        locationLabel.style.fontSize = '11.5px';
+        locationLabel.style.color = 'var(--text-secondary)';
+        locationLabel.style.minWidth = '0';
+        locationLabel.style.overflow = 'hidden';
+        locationLabel.style.textOverflow = 'ellipsis';
+        locationLabel.style.whiteSpace = 'nowrap';
+
+        var travelBtn = document.createElement('button');
+        travelBtn.type = 'button';
+        travelBtn.className = 'faction-location-travel-btn';
+        travelBtn.textContent = '➔ 前往';
+
+        travelBtn.addEventListener('click', function (event) {
+          event.stopPropagation();
+
+          if (typeof requestTravelTo === 'function') {
+            requestTravelTo(locationName);
+          }
+        });
+
+        locationRow.appendChild(locationLabel);
+        locationRow.appendChild(travelBtn);
+        locationsBody.appendChild(locationRow);
+      });
+
+      card.appendChild(locationsBody);
+
+      header.addEventListener('click', function () {
+        var willExpand = !expandedFactionLocationGroups[factionName];
+
+        expandedFactionLocationGroups[factionName] = willExpand;
+        locationsBody.style.display = willExpand ? 'block' : 'none';
+
+        var currentArrow = header.querySelector(
+          '.profile-faction-location-arrow'
+        );
+
+        if (currentArrow) {
+          currentArrow.textContent = willExpand ? '▲' : '▼';
+        }
+
+        header.setAttribute('aria-expanded', String(willExpand));
+      });
+    }
+
+    factionList.appendChild(card);
   });
 }
 
