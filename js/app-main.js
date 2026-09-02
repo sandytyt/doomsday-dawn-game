@@ -297,144 +297,216 @@ function init() {
 }
 
 function populateProviderSelect() {
-  if (!dom.providerSelect) return;
-  dom.providerSelect.innerHTML = '';
+  if (!dom.setup.providerSelect) return;
+
+  dom.setup.providerSelect.innerHTML = '';
+
   for (var key in CONFIG.PROVIDERS) {
     if (Object.prototype.hasOwnProperty.call(CONFIG.PROVIDERS, key)) {
       var opt = document.createElement('option');
       opt.value = key;
       opt.textContent = CONFIG.PROVIDERS[key].label;
-      dom.providerSelect.appendChild(opt);
+      dom.setup.providerSelect.appendChild(opt);
     }
   }
-  var savedProvider = localStorage.getItem(PROVIDER_KEY) || CONFIG.ACTIVE_PROVIDER;
-  dom.providerSelect.value = savedProvider;
-  var savedKey = localStorage.getItem(APIKEY_KEY_PREFIX + savedProvider);
-  if (savedKey) dom.apiKeyInput.value = savedKey;
+
+  var savedProvider =
+    localStorage.getItem(PROVIDER_KEY) || CONFIG.ACTIVE_PROVIDER;
+
+  dom.setup.providerSelect.value = savedProvider;
+
+  var savedKey = localStorage.getItem(
+    APIKEY_KEY_PREFIX + savedProvider
+  );
+
+  if (savedKey && dom.setup.apiKeyInput) {
+    dom.setup.apiKeyInput.value = savedKey;
+  }
 }
 
 function tryRestoreSavedGame() {
-  var provider = localStorage.getItem(PROVIDER_KEY) || CONFIG.ACTIVE_PROVIDER;
-  var savedKey = localStorage.getItem(APIKEY_KEY_PREFIX + provider);
+  var provider =
+    localStorage.getItem(PROVIDER_KEY) || CONFIG.ACTIVE_PROVIDER;
+
+  var savedKey = localStorage.getItem(
+    APIKEY_KEY_PREFIX + provider
+  );
+
   var savedStateRaw = localStorage.getItem(STATE_KEY);
+
   if (!savedStateRaw) return;
 
   try {
     var savedState = JSON.parse(savedStateRaw);
+
     if (savedState.isTestMode || savedKey) {
       gameState.apiKey = savedKey || '';
       gameState.provider = provider;
+
       restoreState(savedState);
       showGameScreen();
       rebuildNarrativeFromHistory();
       renderOptions(gameState.lastOptions);
       renderAll();
     } else {
-      // 【修正 Bug #8】偵測到存檔，但目前供應商缺少金鑰：
-      // 不靜默放棄，改為在開局畫面提示玩家，並自動切換下拉選單
-      // 到存檔記錄的供應商，方便玩家直接補填金鑰。
-      if (dom.providerSelect) dom.providerSelect.value = provider;
-      var day = (savedState.time && savedState.time.day) || '未知';
-      if (dom.apiKeyInput) {
-        dom.apiKeyInput.placeholder = '偵測到第' + day + '天的存檔，請輸入「' + (CONFIG.PROVIDERS[provider] ? CONFIG.PROVIDERS[provider].label : provider) + '」的 API 金鑰以繼續';
+      // 偵測到存檔，但目前供應商缺少 API 金鑰。
+      // 自動切換到存檔記錄的供應商，方便玩家直接補填。
+      if (dom.setup.providerSelect) {
+        dom.setup.providerSelect.value = provider;
       }
-      console.warn('[存檔系統] 偵測到本機存檔（第' + day + '天），但供應商「' + provider + '」缺少 API 金鑰，需要玩家手動補填。');
+
+      var day =
+        (savedState.time && savedState.time.day) || '未知';
+
+      if (dom.setup.apiKeyInput) {
+        dom.setup.apiKeyInput.placeholder =
+          '偵測到第' +
+          day +
+          '天的存檔，請輸入「' +
+          (
+            CONFIG.PROVIDERS[provider]
+              ? CONFIG.PROVIDERS[provider].label
+              : provider
+          ) +
+          '」的 API 金鑰以繼續';
+      }
+
+      console.warn(
+        '[存檔系統] 偵測到本機存檔（第' +
+        day +
+        '天），但供應商「' +
+        provider +
+        '」缺少 API 金鑰，需要玩家手動補填。'
+      );
     }
   } catch (e) {
     console.error('存檔讀取失敗', e);
-    alert('存檔讀取失敗，資料可能已損毀。若持續發生，建議使用「匯出/匯入存檔檔案」功能作為備份。');
+
+    alert(
+      '存檔讀取失敗，資料可能已損毀。若持續發生，建議使用「匯出/匯入存檔檔案」功能作為備份。'
+    );
   }
 }
 
 function setupTestModeEntry() {
-  if (!dom.testModeBtn) return;
+  if (!dom.setup.testModeBtn) return;
   if (CONFIG.TEST_MODE_ENABLED) {
-    dom.testModeBtn.classList.remove('hidden');
+    dom.setup.testModeBtn.classList.remove('hidden');
   } else {
-    dom.testModeBtn.classList.add('hidden');
+    dom.setup.testModeBtn.classList.add('hidden');
   }
 }
 
 function applyCharacterSetup() {
-  var finalGender = dom.charGenderInput.value || pickRandom(RANDOM_CHAR_POOL.genders);
-  var finalName = "你"; // 強制使用第二人稱
+  var finalGender =
+    (dom.setup.charGenderInput && dom.setup.charGenderInput.value) ||
+    pickRandom(RANDOM_CHAR_POOL.genders);
 
-  var bgType = dom.bgSelect ? dom.bgSelect.value : 'combat_survivor';
+  var finalName = '你';
+
+  var bgType = dom.setup.bgSelect
+    ? dom.setup.bgSelect.value
+    : 'combat_survivor';
+
   var picks = {};
-  
+
   if (bgType === 'generalist') {
-    var inputs = dom.generalistDiv.querySelectorAll('.gen-point-input');
+    var inputs = dom.setup.generalistDiv.querySelectorAll(
+      '.gen-point-input'
+    );
+
     for (var i = 0; i < inputs.length; i++) {
       var val = parseInt(inputs[i].value, 10) || 0;
+
       if (val > 0) {
         picks[inputs[i].dataset.stat] = val;
       }
     }
-    // 已移除強制分配 3 點的限制，玩家可以不點或只點 1 點
   }
 
   gameState.charSetup = {
     name: finalName,
     gender: finalGender,
-    location: dom.charLocationInput.value.trim() || pickRandom(RANDOM_CHAR_POOL.locations),
-    occupation: dom.charOccupationInput.value.trim() || pickRandom(RANDOM_CHAR_POOL.occupations),
+    location:
+      (dom.setup.charLocationInput &&
+        dom.setup.charLocationInput.value.trim()) ||
+      pickRandom(RANDOM_CHAR_POOL.locations),
+
+    occupation:
+      (dom.setup.charOccupationInput &&
+        dom.setup.charOccupationInput.value.trim()) ||
+      pickRandom(RANDOM_CHAR_POOL.occupations),
     backgroundType: bgType,
     generalistPicks: picks
   };
 
-  gameState.skillProficiency = { combat: 0, shooting: 0, agility: 0, scouting: 0, medical: 0, negotiation: 0, searching: 0, mechanics: 0 };
-  
+  gameState.skillProficiency = {
+    combat: 0,
+    shooting: 0,
+    agility: 0,
+    scouting: 0,
+    medical: 0,
+    negotiation: 0,
+    searching: 0,
+    mechanics: 0
+  };
+
   if (typeof getBackgroundBonuses === 'function') {
     var bonuses = getBackgroundBonuses(bgType, picks);
+
     for (var k in bonuses) {
-      if (bonuses[k] === 1) gameState.skillProficiency[k] = 50;
-      else if (bonuses[k] === 2) gameState.skillProficiency[k] = 150;
-      else if (bonuses[k] === 3) gameState.skillProficiency[k] = 300;
+      if (bonuses[k] === 1) {
+        gameState.skillProficiency[k] = 50;
+      } else if (bonuses[k] === 2) {
+        gameState.skillProficiency[k] = 150;
+      } else if (bonuses[k] === 3) {
+        gameState.skillProficiency[k] = 300;
+      }
     }
   }
-  return true; 
+
+  return true;
 }
 
 function handleStartGame() {
-  var provider = dom.providerSelect.value;
-  var key = dom.apiKeyInput.value.trim();
-  
+  var provider = dom.setup.providerSelect.value;
+  var key = dom.setup.apiKeyInput.value.trim();
+
   if (!key) {
     alert('請輸入你的 API 金鑰');
     return;
   }
-  
-  // 統一交給共用函式處理角色數值 (包含讀取配點、設定 charSetup 與 skillProficiency)
+
   if (!applyCharacterSetup()) return;
-  
+
   gameState.apiKey = key;
   gameState.provider = provider;
   gameState.isTestMode = false;
+
   localStorage.setItem(PROVIDER_KEY, provider);
   localStorage.setItem(APIKEY_KEY_PREFIX + provider, key);
 
-  // 初始化地圖與探索紀錄
   var mapIds = Object.keys(MAP_PRESETS);
+
   gameState.currentMapPresetId = pickRandom(mapIds);
-  gameState.exploredLocations = []; 
+  gameState.exploredLocations = [];
 
   showGameScreen();
   requestNextTurn('__START__');
 }
 
 function handleStartTestMode() {
-  // 測試模式同樣呼叫共用開局邏輯
   if (!applyCharacterSetup()) return;
 
   gameState.isTestMode = true;
   gameState.testScriptIndex = 0;
   gameState.apiKey = '';
-  
-  // 初始化地圖與探索紀錄
+
   var mapIds = Object.keys(MAP_PRESETS);
+
   gameState.currentMapPresetId = pickRandom(mapIds);
-  gameState.exploredLocations = []; 
-  
+  gameState.exploredLocations = [];
+
   showGameScreen();
   playNextTestScript('__START__');
 }
@@ -461,8 +533,8 @@ function playNextTestScript(playerAction) {
 }
 
 function showGameScreen() {
-  dom.setupScreen.classList.add('hidden');
-  dom.gameScreen.classList.remove('hidden');
+  dom.setup.screen.classList.add('hidden');
+  dom.setup.gameScreen.classList.remove('hidden');
 }
 
 function loadRulesAndLore() {
@@ -506,15 +578,26 @@ function loadRulesAndLore() {
 
 function loadNotionConfig() {
   var saved = localStorage.getItem(NOTION_KEY);
+
   if (!saved) return;
+
   try {
     var cfg = JSON.parse(saved);
-    if (dom.notionProxyInput) dom.notionProxyInput.value = cfg.proxyUrl || '';
-    if (dom.notionDbInput) dom.notionDbInput.value = cfg.dbId || '';
+
+    if (dom.menu.notionProxyInput) {
+      dom.menu.notionProxyInput.value = cfg.proxyUrl || '';
+    }
+
+    if (dom.menu.notionDbInput) {
+      dom.menu.notionDbInput.value = cfg.dbId || '';
+    }
+
     CONFIG.NOTION_ENABLED = !!(cfg.proxyUrl && cfg.dbId);
     CONFIG.NOTION_PROXY_URL = cfg.proxyUrl || '';
     CONFIG.NOTION_DATABASE_ID = cfg.dbId || '';
-  } catch (e) {}
+  } catch (e) {
+    console.warn('[Notion 設定] 讀取本機設定失敗：', e);
+  }
 }
 
 document.addEventListener('DOMContentLoaded', init);
