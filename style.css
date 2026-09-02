@@ -457,7 +457,6 @@ button { font-family: inherit; }
    ========================================= */
 
 /* 1. 統一的卡片外觀 (Card Base) */
-.btn-menu,
 .char-profile-grid,
 .profile-injury-card,
 .profile-awakening-card,
@@ -474,7 +473,6 @@ button { font-family: inherit; }
 }
 
 /* 2. 統一的卡片內距 (Padding) - 不包含手風琴容器 */
-.btn-menu,
 .char-profile-grid,
 .profile-injury-card,
 .profile-awakening-card,
@@ -489,9 +487,30 @@ button { font-family: inherit; }
   margin-top: 13px;
 }
 
-/* 按鈕專屬行為 */
-.btn-menu { width: 100%; text-align: left; color: var(--text-primary); font-size: 14px; cursor: pointer; }
-.btn-menu.btn-danger { color: #e57373; border-color: rgba(139, 30, 30, 0.4); }
+.btn-menu {
+  width: 100%;
+  min-height: 48px;
+  padding: 13px 14px;
+
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.45;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.btn-menu.btn-danger {
+  color: #e57373;
+  border-color: rgba(139, 30, 30, 0.4);
+}
 
 /* 3. 統一的空狀態 (Empty States) */
 .profile-subentity-empty,
@@ -581,7 +600,7 @@ button { font-family: inherit; }
 .profile-awakening-row { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--text-secondary); }
 
 /* 基地與勢力 */
-.profile-safezone-header, .profile-faction-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+.profile-faction-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
 .profile-safezone-name, .profile-faction-name { font-size: 13px; color: var(--text-primary); font-weight: 600; }
 .profile-safezone-pop { font-size: 11px; color: var(--text-dim); }
 .profile-safezone-facilities, .profile-faction-history { font-size: 11.5px; color: var(--text-secondary); line-height: 1.5; }
@@ -631,25 +650,48 @@ button { font-family: inherit; }
 
 .side-menu-content {
   position: absolute;
-  top: 0; right: 0;
-  width: 85%; max-width: 380px; height: 100%;
+  top: 0;
+  right: 0;
+
+  width: 85%;
+  max-width: 380px;
+  height: 100dvh;
+  min-height: 100vh;
+
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+
   background: var(--bg-panel);
   padding: 24px 18px;
   padding-top: max(24px, env(safe-area-inset-top));
-  display: flex; flex-direction: column; gap: 10px;
+  padding-bottom: max(24px, env(safe-area-inset-bottom));
+
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  box-sizing: border-box;
   box-shadow: -8px 0 24px var(--shadow-deep);
   animation: slide-in-right 0.25s ease;
   z-index: 2;
 }
 
-@keyframes slide-in-right {
-  from { transform: translateX(100%); }
-  to { transform: translateX(0); }
+.side-menu-content > * {
+  flex: 0 0 auto;
 }
 
-.side-menu-content h2 { font-size: 18px; color: var(--text-primary); margin-bottom: 12px; }
-.side-menu-footer { margin-top: auto; }
+.side-menu-content h2 {
+  font-size: 18px;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.side-menu-footer {
+  margin-top: 16px;
+  padding-bottom: env(safe-area-inset-bottom);
+  flex: 0 0 auto;
+}
 
 /* 終端機頁籤系統 (Tabbed UI) */
 .info-panel-content { padding: 0; display: flex; flex-direction: column; }
@@ -777,32 +819,6 @@ button { font-family: inherit; }
 .manual-content-container ul { padding-left: 24px; margin-top: 8px; margin-bottom: 16px; }
 .manual-content-container li { margin-bottom: 8px; }
 
-.side-menu-content {
-  display: block;
-  box-sizing: border-box;
-  height: 100dvh;
-  min-height: 100vh;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-  padding-bottom: max(24px, env(safe-area-inset-bottom));
-}
-
-/* 在 block 文件流下 footer 自然排在所有內容之後，不再強制推到底部。 */
-.side-menu-footer {
-  margin-top: 16px;
-  padding-bottom: env(safe-area-inset-bottom);
-}
-
-/* 保持按鈕最小高度與可讀性。 */
-.btn-menu {
-  box-sizing: border-box;
-  min-height: 48px;
-  line-height: 1.45;
-  white-space: normal;
-  overflow-wrap: anywhere;
-}
-
 /* 體格熟練度為 JS 動態區塊，補上與基地/勢力關係相同的垂直間距。 */
 #profile-proficiency-section {
   margin-top: 16px;
@@ -813,6 +829,7 @@ button { font-family: inherit; }
   grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
   column-gap: 8px;
+  margin-bottom: 4px;
 }
 
 .profile-safezone-name {
@@ -824,17 +841,24 @@ button { font-family: inherit; }
 
 .safezone-travel-btn {
   display: inline-flex;
-  flex: 0 0 auto;
   align-items: center;
   justify-content: center;
+  flex: 0 0 auto;
+
   min-width: 56px;
   min-height: 28px;
-  margin-left: 0 !important;
   padding: 2px 6px;
+
+  background: transparent;
+  border: 1px solid rgba(74, 144, 226, 0.4);
+  border-radius: 4px;
+  color: #4a90e2;
+  font-size: 11px;
+  line-height: 1;
   white-space: nowrap;
 }
 
 .profile-safezone-pop {
-  margin-left: 0 !important;
+  margin-left: 0;
   white-space: nowrap;
 }
