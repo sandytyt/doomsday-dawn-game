@@ -807,3 +807,34 @@ button { font-family: inherit; }
 #profile-proficiency-section {
   margin-top: 16px;
 }
+
+.profile-safezone-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  column-gap: 8px;
+}
+
+.profile-safezone-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.safezone-travel-btn {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  min-width: 56px;
+  min-height: 28px;
+  margin-left: 0 !important;
+  padding: 2px 6px;
+  white-space: nowrap;
+}
+
+.profile-safezone-pop {
+  margin-left: 0 !important;
+  white-space: nowrap;
+}
