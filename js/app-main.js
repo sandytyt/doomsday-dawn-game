@@ -1,315 +1,165 @@
 'use strict';
 
 function cacheDom() {
-  // ---------- 開局設定畫面 ----------
-  dom.setupScreen = document.getElementById('setup-screen');
-  dom.gameScreen = document.getElementById('game-screen');
-  dom.providerSelect = document.getElementById('provider-select');
-  dom.apiKeyInput = document.getElementById('api-key-input');
-  dom.startBtn = document.getElementById('start-game-btn');
-  dom.testModeBtn = document.getElementById('test-mode-btn');
-  dom.importSaveBtn = document.getElementById('import-save-btn');
-  dom.importSaveFile = document.getElementById('import-save-file');
-  dom.rulesLinkBtn = document.getElementById('rules-link-btn');
-  dom.charSetupToggle = document.getElementById('char-setup-toggle');
-  dom.charSetupFields = document.getElementById('char-setup-fields');
-  dom.charGenderInput = document.getElementById('char-gender-input');
-  dom.charLocationInput = document.getElementById('char-location-input');
-  dom.charOccupationInput = document.getElementById('char-occupation-input');
-  dom.bgSelect = document.getElementById('char-background-type-select');
-  dom.generalistDiv = document.getElementById('generalist-picks-container');
-  dom.generalistPointsLeft = document.getElementById('generalist-points-left');
-
-  // ---------- 頂部狀態列 ----------
-  dom.statusTime = document.getElementById('status-time');
-  dom.statusLocation = document.getElementById('status-location');
-  dom.statusExpandBtn = document.getElementById('status-expand-btn');
-  dom.staminaFill = document.getElementById('stamina-bar-fill');
-  dom.staminaValue = document.getElementById('stamina-value');
-  dom.statusDanger = document.getElementById('status-danger');
-  dom.injuryTag = document.getElementById('injury-tag');
-  dom.statusPanelFull = document.getElementById('status-panel-full');
-  dom.statHumanity = document.getElementById('stat-humanity');
-  dom.statFaction = document.getElementById('stat-faction');
-  dom.statAwakening = document.getElementById('stat-awakening');
-  dom.statWeather = document.getElementById('stat-weather');
-  dom.statHunger = document.getElementById('stat-hunger');
-  dom.statCompanions = document.getElementById('stat-companions');
-  dom.hungerFill = document.getElementById('hunger-bar-fill');
-  dom.hungerValue = document.getElementById('hunger-value');
-
-  // ---------- 敘事區與行動列 ----------
-  dom.narrativeLog = document.getElementById('narrative-log');
-  dom.narrativeContent = document.getElementById('narrative-content');
-  dom.typingIndicator = document.getElementById('typing-indicator');
-  dom.optionsCollapseToggle = document.getElementById('options-collapse-toggle');
-  dom.optionsContainer = document.getElementById('options-container');
-  dom.freeInputRow = document.getElementById('free-input-row');
-  dom.freeInputText = document.getElementById('free-input-text');
-  dom.freeInputSend = document.getElementById('free-input-send');
-  dom.freeInputCancel = document.getElementById('free-input-cancel');
-  dom.freeInputToggle = document.getElementById('free-input-toggle');
-  dom.actionCollapsedBar = document.getElementById('action-collapsed-bar');
-
-  // ---------- 終端機／資訊面板（物品、NPC、載具） ----------
-  dom.panelsToggleBtn = document.getElementById('panels-toggle-btn');
-  dom.infoPanel = document.getElementById('info-panel');
-  dom.infoPanelBackdrop = document.getElementById('info-panel-backdrop');
-  dom.infoPanelClose = document.getElementById('info-panel-close');
-  dom.itemsSectionToggle = document.getElementById('items-section-toggle');
-  dom.itemsSectionBody = document.getElementById('items-section-body');
-  dom.itemsAccordion = document.getElementById('items-accordion');
-  dom.transferModeToggle = document.getElementById('transfer-mode-toggle');
-  dom.inventoryList = document.getElementById('inventory-list');
-  dom.inventoryLoadTag = document.getElementById('inventory-load-tag');
-  dom.npcSectionToggle = document.getElementById('npc-section-toggle');
-  dom.npcSectionBody = document.getElementById('npc-section-body');
-  dom.npcList = document.getElementById('npc-list');
-  dom.vehicleSectionToggle = document.getElementById('vehicle-section-toggle');
-  dom.vehicleSectionBody = document.getElementById('vehicle-section-body');
-  dom.vehicleList = document.getElementById('vehicle-list');
-
-  // ---------- 側邊選單 ----------
-  dom.sideMenu = document.getElementById('side-menu');
-  dom.sideMenuBackdrop = document.getElementById('side-menu-backdrop');
-  dom.menuToggleBtn = document.getElementById('menu-toggle-btn');
-  dom.menuExportBtn = document.getElementById('menu-export-btn');
-  dom.menuImportBtn = document.getElementById('menu-import-btn');
-  dom.menuNamedSaveBtn = document.getElementById('menu-named-save-btn');
-  dom.menuSaveManagerBtn = document.getElementById('menu-save-manager-btn');
-  dom.menuRestartBtn = document.getElementById('menu-restart-btn');
-  dom.menuApikeyBtn = document.getElementById('menu-apikey-btn');
-  dom.menuRulesBtn = document.getElementById('menu-rules-btn');
-  dom.menuCloseBtn = document.getElementById('menu-close-btn');
-  dom.notionSetupToggle = document.getElementById('notion-setup-toggle');
-  dom.notionSetupFields = document.getElementById('notion-setup-fields');
-  dom.notionProxyInput = document.getElementById('notion-proxy-input');
-  dom.notionDbInput = document.getElementById('notion-db-input');
-  dom.notionSaveBtn = document.getElementById('notion-save-btn');
-  dom.notionSyncNowBtn = document.getElementById('notion-sync-now-btn');
-
-  // ---------- 各種彈窗 ----------
-  dom.eventModal = document.getElementById('event-modal');
-  dom.eventModalIcon = document.getElementById('event-modal-icon');
-  dom.eventModalTitle = document.getElementById('event-modal-title');
-  dom.eventModalText = document.getElementById('event-modal-text');
-  dom.eventModalClose = document.getElementById('event-modal-close');
-  dom.loadingOverlay = document.getElementById('loading-overlay');
-  dom.deathScreen = document.getElementById('death-screen');
-  dom.namedSaveModal = document.getElementById('named-save-modal');
-  dom.namedSaveList = document.getElementById('named-save-list');
-  dom.namedSaveClose = document.getElementById('named-save-close');
-  dom.saveTabLocal = document.getElementById('save-tab-local');
-  dom.saveTabNotion = document.getElementById('save-tab-notion');
-  dom.manualModal = document.getElementById('manual-modal');
-  dom.manualCloseBtn = document.getElementById('manual-close-btn');
-  dom.useModal = document.getElementById('use-modal');
-  dom.useItemName = document.getElementById('use-item-name');
-  dom.useTargetSelect = document.getElementById('use-target-select');
-  dom.useConfirmBtn = document.getElementById('use-confirm-btn');
-  dom.useCancelBtn = document.getElementById('use-cancel-btn');
-  dom.dailyReportModal = document.getElementById('daily-report-modal');
-  dom.dailyReportContent = document.getElementById('daily-report-content');
-  dom.dailyReportCloseBtn = document.getElementById('daily-report-close-btn');
-  dom.travelModal = document.getElementById('travel-modal');
-  dom.travelTargetName = document.getElementById('travel-target-name');
-  dom.travelCostInfo = document.getElementById('travel-cost-info');
-  dom.travelConfirmBtn = document.getElementById('travel-confirm-btn');
-  dom.travelCancelBtn = document.getElementById('travel-cancel-btn');
-  dom.transferModal = document.getElementById('transfer-modal');
-  dom.transferItemName = document.getElementById('transfer-item-name');
-  dom.transferTargetSelect = document.getElementById('transfer-target-select');
-  dom.transferQuantityInput = document.getElementById('transfer-qty-input');
-  dom.transferConfirmBtn = document.getElementById('transfer-confirm-btn');
-  dom.transferCancelBtn = document.getElementById('transfer-cancel-btn');
-
-
-  // ---------- 角色檔案面板 ----------
-  dom.charProfileToggle = document.getElementById('char-profile-toggle');
-  dom.charProfileBody = document.getElementById('char-profile-body');
-  // 【已刪除】dom.profileName（HTML 已無 profile-name 欄位，主角不顯示姓名）
-  dom.profileGender = document.getElementById('profile-gender');
-  dom.profileOccupation = document.getElementById('profile-occupation');
-  dom.profileSafezoneList = document.getElementById('profile-safezone-list');
-  dom.profileFactionList = document.getElementById('profile-faction-list');
-  dom.profileInjurySection = document.getElementById('profile-injury-section');
-  dom.profileInjuryLevel = document.getElementById('profile-injury-level');
-  dom.profileInjuryDetail = document.getElementById('profile-injury-detail');
-  dom.profileAwakeningSection = document.getElementById('profile-awakening-section');
-  dom.profileAwakeningLevel = document.getElementById('profile-awakening-level');
-  dom.profileAwakeningAbility = document.getElementById('profile-awakening-ability');
-  dom.profileAwakeningExp = document.getElementById('profile-awakening-exp');
-  dom.profileProficiencyAnchor = document.getElementById('profile-proficiency-anchor');
-  dom.profileExploredList = document.getElementById('profile-explored-list');
-
-  // ============================================================
-  // 【語意分組別名】指向與上方扁平版本完全相同的 DOM 元素，
-  // 現有程式碼可繼續使用扁平屬性，新程式碼可改用以下語意化路徑。
-  // ============================================================
-
   dom.setup = {
-    screen: dom.setupScreen,
-    gameScreen: dom.gameScreen,
-    providerSelect: dom.providerSelect,
-    apiKeyInput: dom.apiKeyInput,
-    startBtn: dom.startBtn,
-    testModeBtn: dom.testModeBtn,
-    importSaveBtn: dom.importSaveBtn,
-    importSaveFile: dom.importSaveFile,
-    rulesLinkBtn: dom.rulesLinkBtn,
-    charSetupToggle: dom.charSetupToggle,
-    charSetupFields: dom.charSetupFields,
-    charGenderInput: dom.charGenderInput,
-    charLocationInput: dom.charLocationInput,
-    charOccupationInput: dom.charOccupationInput,
-    bgSelect: dom.bgSelect,
-    generalistDiv: dom.generalistDiv,
-    generalistPointsLeft: dom.generalistPointsLeft
+    screen: document.getElementById('setup-screen'),
+    gameScreen: document.getElementById('game-screen'),
+    providerSelect: document.getElementById('provider-select'),
+    apiKeyInput: document.getElementById('api-key-input'),
+    startBtn: document.getElementById('start-game-btn'),
+    testModeBtn: document.getElementById('test-mode-btn'),
+    importSaveBtn: document.getElementById('import-save-btn'),
+    importSaveFile: document.getElementById('import-save-file'),
+    rulesLinkBtn: document.getElementById('rules-link-btn'),
+    charSetupToggle: document.getElementById('char-setup-toggle'),
+    charSetupFields: document.getElementById('char-setup-fields'),
+    charGenderInput: document.getElementById('char-gender-input'),
+    charLocationInput: document.getElementById('char-location-input'),
+    charOccupationInput: document.getElementById('char-occupation-input'),
+    bgSelect: document.getElementById('char-background-type-select'),
+    generalistDiv: document.getElementById('generalist-picks-container'),
+    generalistPointsLeft: document.getElementById('generalist-points-left')
   };
 
   dom.status = {
-    time: dom.statusTime,
-    location: dom.statusLocation,
-    expandBtn: dom.statusExpandBtn,
-    staminaFill: dom.staminaFill,
-    staminaValue: dom.staminaValue,
-    danger: dom.statusDanger,
-    injuryTag: dom.injuryTag,
-    panelFull: dom.statusPanelFull,
-    humanity: dom.statHumanity,
-    faction: dom.statFaction,
-    awakening: dom.statAwakening,
-    weather: dom.statWeather,
-    hunger: dom.statHunger,
-    companions: dom.statCompanions,
-    hungerFill: dom.hungerFill,
-    hungerValue: dom.hungerValue
+    time: document.getElementById('status-time'),
+    location: document.getElementById('status-location'),
+    expandBtn: document.getElementById('status-expand-btn'),
+    staminaFill: document.getElementById('stamina-bar-fill'),
+    staminaValue: document.getElementById('stamina-value'),
+    danger: document.getElementById('status-danger'),
+    injuryTag: document.getElementById('injury-tag'),
+    panelFull: document.getElementById('status-panel-full'),
+    humanity: document.getElementById('stat-humanity'),
+    faction: document.getElementById('stat-faction'),
+    awakening: document.getElementById('stat-awakening'),
+    weather: document.getElementById('stat-weather'),
+    hunger: document.getElementById('stat-hunger'),
+    companions: document.getElementById('stat-companions'),
+    hungerFill: document.getElementById('hunger-bar-fill'),
+    hungerValue: document.getElementById('hunger-value')
   };
 
   dom.narrative = {
-    log: dom.narrativeLog,
-    content: dom.narrativeContent,
-    typingIndicator: dom.typingIndicator,
-    optionsCollapseToggle: dom.optionsCollapseToggle,
-    optionsContainer: dom.optionsContainer,
-    freeInputRow: dom.freeInputRow,
-    freeInputText: dom.freeInputText,
-    freeInputSend: dom.freeInputSend,
-    freeInputCancel: dom.freeInputCancel,
-    freeInputToggle: dom.freeInputToggle,
-    actionCollapsedBar: dom.actionCollapsedBar
+    log: document.getElementById('narrative-log'),
+    content: document.getElementById('narrative-content'),
+    typingIndicator: document.getElementById('typing-indicator'),
+    optionsCollapseToggle: document.getElementById('options-collapse-toggle'),
+    optionsContainer: document.getElementById('options-container'),
+    freeInputRow: document.getElementById('free-input-row'),
+    freeInputText: document.getElementById('free-input-text'),
+    freeInputSend: document.getElementById('free-input-send'),
+    freeInputCancel: document.getElementById('free-input-cancel'),
+    freeInputToggle: document.getElementById('free-input-toggle'),
+    actionCollapsedBar: document.getElementById('action-collapsed-bar')
   };
 
-  // 【備註】dom.infoPanel（面板容器本身）維持原扁平屬性不變，
-  // 分組別名另外命名為 dom.infoPanelGroup 避免與其衝突。
   dom.infoPanelGroup = {
-    toggleBtn: dom.panelsToggleBtn,
-    panel: dom.infoPanel,
-    backdrop: dom.infoPanelBackdrop,
-    close: dom.infoPanelClose,
-    itemsSectionToggle: dom.itemsSectionToggle,
-    itemsSectionBody: dom.itemsSectionBody,
-    itemsAccordion: dom.itemsAccordion,
-    transferModeToggle: dom.transferModeToggle,
-    inventoryList: dom.inventoryList,
-    inventoryLoadTag: dom.inventoryLoadTag,
-    npcSectionToggle: dom.npcSectionToggle,
-    npcSectionBody: dom.npcSectionBody,
-    npcList: dom.npcList,
-    vehicleSectionToggle: dom.vehicleSectionToggle,
-    vehicleSectionBody: dom.vehicleSectionBody,
-    vehicleList: dom.vehicleList
+    toggleBtn: document.getElementById('panels-toggle-btn'),
+    panel: document.getElementById('info-panel'),
+    backdrop: document.getElementById('info-panel-backdrop'),
+    close: document.getElementById('info-panel-close'),
+    itemsSectionToggle: document.getElementById('items-section-toggle'),
+    itemsSectionBody: document.getElementById('items-section-body'),
+    itemsAccordion: document.getElementById('items-accordion'),
+    transferModeToggle: document.getElementById('transfer-mode-toggle'),
+    inventoryList: document.getElementById('inventory-list'),
+    inventoryLoadTag: document.getElementById('inventory-load-tag'),
+    npcSectionToggle: document.getElementById('npc-section-toggle'),
+    npcSectionBody: document.getElementById('npc-section-body'),
+    npcList: document.getElementById('npc-list'),
+    vehicleSectionToggle: document.getElementById('vehicle-section-toggle'),
+    vehicleSectionBody: document.getElementById('vehicle-section-body'),
+    vehicleList: document.getElementById('vehicle-list')
   };
 
   dom.menu = {
-    sideMenu: dom.sideMenu,
-    backdrop: dom.sideMenuBackdrop,
-    toggleBtn: dom.menuToggleBtn,
-    exportBtn: dom.menuExportBtn,
-    importBtn: dom.menuImportBtn,
-    namedSaveBtn: dom.menuNamedSaveBtn,
-    saveManagerBtn: dom.menuSaveManagerBtn,
-    restartBtn: dom.menuRestartBtn,
-    apikeyBtn: dom.menuApikeyBtn,
-    rulesBtn: dom.menuRulesBtn,
-    closeBtn: dom.menuCloseBtn,
-    notionSetupToggle: dom.notionSetupToggle,
-    notionSetupFields: dom.notionSetupFields,
-    notionProxyInput: dom.notionProxyInput,
-    notionDbInput: dom.notionDbInput,
-    notionSaveBtn: dom.notionSaveBtn,
-    notionSyncNowBtn: dom.notionSyncNowBtn
+    sideMenu: document.getElementById('side-menu'),
+    backdrop: document.getElementById('side-menu-backdrop'),
+    toggleBtn: document.getElementById('menu-toggle-btn'),
+    exportBtn: document.getElementById('menu-export-btn'),
+    importBtn: document.getElementById('menu-import-btn'),
+    namedSaveBtn: document.getElementById('menu-named-save-btn'),
+    saveManagerBtn: document.getElementById('menu-save-manager-btn'),
+    restartBtn: document.getElementById('menu-restart-btn'),
+    apikeyBtn: document.getElementById('menu-apikey-btn'),
+    rulesBtn: document.getElementById('menu-rules-btn'),
+    closeBtn: document.getElementById('menu-close-btn'),
+    notionSetupToggle: document.getElementById('notion-setup-toggle'),
+    notionSetupFields: document.getElementById('notion-setup-fields'),
+    notionProxyInput: document.getElementById('notion-proxy-input'),
+    notionDbInput: document.getElementById('notion-db-input'),
+    notionSaveBtn: document.getElementById('notion-save-btn'),
+    notionSyncNowBtn: document.getElementById('notion-sync-now-btn')
   };
 
   dom.modal = {
-    event: dom.eventModal,
-    eventIcon: dom.eventModalIcon,
-    eventTitle: dom.eventModalTitle,
-    eventText: dom.eventModalText,
-    eventClose: dom.eventModalClose,
+    event: document.getElementById('event-modal'),
+    eventIcon: document.getElementById('event-modal-icon'),
+    eventTitle: document.getElementById('event-modal-title'),
+    eventText: document.getElementById('event-modal-text'),
+    eventClose: document.getElementById('event-modal-close'),
 
-    loadingOverlay: dom.loadingOverlay,
-    deathScreen: dom.deathScreen,
+    loadingOverlay: document.getElementById('loading-overlay'),
+    deathScreen: document.getElementById('death-screen'),
 
-    namedSave: dom.namedSaveModal,
-    namedSaveList: dom.namedSaveList,
-    namedSaveClose: dom.namedSaveClose,
-    saveTabLocal: dom.saveTabLocal,
-    saveTabNotion: dom.saveTabNotion,
+    namedSave: document.getElementById('named-save-modal'),
+    namedSaveList: document.getElementById('named-save-list'),
+    namedSaveClose: document.getElementById('named-save-close'),
+    saveTabLocal: document.getElementById('save-tab-local'),
+    saveTabNotion: document.getElementById('save-tab-notion'),
 
-    manual: dom.manualModal,
-    manualClose: dom.manualCloseBtn,
+    manual: document.getElementById('manual-modal'),
+    manualClose: document.getElementById('manual-close-btn'),
 
     dailyReport: {
-      root: dom.dailyReportModal,
-      content: dom.dailyReportContent,
-      closeBtn: dom.dailyReportCloseBtn
+      root: document.getElementById('daily-report-modal'),
+      content: document.getElementById('daily-report-content'),
+      closeBtn: document.getElementById('daily-report-close-btn')
     },
 
     travel: {
-      root: dom.travelModal,
-      targetName: dom.travelTargetName,
-      costInfo: dom.travelCostInfo,
-      confirmBtn: dom.travelConfirmBtn,
-      cancelBtn: dom.travelCancelBtn
+      root: document.getElementById('travel-modal'),
+      targetName: document.getElementById('travel-target-name'),
+      costInfo: document.getElementById('travel-cost-info'),
+      confirmBtn: document.getElementById('travel-confirm-btn'),
+      cancelBtn: document.getElementById('travel-cancel-btn')
     },
 
     transfer: {
-      root: dom.transferModal,
-      itemName: dom.transferItemName,
-      targetSelect: dom.transferTargetSelect,
-      quantityInput: dom.transferQuantityInput,
-      confirmBtn: dom.transferConfirmBtn,
-      cancelBtn: dom.transferCancelBtn
+      root: document.getElementById('transfer-modal'),
+      itemName: document.getElementById('transfer-item-name'),
+      targetSelect: document.getElementById('transfer-target-select'),
+      quantityInput: document.getElementById('transfer-qty-input'),
+      confirmBtn: document.getElementById('transfer-confirm-btn'),
+      cancelBtn: document.getElementById('transfer-cancel-btn')
     },
 
     use: {
-      root: dom.useModal,
-      itemName: dom.useItemName,
-      targetSelect: dom.useTargetSelect,
-      confirmBtn: dom.useConfirmBtn,
-      cancelBtn: dom.useCancelBtn
+      root: document.getElementById('use-modal'),
+      itemName: document.getElementById('use-item-name'),
+      targetSelect: document.getElementById('use-target-select'),
+      confirmBtn: document.getElementById('use-confirm-btn'),
+      cancelBtn: document.getElementById('use-cancel-btn')
     }
-    
   };
 
-  // 【已移除 name 欄位】依使用者指示，dom.profileName 已刪除
   dom.profile = {
-    toggle: dom.charProfileToggle,
-    body: dom.charProfileBody,
-    gender: dom.profileGender,
-    occupation: dom.profileOccupation,
-    safezoneList: dom.profileSafezoneList,
-    factionList: dom.profileFactionList,
-    injurySection: dom.profileInjurySection,
-    injuryLevel: dom.profileInjuryLevel,
-    injuryDetail: dom.profileInjuryDetail,
-    awakeningSection: dom.profileAwakeningSection,
-    awakeningLevel: dom.profileAwakeningLevel,
-    awakeningAbility: dom.profileAwakeningAbility,
-    awakeningExp: dom.profileAwakeningExp,
-    proficiencyAnchor: dom.profileProficiencyAnchor,
-    exploredList: dom.profileExploredList
+    toggle: document.getElementById('char-profile-toggle'),
+    body: document.getElementById('char-profile-body'),
+    gender: document.getElementById('profile-gender'),
+    occupation: document.getElementById('profile-occupation'),
+    safezoneList: document.getElementById('profile-safezone-list'),
+    factionList: document.getElementById('profile-faction-list'),
+    injurySection: document.getElementById('profile-injury-section'),
+    injuryLevel: document.getElementById('profile-injury-level'),
+    injuryDetail: document.getElementById('profile-injury-detail'),
+    awakeningSection: document.getElementById('profile-awakening-section'),
+    awakeningLevel: document.getElementById('profile-awakening-level'),
+    awakeningAbility: document.getElementById('profile-awakening-ability'),
+    awakeningExp: document.getElementById('profile-awakening-exp'),
+    proficiencyAnchor: document.getElementById('profile-proficiency-anchor'),
+    exploredList: document.getElementById('profile-explored-list')
   };
 
   dom.app = {
@@ -320,7 +170,6 @@ function cacheDom() {
   dom.template = {
     safezoneCard: document.getElementById('safezone-card-template')
   };
-
 }
 
 function init() {
