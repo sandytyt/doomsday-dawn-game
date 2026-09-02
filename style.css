@@ -314,7 +314,6 @@ button { font-family: inherit; }
   margin-bottom: 14px;
   padding: 8px 12px;
   border-radius: 4px;
-  display: inline-block;
   float: right;
   clear: both;
   max-width: 88%;
@@ -484,6 +483,10 @@ button { font-family: inherit; }
 .vehicle-card,
 .named-save-row {
   padding: 13px 14px;
+}
+
+#profile-proficiency-section {
+  margin-top: 13px;
 }
 
 /* 按鈕專屬行為 */
@@ -773,3 +776,34 @@ button { font-family: inherit; }
 
 .manual-content-container ul { padding-left: 24px; margin-top: 8px; margin-bottom: 16px; }
 .manual-content-container li { margin-bottom: 8px; }
+
+.side-menu-content {
+  display: block;
+  box-sizing: border-box;
+  height: 100dvh;
+  min-height: 100vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: max(24px, env(safe-area-inset-bottom));
+}
+
+/* 在 block 文件流下 footer 自然排在所有內容之後，不再強制推到底部。 */
+.side-menu-footer {
+  margin-top: 16px;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* 保持按鈕最小高度與可讀性。 */
+.btn-menu {
+  box-sizing: border-box;
+  min-height: 48px;
+  line-height: 1.45;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* 體格熟練度為 JS 動態區塊，補上與基地/勢力關係相同的垂直間距。 */
+#profile-proficiency-section {
+  margin-top: 16px;
+}
