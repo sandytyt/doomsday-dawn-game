@@ -1,19 +1,5 @@
 'use strict';
 
-/* ============================================================
-   app-transfer.js（第二階段：轉移 UI 改用 dom 分組快取）
-
-   【前置條件】請先完成 app-main.js 的 cacheDom() 對應修改：
-   - dom.infoPanelGroup.transferModeToggle
-   - dom.modal.transfer
-   本檔案才可使用 dom.infoPanelGroup.* 與 dom.modal.transfer.*。
-
-   【行為保證】所有物資轉移邏輯、來源/目標解析、數量檢查、
-   既有的 selectEl.innerHTML = '' 防止選項重複 Bug 修正，
-   均完全保留。只將直接 document.getElementById() 改為使用
-   初始化時快取的 DOM 分組路徑。
-   ============================================================ */
-
 var transferState = {
   isTransferMode: false,
   currentSource: null // { type, id, name, max }
