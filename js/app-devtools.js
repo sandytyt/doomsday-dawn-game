@@ -1,23 +1,3 @@
-/* ============================================================
-   app-devtools.js（新檔案）
-   職責：集中管理所有開發者作弊指令，從 app-events.js 搬移過來。
-
-   【本次變更內容】
-   - #give：搬移，內容不變。
-   - #makesafe：搬移，並延續上一輪已修正的版本（改走
-     WorldMemory.applyWorldMemoryUpdate() 正規入口）。
-   - #delfaction：依使用者指示，本次「移除」此指令（不再搬移）。
-     若未來需要清除誤植的陣營資料，建議改用瀏覽器 console 直接操作
-     gameState.factionTrust，或日後在此檔案重新設計更安全的版本。
-   - 新增 CONFIG.DEV_MODE 開關：關閉時，所有 # 開頭的指令會被當成
-     一般劇情輸入直接送給 AI，不會被攔截，避免正式上線後玩家意外
-     或惡意觸發開發者功能。
-
-   【載入順序要求】此檔案依賴 dom、gameState、WorldMemory、
-   appendGMText、renderAll、applyInventoryChangesTo，
-   建議放在 app-events.js 之前、app-ui.js 之後載入。
-   ============================================================ */
-
 'use strict';
 
 // 【接線】從 app-events.js 的 handleFreeInputSend() 呼叫，
@@ -77,6 +57,32 @@ function handleMakeSafeCommand(text) {
     },
     gameState.turnCount
   );
+
+  var createdZone = gameState.worldMemory.safeZones.find(function (zone) {
+    return zone && zone.name === zoneName;
+  });
+
+  if (
+    createdZone &&
+    typeof createdZone.x === 'number' &&
+    typeof createdZone.y === 'number'
+  ) {
+    gameState.location = zoneName;
+
+    gameState.exploredLocations = Array.isArray(gameState.exploredLocations)
+      ? gameState.exploredLocations
+      : [];
+
+    if (gameState.exploredLocations.indexOf(zoneName) === -1) {
+      gameState.exploredLocations.push(zoneName);
+    }
+  } else {
+    console.warn(
+      '[開發者權限] 基地「' +
+      zoneName +
+      '」沒有有效座標，未變更玩家位置。'
+    );
+  }
 
   if (typeof appendGMText === 'function') {
     appendGMText('[開發者權限] 虛空扭曲，已強制將此地註冊為基地「' + zoneName + '」，並開闢專屬物資庫。');
