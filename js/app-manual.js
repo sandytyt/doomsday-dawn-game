@@ -1,37 +1,48 @@
 'use strict';
 
-window.initManualSystem = function () {
-  var modal = document.getElementById('manual-modal');
-  if (!modal) return;
+function initManualSystem() {
+  var modal = dom.modal && dom.modal.manual;
+  var closeBtn = dom.modal && dom.modal.manualClose;
 
-  // 綁定右上角關閉按鈕
-  var closeBtn = document.getElementById('manual-close-btn');
+  if (!modal) {
+    console.warn('[UI警告] 找不到元素「modal.manual」，已略過手冊事件初始化。請確認 index.html 是否有 id="manual-modal"。');
+    return;
+  }
+
   if (closeBtn) {
     closeBtn.addEventListener('click', function () {
       modal.classList.add('hidden');
     });
+  } else {
+    console.warn('[UI警告] 找不到元素「modal.manualClose」，無法綁定手冊關閉按鈕。');
   }
 
-  // 綁定頁籤切換邏輯
   var tabBtns = modal.querySelectorAll('.manual-tab-btn');
   var panes = modal.querySelectorAll('.manual-pane');
 
+  if (tabBtns.length === 0) {
+    console.warn('[UI警告] 在「modal.manual」內找不到任何「.manual-tab-btn」元素，已略過手冊頁籤事件綁定。');
+    return;
+  }
+
+  if (panes.length === 0) {
+    console.warn('[UI警告] 在「modal.manual」內找不到任何「.manual-pane」元素，已略過手冊頁籤事件綁定。');
+    return;
+  }
+
   tabBtns.forEach(function (btn) {
     btn.addEventListener('click', function () {
-      // 移除所有啟動狀態
       tabBtns.forEach(function (b) { b.classList.remove('active'); });
-      panes.forEach(function (p) { p.classList.add('hidden'); });
+      panes.forEach(function (pane) { pane.classList.add('hidden'); });
 
-      // 啟動當前點擊的頁籤
       btn.classList.add('active');
       var targetId = btn.getAttribute('data-target');
       var targetPane = document.getElementById(targetId);
       if (targetPane) {
         targetPane.classList.remove('hidden');
+      } else {
+        console.warn('[UI警告] 手冊頁籤目標不存在：#' + targetId);
       }
     });
   });
-};
-
-// 確保網頁載入後，自動執行初始化
-document.addEventListener('DOMContentLoaded', window.initManualSystem);document.addEventListener('DOMContentLoaded', window.initManualSystem);
+}
