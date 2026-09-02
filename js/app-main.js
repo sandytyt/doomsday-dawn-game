@@ -238,15 +238,25 @@ function cacheDom() {
     eventTitle: dom.eventModalTitle,
     eventText: dom.eventModalText,
     eventClose: dom.eventModalClose,
+
     loadingOverlay: dom.loadingOverlay,
     deathScreen: dom.deathScreen,
+
     namedSave: dom.namedSaveModal,
     namedSaveList: dom.namedSaveList,
     namedSaveClose: dom.namedSaveClose,
     saveTabLocal: dom.saveTabLocal,
     saveTabNotion: dom.saveTabNotion,
+
     manual: dom.manualModal,
     manualClose: dom.manualCloseBtn,
+
+    dailyReport: {
+      root: dom.dailyReportModal,
+      content: dom.dailyReportContent,
+      closeBtn: dom.dailyReportCloseBtn
+    },
+
     transfer: {
       root: dom.transferModal,
       itemName: dom.transferItemName,
@@ -255,17 +265,14 @@ function cacheDom() {
       confirmBtn: dom.transferConfirmBtn,
       cancelBtn: dom.transferCancelBtn
     },
+
     use: {
       root: dom.useModal,
       itemName: dom.useItemName,
       targetSelect: dom.useTargetSelect,
       confirmBtn: dom.useConfirmBtn,
       cancelBtn: dom.useCancelBtn
-    },
-    root: dom.dailyReportModal,
-    content: dom.dailyReportContent,
-    closeBtn: dom.dailyReportCloseBtn
-
+    }
   };
 
   // 【已移除 name 欄位】依使用者指示，dom.profileName 已刪除
