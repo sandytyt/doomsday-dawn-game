@@ -290,9 +290,6 @@ function buildNotionSyncBody(gameState) {
   var fullStateJson = JSON.stringify(gameState);
 
   // 2. 載具判斷
-  var activeVehicle = gameState.vehicles ? gameState.vehicles.find(function (v) { return v.status === 'active'; }) : null;
-  var vehicleText = activeVehicle ? activeVehicle.name : '無代步工具';
-
   return {
     parent: { database_id: CONFIG.NOTION_DATABASE_ID },
     properties: {
@@ -311,10 +308,7 @@ function buildNotionSyncBody(gameState) {
       '隨行隊員': { rich_text: safeRichText(gameState.companions && gameState.companions.length > 0 ? gameState.companions.join('、') : '孤身一人', 1900) },
       '前文提要': { rich_text: safeRichText(briefSummary || '無', 1900) },
       '更新時間': { date: { start: new Date().toISOString() } },
-      '存檔JSON': { rich_text: chunkText(fullStateJson, NOTION_CHUNK_SIZE) },
-      '地圖池': { select: { name: gameState.currentMapPresetId || "未知" } },
-      '已探索地點數': { number: gameState.exploredLocations ? gameState.exploredLocations.length : 0 },
-      '當前載具': { rich_text: safeRichText(vehicleText, 1900) }
+      '存檔JSON': { rich_text: chunkText(fullStateJson, NOTION_CHUNK_SIZE) }
     }
   };
 }
