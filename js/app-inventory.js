@@ -230,33 +230,50 @@ var useItemState = {
   maxQty: 0
 };
 
-document.addEventListener('DOMContentLoaded', function() {
-  var cancelBtn = document.getElementById('use-cancel-btn');
-  if (cancelBtn) cancelBtn.addEventListener('click', function() {
-    document.getElementById('use-modal').classList.add('hidden');
-  });
+function initItemUseUI() {
+  var useModal = dom.modal && dom.modal.use;
+  if (!useModal) {
+    console.warn('[UI警告] 找不到「modal.use」分組，已略過物品使用彈窗初始化。請確認 cacheDom() 是否已新增 use modal 快取。');
+    return;
+  }
 
-  var confirmBtn = document.getElementById('use-confirm-btn');
-  if (confirmBtn) confirmBtn.addEventListener('click', executeUseItem);
-});
+  if (useModal.cancelBtn) {
+    useModal.cancelBtn.addEventListener('click', function () {
+      useModal.root.classList.add('hidden');
+    });
+  } else {
+    console.warn('[UI警告] 找不到元素「modal.use.cancelBtn」，無法綁定物品使用取消按鈕。');
+  }
+
+  if (useModal.confirmBtn) {
+    useModal.confirmBtn.addEventListener('click', executeUseItem);
+  } else {
+    console.warn('[UI警告] 找不到元素「modal.use.confirmBtn」，無法綁定物品使用確認按鈕。');
+  }
+}
 
 function executeUseItem() {
-  var target = document.getElementById('use-target-select').value;
+  var useModal = dom.modal && dom.modal.use;
+  if (!useModal || !useModal.root || !useModal.targetSelect) {
+    console.warn('[UI警告] 物品使用彈窗快取不完整，無法使用物品。');
+    return;
+  }
+
+  var target = useModal.targetSelect.value;
   var itemName = useItemState.itemName;
-  
-  // 1. 【修復喝水 Bug】將食物與水合併視為「可飲食消耗品」
+
+  // 將食物與水合併視為「可飲食消耗品」
   var isWater = (typeof isWaterOnly === 'function') ? isWaterOnly(itemName) : false;
-  // 把 && !isWater 拿掉，只要是食物或是水，都允許使用！
-  var isConsumable = isLikelyFood(itemName) || isWater; 
+  var isConsumable = isLikelyFood(itemName) || isWater;
   var isMed = itemName.indexOf('醫療包') !== -1 || itemName.indexOf('繃帶') !== -1 || itemName.indexOf('藥') !== -1 || itemName.indexOf('紗布') !== -1;
   var isCore = itemName.indexOf('晶核') !== -1;
-  
+
   if (!isConsumable && !isMed && !isCore) {
     alert('此物品目前無法直接使用（可能是材料或無法食用的物品）。');
     return;
   }
-  
-  // 晶核專屬檢查：通常晶核只能由主角自己吸收
+
+  // 晶核專屬檢查：晶核只能由主角自己吸收
   if (isCore && target !== 'player') {
     alert('晶核目前只能由主角自己吸收轉化！');
     return;
@@ -269,52 +286,37 @@ function executeUseItem() {
     targets.push('player');
     targets = targets.concat(gameState.companions || []);
   }
-  
-  // ─── 完美對接你的智慧食物系統 ───
+
   var shareType = 'individual';
   var recovery = 10;
   var staminaRecovery = 0;
-
   if (typeof getFoodStats === 'function') {
     var stats = getFoodStats(itemName);
     shareType = stats.shareType;
     recovery = stats.recovery;
     staminaRecovery = stats.stamina || 0;
   }
-  // ────────────────────────────
-  
-  var qtyToConsume = 0;
-  
-  if (target === 'all' && shareType === 'shared') {
-    qtyToConsume = 1;
-  } else {
-    qtyToConsume = targets.length;
-  }
-  
-  if (isCore) {
-    qtyToConsume = 1; 
-  }
-  
+
+  var qtyToConsume = target === 'all' && shareType === 'shared' ? 1 : targets.length;
+  if (isCore) qtyToConsume = 1;
+
   if (useItemState.maxQty < qtyToConsume) {
     alert('數量不足！你需要 ' + qtyToConsume + ' 份，但背包只有 ' + useItemState.maxQty + ' 份。');
     return;
   }
-  
-  // 1. 扣除物品
+
+  // 扣除物品
   applyInventoryChangesTo(gameState.inventory, [{ name: itemName, quantity: qtyToConsume, action: 'remove' }]);
-  
-  // 2. 應用效果
+
+  // 應用效果
   if (isCore) {
     var expGained = (typeof getCoreExpGained === 'function') ? getCoreExpGained(itemName) : 10;
-    
-    if (typeof applyAbilityExpChange === 'function') {
-      applyAbilityExpChange(expGained); 
-    }
+    if (typeof applyAbilityExpChange === 'function') applyAbilityExpChange(expGained);
     if (typeof advanceTime === 'function') {
-      advanceTime(10); 
+      advanceTime(10);
     } else {
       gameState.time.minute += 10;
-      if(gameState.time.minute >= 60) {
+      if (gameState.time.minute >= 60) {
         gameState.time.minute -= 60;
         gameState.time.hour += 1;
       }
@@ -322,43 +324,39 @@ function executeUseItem() {
     appendGMText('[系統] 你吸收了 ' + itemName + '，獲得 ' + expGained + ' 點熟練度，時間過去了 10 分鐘。');
   } else {
     // 食物與藥品效果
-    targets.forEach(function(t) {
-      // 2. 【修復體力 Bug】讓水跟食物都能進入恢復迴圈，並加上 Number 防呆確保數值相加正確
-      if (isConsumable) { 
+    targets.forEach(function (t) {
+      if (isConsumable) {
         if (t === 'player') {
           gameState.hunger = Math.min(100, gameState.hunger + recovery);
           gameState.stamina = Math.min(gameState.maxStamina || 100, (Number(gameState.stamina) || 0) + staminaRecovery);
-        }
-        else if (gameState.npcStates && gameState.npcStates[t]) {
+        } else if (gameState.npcStates && gameState.npcStates[t]) {
           gameState.npcStates[t].hunger = Math.min(100, gameState.npcStates[t].hunger + recovery);
           gameState.npcStates[t].stamina = Math.min(100, (Number(gameState.npcStates[t].stamina) || 0) + staminaRecovery);
         }
       }
+
       if (isMed) {
         if (t === 'player') {
-           gameState.injuryStatus = (gameState.injuryStatus === 'severe') ? 'minor' : 'none';
-           if (gameState.injuryStatus === 'none') gameState.injuryDetail = ''; 
+          gameState.injuryStatus = gameState.injuryStatus === 'severe' ? 'minor' : 'none';
+          if (gameState.injuryStatus === 'none') gameState.injuryDetail = '';
         } else if (gameState.npcStates && gameState.npcStates[t]) {
-           var npc = gameState.npcStates[t];
-           npc.injuryStatus = (npc.injuryStatus === 'severe') ? 'minor' : 'none';
-           if (npc.injuryStatus === 'none') npc.injuryDetail = '';
+          var npc = gameState.npcStates[t];
+          npc.injuryStatus = npc.injuryStatus === 'severe' ? 'minor' : 'none';
+          if (npc.injuryStatus === 'none') npc.injuryDetail = '';
         }
       }
     });
-    
+
     var targetLabel = target === 'all' ? '全體人員' : (target === 'player' ? '自己' : target.substring(4));
-    
-    // 讓日誌清楚顯示喝水/吃東西後恢復了體力
     if (isConsumable && !isMed) {
-       appendGMText('[系統] 你將 ' + itemName + ' 分配給了 ' + targetLabel + ' (消耗 ' + qtyToConsume + ' 份)，恢復了飽食度與體力。');
+      appendGMText('[系統] 你將 ' + itemName + ' 分配給了 ' + targetLabel + ' (消耗 ' + qtyToConsume + ' 份)，恢復了飽食度與體力。');
     } else {
-       appendGMText('[系統] 你將 ' + itemName + ' 分配給了 ' + targetLabel + ' (消耗 ' + qtyToConsume + ' 份)。');
+      appendGMText('[系統] 你將 ' + itemName + ' 分配給了 ' + targetLabel + ' (消耗 ' + qtyToConsume + ' 份)。');
     }
   }
-  
-  // 3. 收尾與日誌提示
-  document.getElementById('use-modal').classList.add('hidden');
-  if (typeof renderAll === 'function') renderAll(); 
+
+  useModal.root.classList.add('hidden');
+  if (typeof renderAll === 'function') renderAll();
 }
 
 function isWaterOnly(itemName) {
