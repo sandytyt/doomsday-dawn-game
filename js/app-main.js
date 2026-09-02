@@ -102,12 +102,6 @@ function cacheDom() {
   dom.saveTabNotion = document.getElementById('save-tab-notion');
   dom.manualModal = document.getElementById('manual-modal');
   dom.manualCloseBtn = document.getElementById('manual-close-btn');
-  dom.transferModal = document.getElementById('transfer-modal');
-  dom.transferItemName = document.getElementById('transfer-item-name');
-  dom.transferTargetSelect = document.getElementById('transfer-target-select');
-  dom.transferQuantityInput = document.getElementById('transfer-qty-input');
-  dom.transferConfirmBtn = document.getElementById('transfer-confirm-btn');
-  dom.transferCancelBtn = document.getElementById('transfer-cancel-btn');
   dom.useModal = document.getElementById('use-modal');
   dom.useItemName = document.getElementById('use-item-name');
   dom.useTargetSelect = document.getElementById('use-target-select');
@@ -116,6 +110,17 @@ function cacheDom() {
   dom.dailyReportModal = document.getElementById('daily-report-modal');
   dom.dailyReportContent = document.getElementById('daily-report-content');
   dom.dailyReportCloseBtn = document.getElementById('daily-report-close-btn');
+  dom.travelModal = document.getElementById('travel-modal');
+  dom.travelTargetName = document.getElementById('travel-target-name');
+  dom.travelCostInfo = document.getElementById('travel-cost-info');
+  dom.travelConfirmBtn = document.getElementById('travel-confirm-btn');
+  dom.travelCancelBtn = document.getElementById('travel-cancel-btn');
+  dom.transferModal = document.getElementById('transfer-modal');
+  dom.transferItemName = document.getElementById('transfer-item-name');
+  dom.transferTargetSelect = document.getElementById('transfer-target-select');
+  dom.transferQuantityInput = document.getElementById('transfer-qty-input');
+  dom.transferConfirmBtn = document.getElementById('transfer-confirm-btn');
+  dom.transferCancelBtn = document.getElementById('transfer-cancel-btn');
 
 
   // ---------- 角色檔案面板 ----------
