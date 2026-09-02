@@ -239,7 +239,9 @@ function initItemUseUI() {
 
   if (useModal.cancelBtn) {
     useModal.cancelBtn.addEventListener('click', function () {
-      useModal.root.classList.add('hidden');
+      if (useModal.root) {
+        useModal.root.classList.add('hidden');
+      }
     });
   } else {
     console.warn('[UI警告] 找不到元素「modal.use.cancelBtn」，無法綁定物品使用取消按鈕。');
