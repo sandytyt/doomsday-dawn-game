@@ -334,9 +334,15 @@ var expandedLocationGroups = {};
 
 function renderProfileExploredLocations() {
   var container = dom.profile.exploredList;
+
   if (!container) return;
+
   container.innerHTML = '';
-  if (!gameState.exploredLocations || gameState.exploredLocations.length === 0) {
+
+  if (
+    !Array.isArray(gameState.exploredLocations) ||
+    gameState.exploredLocations.length === 0
+  ) {
     var emptyEl = document.createElement('div');
     emptyEl.className = 'profile-subentity-empty';
     emptyEl.textContent = '尚未探索任何地點';
@@ -344,24 +350,24 @@ function renderProfileExploredLocations() {
     return;
   }
 
-  var sortedLocs = gameState.exploredLocations.slice().sort(function (a, b) { return a.length - b.length; });
-  var REGION_ANCHORS = ['維爾赫姆市', '灰堡', '荒原鎮群', '靜默聖所', '深谷中繼站', '方舟海上堡壘'];
   var groups = {};
 
   gameState.exploredLocations.forEach(function (loc) {
-    var matchedGroup = null;
-    for (var i = 0; i < REGION_ANCHORS.length; i++) {
-      if (loc.indexOf(REGION_ANCHORS[i]) !== -1) {
-        matchedGroup = REGION_ANCHORS[i];
-        break;
-      }
+    var resolved = resolveMapLocation(loc);
+
+    // 已知地圖地點／AI 變體：以所屬勢力區域 key 分組。
+    // 未知地點：保留原始名稱，獨立成一個可前往項目。
+    var groupName = resolved ? resolved.regionKey : loc;
+
+    if (!groups[groupName]) {
+      groups[groupName] = {
+        isRegion: !!resolved,
+        locations: []
+      };
     }
-    var finalGroupName = matchedGroup || loc;
-    if (!groups[finalGroupName]) groups[finalGroupName] = [];
-    if (loc !== matchedGroup) {
-      groups[finalGroupName].push(loc);
-    } else if (groups[finalGroupName].length === 0) {
-      groups[finalGroupName].push(loc);
+
+    if (groups[groupName].locations.indexOf(loc) === -1) {
+      groups[groupName].locations.push(loc);
     }
   });
 
@@ -369,86 +375,120 @@ function renderProfileExploredLocations() {
   container.style.overflowY = 'auto';
   container.style.paddingRight = '5px';
 
-  for (var groupName in groups) {
-    if (Object.prototype.hasOwnProperty.call(groups, groupName)) {
-      (function (gName, locs) {
-        var groupDiv = document.createElement('div');
-        groupDiv.style.marginBottom = '8px';
+  // 讓群組顯示順序穩定：
+  // 先依 MAP_PRESETS 的地圖順序，最後才放 AI 完全未知的獨立地點。
+  var orderedGroupNames = [];
 
-        if (locs.length <= 1) {
-          groupDiv.appendChild(createLocationButton(locs[0]));
-        } else {
-          var header = document.createElement('div');
-          var isExpanded = expandedLocationGroups[gName] || false;
-
-          header.style.display = 'flex';
-          header.style.alignItems = 'center';
-          header.style.justifyContent = 'space-between';
-          header.style.gap = '8px';
-          header.style.padding = '8px 12px';
-          header.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
-          header.style.borderLeft = '3px solid #4a90e2';
-          header.style.borderRadius = '4px';
-          header.style.cursor = 'pointer';
-          header.style.color = '#e0e0e0';
-
-          var body = document.createElement('div');
-          body.style.display = isExpanded ? 'block' : 'none';
-          body.style.paddingLeft = '12px';
-          body.style.marginTop = '4px';
-
-          locs.forEach(function (loc) {
-            body.appendChild(createLocationButton(loc));
-          });
-
-          function renderGroupHeader(expanded) {
-            header.innerHTML =
-              '<span style="font-weight: bold; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">' +
-              escapeHtml(gName) +
-              '</span>' +
-              '<span style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">' +
-                '<button type="button" class="region-travel-btn" ' +
-                  'style="background: transparent; border: 1px solid rgba(74, 144, 226, 0.45); border-radius: 4px; color: #4a90e2; font-size: 11px; padding: 2px 6px; cursor: pointer;">' +
-                  '➔ 前往' +
-                '</button>' +
-                '<span style="font-size: 0.8em; color: #888;">' +
-                  locs.length +
-                  (expanded ? ' ▲' : ' ▼') +
-                '</span>' +
-              '</span>';
-
-            var travelBtn = header.querySelector('.region-travel-btn');
-
-            if (travelBtn) {
-              travelBtn.addEventListener('click', function (event) {
-                event.stopPropagation();
-
-                if (typeof requestTravelTo === 'function') {
-                  requestTravelTo(gName);
-                }
-              });
-            }
-          }
-
-          renderGroupHeader(isExpanded);
-
-          header.addEventListener('click', function () {
-            var willExpand = body.style.display === 'none';
-
-            body.style.display = willExpand ? 'block' : 'none';
-            expandedLocationGroups[gName] = willExpand;
-
-            renderGroupHeader(willExpand);
-          });
-
-          groupDiv.appendChild(header);
-          groupDiv.appendChild(body);
-        }
-
-        container.appendChild(groupDiv);
-      })(groupName, groups[groupName]);
+  for (var regionKey in MAP_PRESETS) {
+    if (
+      Object.prototype.hasOwnProperty.call(MAP_PRESETS, regionKey) &&
+      groups[regionKey]
+    ) {
+      orderedGroupNames.push(regionKey);
     }
   }
+
+  for (var groupName in groups) {
+    if (
+      Object.prototype.hasOwnProperty.call(groups, groupName) &&
+      orderedGroupNames.indexOf(groupName) === -1
+    ) {
+      orderedGroupNames.push(groupName);
+    }
+  }
+
+  orderedGroupNames.forEach(function (groupName) {
+    var group = groups[groupName];
+    var locs = group.locations;
+
+    var groupDiv = document.createElement('div');
+    groupDiv.style.marginBottom = '8px';
+
+    // 已識別的勢力／區域永遠顯示群組 header：
+    // 即使目前只有一個已探索地點，仍可「前往灰堡」等區域錨點。
+    if (group.isRegion) {
+      renderExploredRegionGroup(
+        groupDiv,
+        groupName,
+        locs
+      );
+    } else {
+      // 完全未知、無法對應地圖的 AI 地點，保留獨立可點擊旅行列。
+      locs.forEach(function (locationName) {
+        groupDiv.appendChild(createLocationButton(locationName));
+      });
+    }
+
+    container.appendChild(groupDiv);
+  });
+}
+
+function renderExploredRegionGroup(groupDiv, regionKey, locations) {
+  var header = document.createElement('div');
+  var isExpanded = expandedLocationGroups[regionKey] || false;
+
+  header.style.display = 'flex';
+  header.style.alignItems = 'center';
+  header.style.justifyContent = 'space-between';
+  header.style.gap = '8px';
+  header.style.padding = '8px 12px';
+  header.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+  header.style.borderLeft = '3px solid #4a90e2';
+  header.style.borderRadius = '4px';
+  header.style.cursor = 'pointer';
+  header.style.color = '#e0e0e0';
+
+  var body = document.createElement('div');
+  body.style.display = isExpanded ? 'block' : 'none';
+  body.style.paddingLeft = '12px';
+  body.style.marginTop = '4px';
+
+  locations.forEach(function (locationName) {
+    body.appendChild(createLocationButton(locationName));
+  });
+
+  function renderHeader(expanded) {
+    header.innerHTML =
+      '<span style="font-weight: bold; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">' +
+      escapeHtml(regionKey) +
+      '</span>' +
+      '<span style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">' +
+        '<button type="button" class="region-travel-btn" ' +
+          'style="background: transparent; border: 1px solid rgba(74, 144, 226, 0.45); border-radius: 4px; color: #4a90e2; font-size: 11px; padding: 2px 6px; cursor: pointer;">' +
+          '➔ 前往' +
+        '</button>' +
+        '<span style="font-size: 0.8em; color: #888;">' +
+          locations.length +
+          (expanded ? ' ▲' : ' ▼') +
+        '</span>' +
+      '</span>';
+
+    var travelBtn = header.querySelector('.region-travel-btn');
+
+    if (travelBtn) {
+      travelBtn.addEventListener('click', function (event) {
+        event.stopPropagation();
+
+        if (typeof requestTravelTo === 'function') {
+          requestTravelTo(regionKey);
+        }
+      });
+    }
+  }
+
+  renderHeader(isExpanded);
+
+  header.addEventListener('click', function () {
+    var willExpand = body.style.display === 'none';
+
+    body.style.display = willExpand ? 'block' : 'none';
+    expandedLocationGroups[regionKey] = willExpand;
+
+    renderHeader(willExpand);
+  });
+
+  groupDiv.appendChild(header);
+  groupDiv.appendChild(body);
 }
 
 function createLocationButton(locName) {
