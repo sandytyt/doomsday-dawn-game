@@ -257,6 +257,14 @@ function cacheDom() {
       closeBtn: dom.dailyReportCloseBtn
     },
 
+    travel: {
+      root: dom.travelModal,
+      targetName: dom.travelTargetName,
+      costInfo: dom.travelCostInfo,
+      confirmBtn: dom.travelConfirmBtn,
+      cancelBtn: dom.travelCancelBtn
+    },
+
     transfer: {
       root: dom.transferModal,
       itemName: dom.transferItemName,
