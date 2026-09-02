@@ -178,7 +178,7 @@ function showDeathScreen(text) {
 }
 
 function updateDynamicVisuals() {
-  var appContainer = document.getElementById('app');
+  var appContainer = dom.app.root;
   var currentLoc = gameState.location || "未知";
   var currentZone = "未知";
 
@@ -232,7 +232,7 @@ function updateDynamicVisuals() {
     appContainer.style.backgroundImage = "url('images/bg/" + finalBgFileName + "')";
   }
 
-  var avatarBox = document.getElementById('player-avatar-box');
+  var avatarBox = dom.app.playerAvatarBox;
   if (avatarBox && gameState.charSetup) {
     var gender = (gameState.charSetup.gender === '女性') ? 'female' : 'male';
     var bgType = gameState.charSetup.backgroundType;
@@ -267,7 +267,7 @@ function renderProfileProficiency() {
   var existing = document.getElementById('profile-proficiency-section');
   if (existing) existing.remove();
 
-  var anchor = document.getElementById('profile-proficiency-anchor');
+  var anchor = dom.profile.proficiencyAnchor;
   if (!anchor) {
     console.warn('[UI警告] 找不到 #profile-proficiency-anchor，請確認 index.html 是否已新增此錨點元素。體格熟練度區塊將無法顯示。');
     return;
@@ -307,7 +307,7 @@ function renderProfileInjury() {
 var expandedLocationGroups = {};
 
 function renderProfileExploredLocations() {
-  var container = document.getElementById('profile-explored-list');
+  var container = dom.profile.exploredList;
   if (!container) return;
   container.innerHTML = '';
   if (!gameState.exploredLocations || gameState.exploredLocations.length === 0) {
@@ -438,7 +438,7 @@ function renderProfileAwakening() {
 }
 
 function renderProfileSafezones() {
-  var container = document.getElementById('profile-safezone-list');
+  var container = dom.profile.safezoneList;
   if (!container) return;
   var worldMemory = gameState.worldMemory;
   var zones = worldMemory.safeZones;
@@ -463,7 +463,7 @@ function renderProfileSafezones() {
     return;
   }
 
-  var template = document.getElementById('safezone-card-template');
+  var template = dom.template.safezoneCard;
   if (!template) return;
 
   zones.forEach(function (zone) {
