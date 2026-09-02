@@ -47,7 +47,7 @@ var CONFIG = {
   TEST_MODE_ENABLED: true,
   DEV_MODE: true,   // 【新增】開發者作弊指令總開關，正式上線前請改為 false
   TEST_SCRIPT: (typeof TEST_SCRIPT !== 'undefined') ? TEST_SCRIPT : [],
-  NOTION_ENABLED: false,
+  NOTION_ENABLED: true,
   NOTION_PROXY_URL: '',
   NOTION_DATABASE_ID: ''
 };
