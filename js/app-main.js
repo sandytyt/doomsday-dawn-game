@@ -108,6 +108,11 @@ function cacheDom() {
   dom.transferQuantityInput = document.getElementById('transfer-qty-input');
   dom.transferConfirmBtn = document.getElementById('transfer-confirm-btn');
   dom.transferCancelBtn = document.getElementById('transfer-cancel-btn');
+  dom.useModal = document.getElementById('use-modal');
+  dom.useItemName = document.getElementById('use-item-name');
+  dom.useTargetSelect = document.getElementById('use-target-select');
+  dom.useConfirmBtn = document.getElementById('use-confirm-btn');
+  dom.useCancelBtn = document.getElementById('use-cancel-btn');
 
 
   // ---------- 角色檔案面板 ----------
@@ -247,7 +252,15 @@ function cacheDom() {
       quantityInput: dom.transferQuantityInput,
       confirmBtn: dom.transferConfirmBtn,
       cancelBtn: dom.transferCancelBtn
+    },
+    use: {
+      root: dom.useModal,
+      itemName: dom.useItemName,
+      targetSelect: dom.useTargetSelect,
+      confirmBtn: dom.useConfirmBtn,
+      cancelBtn: dom.useCancelBtn
     }
+
   };
 
   // 【已移除 name 欄位】依使用者指示，dom.profileName 已刪除
@@ -270,12 +283,15 @@ function cacheDom() {
 }
 
 function init() {
-  
   cacheDom();
+
+  // 所有 DOM 分組快取已完成，現在才初始化依賴快取的 UI 模組。
   if (typeof initTransferUI === 'function') initTransferUI();
+  if (typeof initItemUseUI === 'function') initItemUseUI();
+  if (typeof initManualSystem === 'function') initManualSystem();
+
   populateProviderSelect();
   bindEvents();
-  setupManualTabs(); // 【獨立呼叫：綁定遊戲手冊分頁】
   loadRulesAndLore();
   loadNotionConfig();
   setupTestModeEntry();
