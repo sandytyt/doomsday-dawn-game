@@ -234,8 +234,9 @@ function getConsumePriority(name) {
 
 // ─── UI 報表渲染 ───
 function renderDailyReportModal(reports, daysPassed) {
-  var modal = document.getElementById('daily-report-modal');
-  var content = document.getElementById('daily-report-content');
+  var modal = dom.modal.dailyReport.root;
+  var content = dom.modal.dailyReport.content;
+
   if (!modal || !content) return;
   var html = '';
 
@@ -276,9 +277,13 @@ function renderDailyReportModal(reports, daysPassed) {
   });
 
   content.innerHTML = html;
-  document.getElementById('daily-report-close-btn').onclick = function () {
-    modal.classList.add('hidden');
+  var closeBtn = dom.modal.dailyReport.closeBtn;
+
+  if (closeBtn) {
+    closeBtn.onclick = function () {
+      modal.classList.add('hidden');
     if (typeof renderAll === 'function') renderAll();
-  };
+    };
+  }
   modal.classList.remove('hidden');
 }
