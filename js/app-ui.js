@@ -671,12 +671,16 @@ function openUseModal(itemName, qty) {
 }
 
 function openTravelConfirmModal(targetLocation, dist, costType, costValue, timeCost, canTravel, errorMsg, activeVehicle) {
-  var modal = document.getElementById('travel-modal');
-  var targetNameEl = document.getElementById('travel-target-name');
-  var infoDiv = document.getElementById('travel-cost-info');
-  var confirmBtn = document.getElementById('travel-confirm-btn');
-  var cancelBtn = document.getElementById('travel-cancel-btn');
-  if (!modal) return;
+  var modal = dom.modal.travel.root;
+  var targetNameEl = dom.modal.travel.targetName;
+  var infoDiv = dom.modal.travel.costInfo;
+  var confirmBtn = dom.modal.travel.confirmBtn;
+  var cancelBtn = dom.modal.travel.cancelBtn;
+
+  if (!modal || !targetNameEl || !infoDiv || !confirmBtn || !cancelBtn) {
+    console.warn('[UI警告] 旅途確認視窗的 DOM 快取不完整，已取消開啟旅途確認視窗。');
+    return;
+  }
 
   cancelBtn.onclick = function () { modal.classList.add('hidden'); };
 
