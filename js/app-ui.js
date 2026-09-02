@@ -254,7 +254,6 @@ function renderCharProfile() {
   // 【已刪除】dom.profileName 渲染——HTML 已無 profile-name 欄位，
   // 且遊戲設計上主角本來就不顯示姓名，永遠用第二人稱「你」稱呼。
   if (dom.profile.gender) dom.profile.gender.textContent = c.gender || '未指定';
-  if (dom.profile.location) dom.profile.location.textContent = c.location || '未知';
   if (dom.profile.occupation) dom.profile.occupation.textContent = c.occupation || '未知';
   renderProfileProficiency();
   renderProfileInjury();
