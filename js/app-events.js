@@ -42,8 +42,7 @@ function bindEvents() {
   // 【綁定開啟手冊】
   bindSafe(dom.setup.rulesLinkBtn, 'click', function () { toggleManualModal(true); }, 'setup.rulesLinkBtn');
   bindSafe(dom.menu.rulesBtn, 'click', function () { toggleSideMenu(false); setTimeout(function () { toggleManualModal(true); }, 200); }, 'menu.rulesBtn');
-  bindSafe(dom.modal.manualClose, 'click', function () { toggleManualModal(false); }, 'modal.manualClose');
-
+ 
   bindSafe(dom.menu.notionSetupToggle, 'click', function () { toggleCollapse(dom.menu.notionSetupToggle, dom.menu.notionSetupFields); }, 'menu.notionSetupToggle');
   bindSafe(dom.menu.notionSaveBtn, 'click', handleSaveNotionConfig, 'menu.notionSaveBtn');
   bindSafe(dom.menu.notionSyncNowBtn, 'click', handleNotionSyncNow, 'menu.notionSyncNowBtn');
