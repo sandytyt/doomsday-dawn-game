@@ -270,9 +270,9 @@ function cacheDom() {
 }
 
 function init() {
-  if (typeof initTransferUI === 'function') initTransferUI();
   
   cacheDom();
+  if (typeof initTransferUI === 'function') initTransferUI();
   populateProviderSelect();
   bindEvents();
   setupManualTabs(); // 【獨立呼叫：綁定遊戲手冊分頁】
