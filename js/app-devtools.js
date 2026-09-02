@@ -69,13 +69,6 @@ function handleMakeSafeCommand(text) {
   ) {
     gameState.location = zoneName;
 
-    gameState.exploredLocations = Array.isArray(gameState.exploredLocations)
-      ? gameState.exploredLocations
-      : [];
-
-    if (gameState.exploredLocations.indexOf(zoneName) === -1) {
-      gameState.exploredLocations.push(zoneName);
-    }
   } else {
     console.warn(
       '[開發者權限] 基地「' +
