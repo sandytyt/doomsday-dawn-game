@@ -120,7 +120,6 @@ function cacheDom() {
   dom.charProfileBody = document.getElementById('char-profile-body');
   // 【已刪除】dom.profileName（HTML 已無 profile-name 欄位，主角不顯示姓名）
   dom.profileGender = document.getElementById('profile-gender');
-  dom.profileLocation = document.getElementById('profile-location');
   dom.profileOccupation = document.getElementById('profile-occupation');
   dom.profileSafezoneList = document.getElementById('profile-safezone-list');
   dom.profileFactionList = document.getElementById('profile-faction-list');
@@ -268,7 +267,6 @@ function cacheDom() {
     toggle: dom.charProfileToggle,
     body: dom.charProfileBody,
     gender: dom.profileGender,
-    location: dom.profileLocation,
     occupation: dom.profileOccupation,
     safezoneList: dom.profileSafezoneList,
     factionList: dom.profileFactionList,
