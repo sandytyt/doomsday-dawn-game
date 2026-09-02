@@ -608,6 +608,31 @@ button { font-family: inherit; }
 .profile-faction-trust.trust-positive { color: #8fbc8f; }
 .profile-faction-trust.trust-negative { color: #e57373; }
 .profile-faction-trust.trust-neutral { color: var(--text-dim); }
+.profile-faction-header {
+  gap: 8px;
+}
+
+.profile-faction-locations {
+  border-top: 1px dashed var(--border-color);
+}
+
+.faction-location-travel-btn {
+  flex: 0 0 auto;
+  padding: 3px 7px;
+  background: transparent;
+  border: 1px solid rgba(74, 144, 226, 0.45);
+  border-radius: 4px;
+  color: #4a90e2;
+  font-family: inherit;
+  font-size: 11px;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.faction-location-travel-btn:active {
+  background: rgba(74, 144, 226, 0.12);
+}
 
 /* 載具內部 */
 .vehicle-card.vehicle-active { border-color: var(--accent-teal); }
