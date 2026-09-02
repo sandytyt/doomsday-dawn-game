@@ -193,6 +193,125 @@ var MAP_PRESETS = {
 };
 
 // ----------------------------------------
+// 5.1 AI 地點名稱解析
+// ----------------------------------------
+// AI 可能回傳「指揮塔樓外圍」、「灰堡外圍野戰醫療營帳」等名稱變體。
+// 此函式把變體對應回 MAP_PRESETS 中最近的標準地點與所屬區域。
+function resolveMapLocation(locationName) {
+  var rawName = String(locationName || '').trim();
+
+  if (!rawName || typeof MAP_PRESETS === 'undefined') {
+    return null;
+  }
+
+  var bestMatch = null;
+  var bestScore = -1;
+
+  for (var regionKey in MAP_PRESETS) {
+    if (!Object.prototype.hasOwnProperty.call(MAP_PRESETS, regionKey)) {
+      continue;
+    }
+
+    var region = MAP_PRESETS[regionKey];
+
+    // 區域短名：灰堡、維爾赫姆市……
+    if (rawName === regionKey) {
+      return {
+        regionKey: regionKey,
+        region: region,
+        location: null,
+        matchedName: regionKey,
+        x: region.x,
+        y: region.y,
+        exact: true
+      };
+    }
+
+    // 區域完整顯示名稱：灰堡 (Ash Fort)……
+    if (rawName === region.name) {
+      return {
+        regionKey: regionKey,
+        region: region,
+        location: null,
+        matchedName: region.name,
+        x: region.x,
+        y: region.y,
+        exact: true
+      };
+    }
+
+    var locations = Array.isArray(region.locations)
+      ? region.locations
+      : [];
+
+    for (var i = 0; i < locations.length; i++) {
+      var knownLocation = locations[i];
+      var knownName = String(knownLocation.name || '');
+
+      if (!knownName) {
+        continue;
+      }
+
+      // 精確命中，立即回傳。
+      if (rawName === knownName) {
+        return {
+          regionKey: regionKey,
+          region: region,
+          location: knownLocation,
+          matchedName: knownName,
+          x: knownLocation.x,
+          y: knownLocation.y,
+          exact: true
+        };
+      }
+
+      // 變體命中：例如「灰堡外圍野戰醫療營帳」包含「野戰醫療營帳」。
+      // 標準名稱越長，匹配越具體，所以使用名稱字數當分數。
+      if (
+        rawName.indexOf(knownName) !== -1 ||
+        knownName.indexOf(rawName) !== -1
+      ) {
+        var score = knownName.length;
+
+        if (score > bestScore) {
+          bestScore = score;
+          bestMatch = {
+            regionKey: regionKey,
+            region: region,
+            location: knownLocation,
+            matchedName: knownName,
+            x: knownLocation.x,
+            y: knownLocation.y,
+            exact: false
+          };
+        }
+      }
+    }
+
+    // 若 AI 名稱只有區域詞，例如「灰堡外圍」，沒有具體標準地點，
+    // 對應到該區域錨點。
+    if (rawName.indexOf(regionKey) !== -1) {
+      var regionScore = regionKey.length;
+
+      if (regionScore > bestScore) {
+        bestScore = regionScore;
+        bestMatch = {
+          regionKey: regionKey,
+          region: region,
+          location: null,
+          matchedName: regionKey,
+          x: region.x,
+          y: region.y,
+          exact: false
+        };
+      }
+    }
+  }
+
+  return bestMatch;
+};
+
+// ----------------------------------------
 // 6. 五大陣營白名單與基地別名對照表
 // ----------------------------------------
 // 【搬遷說明】此常數原本以區域變數形式寫死在 app-engine.js 的
