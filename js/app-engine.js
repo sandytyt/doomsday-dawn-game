@@ -386,6 +386,7 @@ function getLocationCoords(locName) {
   // 2. 再查系統預設大地圖（MAP_PRESETS）
   for (var poolId in MAP_PRESETS) {
     var pool = MAP_PRESETS[poolId];
+    if (poolId === locName) {return {x: pool.x,y: pool.y};}
     if (pool.name === locName) return { x: pool.x, y: pool.y };
     for (var i = 0; i < pool.locations.length; i++) {
       if (pool.locations[i].name === locName) return { x: pool.locations[i].x, y: pool.locations[i].y };
