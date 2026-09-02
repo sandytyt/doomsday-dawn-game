@@ -35,9 +35,6 @@ function handleAIResponse(response) {
 
     if (targetZone && targetZone.name) {
       gameState.location = targetZone.name; // 主角自動進入新建的基地
-      if (gameState.exploredLocations.indexOf(targetZone.name) === -1) {
-        gameState.exploredLocations.push(targetZone.name);
-      }
     }
   }
 
